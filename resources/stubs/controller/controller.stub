@@ -1,0 +1,100 @@
+<?php
+
+namespace {{ namespace }};
+
+use App\Models\{{ model }} as Model;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+
+class {{ name }} extends Controller
+{
+    public $model;
+
+    public function __construct(Model $model)
+    {
+        $this->model = $model;
+    }
+
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+        return view('{{ view }}.index');
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function create()
+    {
+        return view('{{ view }}.create');
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            //
+        ]);
+
+        $this->model->create($data);
+        alertNotif('save');
+        return redirect()->route('{{ route }}.index');
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function edit($id)
+    {
+        $data = $this->model->findOrFail($id);
+        return view('{{ route }}.edit', compact('data'));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, $id)
+    {
+        $model = $this->model->find($id);
+        $data = $request->validate([
+            //
+        ]);
+
+        $data['updated_by'] = auth()->user()->id;
+        $model->update($data);
+        alertNotif('update');
+        return redirect()->route('{{ route }}.index');
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy($id)
+    {
+        $model = $this->model->find($id);
+        $model->delete();
+        alertNotif('delete');
+        return redirect()->route('{{ route }}.index');
+    }
+}
