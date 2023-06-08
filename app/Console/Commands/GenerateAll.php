@@ -110,7 +110,13 @@ class GenerateAll extends Command
     {
         $model = $modelName;
         $dirname = dirname($path) === '.' ? '' : dirname($path);
-        $resourceDir = Str::kebab($path);
+        
+        $partPath = explode('/', $path);
+        $slugParts = array_map(function($part) {
+            return Str::kebab($part);
+        }, $partPath);
+        $resourceDir = implode('/', $slugParts);
+
         $viewDir = $dirname ? resource_path("views/{$resourceDir}") : resource_path("views");
         $livewireView = 'show-' . Str::kebab($model);
         $livewireViewPath = $dirname ? strtolower($dirname) . '.' . $livewireView : $livewireView;
