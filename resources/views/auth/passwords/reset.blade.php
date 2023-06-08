@@ -8,7 +8,7 @@
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
 
-    <title>CBT | PP Assalam Al-Islamy</title>
+    <title>{{ appName() }} | {{ holderName() }}</title>
 
     <meta name="description" content="" />
     <link rel="icon" type="image/x-icon" href="{{ asset('theme/favicon.ico') }}" />

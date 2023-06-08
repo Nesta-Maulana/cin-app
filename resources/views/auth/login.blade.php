@@ -46,25 +46,16 @@
     <div class="authentication-wrapper authentication-cover authentication-bg">
         <div class="authentication-inner row">
             <div class="d-none d-lg-flex col-lg-7 p-0">
-                <div class="auth-cover-bg auth-cover-bg-color position-relative overflow-hidden">
-                    <img src="{{ asset('theme/assets/img/auth-bg.png') }}" alt="auth-login-cover"
-                        class="img-fluid auth-illustration position-absolute top-0 start-0 min-vh-100"
-                        style="object-fit: cover;" />
+                <div class="auth-cover-bg auth-cover-bg-color d-flex justify-content-center align-items-center">
+                    <img src="{{ asset('theme/assets/img/illustrations/auth-login-illustration-light.png') }}"
+                        alt="auth-login-cover" class="img-fluid my-5 auth-illustration"
+                        data-app-light-img="illustrations/auth-login-illustration-light.png"
+                        data-app-dark-img="illustrations/auth-login-illustration-dark.png" />
 
-                    <div class="position-absolute top-50 start-50 translate-middle text-center text-white"
-                        style="z-index: 1;">
-                        <a href="#">
-                            <img alt="Logo" src="{{ asset('theme/assets/img/logo.png') }}" class="mb-3"
-                                style="width: 70px" />
-                        </a>
-                        <h1 class="mb-2 text-white">
-                            MAQIIS 2S5.0
-                        </h1>
-                        <div class="d-none d-lg-block">
-                            <b>Ma'had Al-Ma'tuq</b> Integrated Information System Toward Society 5.0. Sistem Informasi
-                            Terpadu <b>Pesantren Al-Ma'tuq</b> Sukabumi.
-                        </div>
-                    </div>
+                    <img src="{{ asset('theme/assets/img/illustrations/bg-shape-image-light.png') }}"
+                        alt="auth-login-cover" class="platform-bg"
+                        data-app-light-img="illustrations/bg-shape-image-light.png"
+                        data-app-dark-img="illustrations/bg-shape-image-dark.png" />
                 </div>
             </div>
 

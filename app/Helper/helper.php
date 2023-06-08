@@ -8,6 +8,10 @@ use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
+/*  
+Admin Helper
+*/
+
 /*** initial user ***/
 if (! function_exists('userInitial')) {
   function userInitial($id) {
@@ -54,17 +58,6 @@ if (! function_exists('yesOrNo')) {
       return '<span class="badge badge-center rounded-pill bg-primary"><i class="ti ti-check"></i></span>';
     } else {
       return '<span class="badge badge-center rounded-pill bg-label-secondary"><i class="ti ti-x"></i></span>';
-    }
-  }
-}
-
-/*** yes or no status ***/
-if (! function_exists('overnight')) {
-  function overnight($id) {
-    if ($id) { 
-      return '<span class="badge badge-center rounded-pill bg-label-primary" title="Next Day"><i class="ti ti-cloud"></i></span>';
-    } else {
-      return '<span class="badge badge-center rounded-pill bg-label-secondary"><i class="ti ti-sun-high"></i></span>';
     }
   }
 }
@@ -135,14 +128,6 @@ if (! function_exists('listModel')) {
     }
 
     return $modelList;
-  }
-}
-
-/*** get menu header ***/
-if (! function_exists('getMenuHeader')) {
-  function getMenuHeader() {
-    $menu = Menu::with('subMenu')->whereNull('main_menu')->where('is_header', true)->orderBy('sort', 'asc')->select('name', 'id')->get();
-    return $menu;
   }
 }
 
@@ -271,25 +256,6 @@ if (! function_exists('thisYear')) {
   }
 }
 
-/*** blood type ***/
-if (! function_exists('bloodType')) {
-  function bloodType() {
-    return ['A', 'A+', 'A-', 'B', 'B+', 'B-', 'AB', 'AB+', 'AB-', 'O', 'O+', 'O-'];
-  }
-}
-
-/*** class range ***/
-if (! function_exists('classRange')) {
-  function classRange($prefix, $first, $last) {
-    $alphabet = range($first, $last);
-    $result = array();
-    foreach ($alphabet as $char) {
-      $result[] = $prefix.' '.$char;
-    }
-    return $result;
-  }
-}
-
 /*** alphabet list ***/
 if (!function_exists('alphabetList')) {
     function alphabetList() {
@@ -308,30 +274,6 @@ if (!function_exists('dateDMY')) {
 if (! function_exists('numberFormat')) {
   function numberFormat($value) {
     return number_format($value, 0, ',', '.');
-  }
-}
-
-/*** short school name ***/
-if (! function_exists('shortName')) {
-  function shortName($key) {
-    $names = [
-      'Markaz Al-Ma\'tuq' => 'Al-Ma\'tuq',
-      'Markaz Al-Zamil' => 'Al-Zamil',
-      'Markaz Tahfizh Al-Bassam' => 'Al-Bassam',
-      'Markaz Tahfizh Al-\'Afaf' => 'Al-\'Afaf',
-      'SD Muhammad Al-\'Unaizy' => 'Al-\'Unaizy',
-      'TKIT Al-Ma\'tuq' => 'TKIT',
-    ];
-    return isset($names[$key]) ? $names[$key] : $key;
-  }
-}
-
-/*** work unit ***/
-if (! function_exists('workUnit')) {
-  function workUnit($employee) {
-    $unit = ($employee->employee_type == 2) ? $employee->school->name : $employee->employeeType->name;
-    $division = $employee->division ? $employee->division->name : '';
-    return compact('unit', 'division');
   }
 }
 
@@ -366,17 +308,6 @@ if (! function_exists('since')) {
 if (! function_exists('now')) {
   function now() {
     return Carbon::now();
-  }
-}
-
-/*** shift kerja ***/
-if (! function_exists('shift')) {
-  function shift($employee) {
-    if ($employee->is_reg_shift) {
-      return $shift = $employee->regularShift->name;
-    } else {
-      return $shift = 'Custom';
-    }
   }
 }
 
