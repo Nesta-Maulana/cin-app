@@ -83,23 +83,9 @@
                             <label for="role" class="form-label">Role</label>
                             <select class="form-select" name="role" id="role">
                                 @foreach ($role as $key => $item)
-                                <option value="{{ $item }}">{{ $item }}</option>
+                                <option value="{{ $item }}" @selected(old('role')==$item)>{{ $item }}</option>
                                 @endforeach
                             </select>
-                        </div>
-
-                        <div class="mb-3 col-md-12">
-                            <label for="school" class="form-label">Markaz</label>
-                            <div class="select2-dark">
-                                <select name="schools[]" id="school" class="select2 form-select"
-                                    data-placeholder="Pilih" multiple>
-                                    @foreach ($school as $key => $item)
-                                    <option value="{{ $key }}">
-                                        {{ $item }}
-                                    </option>
-                                    @endforeach
-                                </select>
-                            </div>
                         </div>
 
                     </div>

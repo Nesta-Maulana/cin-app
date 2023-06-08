@@ -59,29 +59,18 @@
                                 id="username" name="username" value="{{ $data->username }}" placeholder="Username"
                                 required />
                         </div>
-
                         <div class="mb-3 col-md-12">
                             <label for="role" class="form-label">Role</label>
                             <select class="form-select" name="role" id="role">
                                 @foreach ($role as $key => $item)
-                                <option value="{{ $item }}">{{ $item }}</option>
+                                {{ $item }}
+                                <option value="{{ $item }}" @selected($data->getRoleNames()[0] == $item)>
+                                    {{ $item }}
+                                </option>
                                 @endforeach
                             </select>
                         </div>
 
-                        <div class="mb-3 col-md-12">
-                            <label for="school" class="form-label">Markaz</label>
-                            <div class="select2-dark">
-                                <select name="schools[]" id="school" class="select2 form-select"
-                                    data-placeholder="Pilih Data" multiple>
-                                    @foreach ($school as $key => $item)
-                                    <option value="{{ $key }}" @selected(in_array($key, $schools))>
-                                        {{ $item }}
-                                    </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
                     </div>
                     <div class="my-2">
                         <button type="submit" class="btn btn-primary px-5 me-2">Update</button>
