@@ -52,8 +52,9 @@
                 <thead>
                     <tr>
                         @can('update-user-admin')
-                            <th style="width: 10px;">
-                                <input wire:model="selectAll" type="checkbox" class="form-check-input">
+                            <th>
+                                <input style="width: 17px; height: 17px" wire:model="selectAll" type="checkbox"
+                                    class="form-check-input">
                             </th>
                         @endcan
                         <th>User</th>
@@ -72,8 +73,8 @@
                         <tr wire:key="row{{ $item->id }}">
                             @can('update-user-admin')
                                 <td>
-                                    <input wire:model="selected" value="{{ $item->id }}" type="checkbox"
-                                        class="dt-checkboxes form-check-input">
+                                    <input style="width: 17px; height: 17px" wire:model="selected"
+                                        value="{{ $item->id }}" type="checkbox" class="dt-checkboxes form-check-input">
                                 </td>
                             @endcan
 

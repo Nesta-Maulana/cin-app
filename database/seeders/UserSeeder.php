@@ -26,15 +26,23 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Admin',
                 'username' => 'admin',
-                'email' => 'admin@test.my.id',
-                'password' => '$2y$10$kpfYig8ZOtKlXnc6dmCR9O4HTifCsBT4ETHtgPWTcQKQWCn2I8p1C',
+                'email' => 'admin@shofyan.my.id',
+                'password' => '$2y$10$ofZbNRKN3e49KOEcIFwWm.eZbJb2Zp3ZCtGUFxNFg0W34oRQNlbYq',
+            ],
+            [
+                'name' => 'Operator',
+                'username' => 'operator',
+                'email' => 'operator@shofyan.my.id',
+                'password' => '$2y$10$ofZbNRKN3e49KOEcIFwWm.eZbJb2Zp3ZCtGUFxNFg0W34oRQNlbYq',
             ],
         ]);
-        
+
         $superAdmin = User::find(1);
         $admin = User::find(2);
+        $operator = User::find(3);
 
         $superAdmin->assignRole('Super Admin');
-        $admin->assignRole('Admin');       
+        $admin->assignRole('Admin');
+        $operator->assignRole('Operator');
     }
 }
