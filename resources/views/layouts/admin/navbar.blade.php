@@ -29,7 +29,7 @@
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li>
-                        <a class="dropdown-item" href="#">
+                        <div class="dropdown-item">
                             <div class="d-flex">
                                 <div class="flex-shrink-0 me-3">
                                     <div class="avatar avatar-online">
@@ -40,24 +40,19 @@
                                 </div>
                                 <div class="flex-grow-1">
                                     <span class="fw-semibold d-block">{{ ucwords(auth()->user()->name) }}</span>
-                                    <small class="text-muted">Admin</small>
+                                    <small
+                                        class="text-muted">{{ ucwords(auth()->user()->getRoleNames()->first()) }}</small>
                                 </div>
                             </div>
-                        </a>
+                        </div>
                     </li>
                     <li>
                         <div class="dropdown-divider"></div>
                     </li>
                     <li>
-                        <a class="dropdown-item" href="#">
-                            <i class="ti ti-user-check me-2 ti-sm"></i>
-                            <span class="align-middle">My Profile</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item" href="#">
+                        <a class="dropdown-item" href="{{ route('my-account.edit') }}">
                             <i class="ti ti-settings me-2 ti-sm"></i>
-                            <span class="align-middle">Settings</span>
+                            <span class="align-middle">My Account</span>
                         </a>
                     </li>
                     <li>
