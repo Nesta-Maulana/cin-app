@@ -24,7 +24,7 @@ use App\Http\Controllers\Admin\PermissionController;
 Auth::routes();
 
 Route::get('/', function () {
-    return redirect()->route('login');
+    return Auth::check() ? redirect()->route('dashboard') : redirect()->route('login');
 });
 
 Route::prefix('admin')->middleware(['auth', 'auth.status'])->group(function () {

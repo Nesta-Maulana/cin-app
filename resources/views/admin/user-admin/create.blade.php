@@ -25,7 +25,7 @@
                 </div>
 
                 <div class="card-body">
-                    <form action="{{ route('user.store') }}" method="POST">
+                    <form action="{{ route('user-admin.store') }}" method="POST">
                         @csrf
 
                         @if (count($errors) > 0)

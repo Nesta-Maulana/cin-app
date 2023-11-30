@@ -8,7 +8,7 @@ use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
-/*  
+/*
 Admin Helper
 */
 
@@ -35,7 +35,7 @@ if (! function_exists('myInitial')) {
       foreach ($words as $w) {
         $initials .= $w[0];
       }
-      return strtoupper($initials);
+      return substr(strtoupper($initials), 0, 2);
     }
   }
 }
@@ -43,7 +43,7 @@ if (! function_exists('myInitial')) {
 /*** active status ***/
 if (! function_exists('isActive')) {
   function isActive($id) {
-    if ($id) { 
+    if ($id) {
       return '<span class="badge bg-label-success" text-capitalized="">Active</span>';
     } else {
       return '<span class="badge bg-label-danger" text-capitalized="">Inactive</span>';
@@ -54,7 +54,7 @@ if (! function_exists('isActive')) {
 /*** yes or no status ***/
 if (! function_exists('yesOrNo')) {
   function yesOrNo($id) {
-    if ($id) { 
+    if ($id) {
       return '<span class="badge badge-center rounded-pill bg-primary"><i class="ti ti-check"></i></span>';
     } else {
       return '<span class="badge badge-center rounded-pill bg-label-secondary"><i class="ti ti-x"></i></span>';
@@ -65,7 +65,7 @@ if (! function_exists('yesOrNo')) {
 /*** sweetalert notif ***/
 if (! function_exists('alertNotif')) {
   function alertNotif($message) {
-    if ($message == 'save') { 
+    if ($message == 'save') {
       return toast('Data Tersimpan!','success');
     } elseif ($message == 'update') {
       return toast('Data Diperbarui!','success');
@@ -80,7 +80,7 @@ if (! function_exists('alertNotif')) {
 /*** sweetalert notif livewire message ***/
 if (! function_exists('alertMsg')) {
   function alertMsg($message) {
-    if ($message == 'save') { 
+    if ($message == 'save') {
       return 'Data Tersimpan!';
     } elseif ($message == 'update') {
       return 'Data Diperbarui!';
@@ -160,7 +160,11 @@ if (!function_exists('canAccessMenu')) {
 /*** image asset ***/
 if (! function_exists('imageAsset')) {
   function imageAsset($image) {
-    return asset("storage/{$image}");
+    if (!$image) {
+        return asset("Thumbnail.jpg");
+    } else {
+        return asset("storage/{$image}");
+    }
   }
 }
 
@@ -209,6 +213,7 @@ if (! function_exists('siteLogo')) {
       $setting = Setting::first();
       $logo = $setting ? imageAsset($setting->logo) : null;
     }
+    // dd($logo);
     return $logo;
   }
 }
