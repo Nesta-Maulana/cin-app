@@ -60,7 +60,7 @@ class User extends Authenticatable
         $this->attributes['password'] = Hash::make($value);
     }
 
-    public function scopeFilter($query, $search) 
+    public function scopeFilter($query, $search)
     {
         $query->when($search ?? false, function($query, $search){
             return $query->where('username', 'like', "%$search%")
@@ -72,27 +72,8 @@ class User extends Authenticatable
     public function scopeAdministrator($query)
     {
         return $query->whereHas('roles', function ($query) {
-            $query->whereIn('name', ['admin', 'director', 'operator']);
+            $query->whereIn('name', ['admin', 'operator']);
         });
     }
 
-    /**
-     * Get the Student associated with the Student
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne
-     */
-    public function student()
-    {
-        return $this->hasOne(Student::class);
-    }
-
-    /**
-     * The schools that belong to the User
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
-     */
-    public function schools()
-    {
-        return $this->belongsToMany(School::class, 'user_schools');
-    }
 }

@@ -27,17 +27,11 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-Route::get('/template', function () {
-    return view('layouts.admin.app');
-});
-
-// Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
-
 Route::prefix('admin')->middleware(['auth', 'auth.status'])->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-    Route::resource('user', UserAdminController::class);
-    Route::put('/user/{id}/password', [UserAdminController::class, 'updatePassword'])->name('user.update.password');
+    Route::resource('user-admin', UserAdminController::class);
+    Route::put('/user-admin/{id}/password', [UserAdminController::class, 'updatePassword'])->name('user-admin.update.password');
 
     Route::resource('role', RoleController::class);
     Route::resource('permission', PermissionController::class);

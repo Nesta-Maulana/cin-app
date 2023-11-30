@@ -35,7 +35,7 @@ class UserAdminController extends Controller
     }
 
     public function store(Request $request)
-    {   
+    {
         $data = $request->validate([
             'name' => 'required',
             'email' => 'required|unique:users,email',
@@ -50,7 +50,7 @@ class UserAdminController extends Controller
         });
 
         alertNotif('save');
-        return redirect()->route('user.index');
+        return redirect()->route('user-admin.index');
     }
 
     public function edit($id)
@@ -61,14 +61,14 @@ class UserAdminController extends Controller
     }
 
     public function update(Request $request, $id)
-    {   
+    {
         $model = $this->model->find($id);
         $data = $request->validate([
             'name' => 'required',
             'email' => 'required|unique:users,email,'.$model->id,
             'username' => 'required|unique:users,username,'.$model->id,
         ]);
-        
+
         $data['updated_by'] = auth()->user()->id;
         DB::transaction(function () use($request, $model, $data) {
             $model->update($data);
@@ -76,7 +76,7 @@ class UserAdminController extends Controller
         });
 
         alertNotif('update');
-        return redirect()->route('user.index');
+        return redirect()->route('user-admin.index');
     }
 
     public function destroy($id)
@@ -84,6 +84,6 @@ class UserAdminController extends Controller
         $model = $this->model->find($id);
         $model->delete();
         alertNotif('delete');
-        return redirect()->route('user.index');
+        return redirect()->route('user-admin.index');
     }
 }
