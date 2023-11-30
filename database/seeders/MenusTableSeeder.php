@@ -14,12 +14,12 @@ class MenusTableSeeder extends Seeder
      */
     public function run()
     {
-        
+
 
         \DB::table('menus')->delete();
-        
+
         \DB::table('menus')->insert(array (
-            0 => 
+            0 =>
             array (
                 'created_at' => '2023-04-13 10:45:28',
                 'icon' => NULL,
@@ -29,9 +29,9 @@ class MenusTableSeeder extends Seeder
                 'permission_id' => 2,
                 'sort' => 1,
                 'updated_at' => '2023-06-08 06:17:37',
-                'url' => 'admin/user',
+                'url' => 'admin/user-admin',
             ),
-            1 => 
+            1 =>
             array (
                 'created_at' => '2023-04-13 11:12:44',
                 'icon' => NULL,
@@ -43,7 +43,7 @@ class MenusTableSeeder extends Seeder
                 'updated_at' => '2023-06-08 06:17:42',
                 'url' => 'admin/role',
             ),
-            2 => 
+            2 =>
             array (
                 'created_at' => '2023-04-13 11:45:17',
                 'icon' => NULL,
@@ -55,7 +55,7 @@ class MenusTableSeeder extends Seeder
                 'updated_at' => '2023-06-08 06:17:06',
                 'url' => 'admin/permission',
             ),
-            3 => 
+            3 =>
             array (
                 'created_at' => '2023-04-13 11:43:45',
                 'icon' => NULL,
@@ -67,7 +67,7 @@ class MenusTableSeeder extends Seeder
                 'updated_at' => '2023-06-08 06:17:13',
                 'url' => 'admin/menu',
             ),
-            4 => 
+            4 =>
             array (
                 'created_at' => '2023-04-24 07:49:08',
                 'icon' => 'adjustments-horizontal',
@@ -79,7 +79,7 @@ class MenusTableSeeder extends Seeder
                 'updated_at' => '2023-06-08 06:17:40',
                 'url' => NULL,
             ),
-            5 => 
+            5 =>
             array (
                 'created_at' => '2023-04-25 09:45:47',
                 'icon' => 'users',
@@ -91,7 +91,7 @@ class MenusTableSeeder extends Seeder
                 'updated_at' => '2023-06-08 06:17:40',
                 'url' => NULL,
             ),
-            6 => 
+            6 =>
             array (
                 'created_at' => '2023-05-23 10:08:35',
                 'icon' => NULL,
@@ -104,7 +104,7 @@ class MenusTableSeeder extends Seeder
                 'url' => 'admin/setting',
             ),
         ));
-        
-        
+
+
     }
 }
