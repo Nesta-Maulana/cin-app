@@ -69,7 +69,6 @@ class UserAdminController extends Controller
             'username' => 'required|unique:users,username,'.$model->id,
         ]);
 
-        $data['updated_by'] = auth()->user()->id;
         DB::transaction(function () use($request, $model, $data) {
             $model->update($data);
             $model->syncRoles([$request->role]);

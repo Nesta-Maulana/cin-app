@@ -23,11 +23,6 @@ return new class extends Migration
             $table->boolean('status')->default(true);
             $table->string('mobile')->nullable();
             $table->rememberToken();
-
-            $table->smallInteger('created_by')->nullable();
-            $table->smallInteger('updated_by')->nullable();
-            $table->smallInteger('deleted_by')->nullable();
-            
             $table->timestamps();
             $table->softDeletes();
         });
