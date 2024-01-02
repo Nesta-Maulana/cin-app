@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\Menu;
 use App\Models\Permission;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,13 +11,13 @@ class Menu extends Model
     use HasFactory;
     protected $guarded = ['id'];
 
-    public function scopeFilter($query, $search) 
+    public function scopeFilter($query, $search)
     {
         $query->when($search ?? false, function($query, $search){
             return $query->where('name', 'like', "%$search%");
         });
     }
-    
+
     /**
      * Get the permission that owns the Menu
      *
@@ -54,4 +53,3 @@ class Menu extends Model
         return $this->subMenu()->count() > 0;
     }
 }
- 
