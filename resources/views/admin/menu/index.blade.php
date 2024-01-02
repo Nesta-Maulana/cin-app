@@ -2,90 +2,88 @@
 @section('title', 'Menu')
 
 @push('style')
-<link rel="stylesheet" href="{{ asset('theme/assets/css/custom.css') }}" />
-<style>
-    .tree,
-    .tree ul {
-        margin: 0;
-        padding: 0;
-        list-style: none
-    }
+    <link rel="stylesheet" href="{{ asset('theme/custom.css') }}" />
+    <style>
+        .tree,
+        .tree ul {
+            margin: 0;
+            padding: 0;
+            list-style: none
+        }
 
-    .tree ul {
-        margin-left: 1em;
-        position: relative
-    }
+        .tree ul {
+            margin-left: 1em;
+            position: relative
+        }
 
-    .tree ul ul {
-        margin-left: .5em
-    }
+        .tree ul ul {
+            margin-left: .5em
+        }
 
-    .tree ul:before {
-        content: "";
-        display: block;
-        width: 0;
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        border-left: 1px solid
-    }
+        .tree ul:before {
+            content: "";
+            display: block;
+            width: 0;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            border-left: 1px solid
+        }
 
-    .tree li {
-        margin: 0;
-        padding: 0 1em;
-        line-height: 2em;
-        position: relative
-    }
+        .tree li {
+            margin: 0;
+            padding: 0 1em;
+            line-height: 2em;
+            position: relative
+        }
 
-    .tree ul li:before {
-        content: "";
-        display: block;
-        width: 10px;
-        height: 0;
-        border-top: 1px solid;
-        margin-top: -1px;
-        position: absolute;
-        top: 1em;
-        left: 0
-    }
+        .tree ul li:before {
+            content: "";
+            display: block;
+            width: 10px;
+            height: 0;
+            border-top: 1px solid;
+            margin-top: -1px;
+            position: absolute;
+            top: 1em;
+            left: 0
+        }
 
-    .tree ul li:last-child:before {
-        background: #fff;
-        height: auto;
-        top: 1em;
-        bottom: 0
-    }
+        .tree ul li:last-child:before {
+            background: #fff;
+            height: auto;
+            top: 1em;
+            bottom: 0
+        }
 
-    .indicator {
-        margin-right: 5px;
-    }
+        .indicator {
+            margin-right: 5px;
+        }
 
-    .tree li a {
-        text-decoration: none;
-    }
+        .tree li a {
+            text-decoration: none;
+        }
 
-    .tree li button,
-    .tree li button:active,
-    .tree li button:focus {
-        text-decoration: none;
-        border: none;
-        background: transparent;
-        margin: 0px 0px 0px 0px;
-        padding: 0px 0px 0px 0px;
-        outline: 0;
-    }
-</style>
+        .tree li button,
+        .tree li button:active,
+        .tree li button:focus {
+            text-decoration: none;
+            border: none;
+            background: transparent;
+            margin: 0px 0px 0px 0px;
+            padding: 0px 0px 0px 0px;
+            outline: 0;
+        }
+    </style>
 @endpush
 
 @push('script')
-<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<x-livewire-alert::scripts />
-<script src="https://unpkg.com/@nextapps-be/livewire-sortablejs@0.2.0/dist/livewire-sortable.js"></script>
-
-
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <x-livewire-alert::scripts />
+    <script src="https://unpkg.com/@nextapps-be/livewire-sortablejs@0.2.0/dist/livewire-sortable.js"></script>
 @endpush
 
 @section('content')
-@livewire('admin.show-menu', ['title' => $__env->yieldContent('title')])
+    @livewire('admin.show-menu', ['title' => $__env->yieldContent('title')])
 @endsection

@@ -84,7 +84,7 @@
     <script src="{{ asset('theme/assets/vendor/libs/node-waves/node-waves.js') }}"></script>
     <script src="{{ asset('theme/assets/vendor/libs/hammer/hammer.js') }}"></script>
     <script src="{{ asset('theme/assets/vendor/js/menu.js') }}"></script>
-    <script src="{{ asset('theme/assets/vendor/js/sidebar.js') }}"></script>
+    <script src="{{ asset('theme/sidebar.js') }}"></script>
 
     <!-- Vendors JS -->
     @stack('vendor-script')
