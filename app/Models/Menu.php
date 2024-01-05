@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Permission;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -10,6 +11,24 @@ class Menu extends Model
 {
     use HasFactory;
     protected $guarded = ['id'];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saved(function () {
+            static::clearMenuCache();
+        });
+
+        static::deleted(function () {
+            static::clearMenuCache();
+        });
+    }
+
+    public static function clearMenuCache()
+    {
+        Cache::forget('menu');
+    }
 
     public function scopeFilter($query, $search)
     {
@@ -51,5 +70,15 @@ class Menu extends Model
     public function hasSubMenu()
     {
         return $this->subMenu()->count() > 0;
+    }
+
+    public function scopeWithIcon($query)
+    {
+        return $query->whereNotNull('icon');
+    }
+
+    public function scopeSorted($query)
+    {
+        return $query->orderBy('sort', 'asc');
     }
 }

@@ -109,33 +109,18 @@ if (! function_exists('roleColor')) {
   }
 }
 
-/*** model list ***/
-if (! function_exists('listModel')) {
-  function listModel() {
-    $modelList = [];
-    $path = app_path() . "/Models";
-    $results = scandir($path);
-
-    foreach ($results as $result) {
-      if ($result === '.' or $result === '..') continue;
-      $filename = $result;
-
-      if (is_dir($filename)) {
-        $modelList = array_merge($modelList, getModels($filename));
-      } else {
-        $modelList[] = substr($filename,0,-4);
-      }
-    }
-
-    return $modelList;
-  }
-}
-
 /*** get menu ***/
 if (! function_exists('getMenu')) {
   function getMenu() {
-    $menu = Menu::with('subMenu')->whereNotNull('icon')->orderBy('sort', 'asc')->get();
-    return $menu;
+    return cache()->rememberForever('menu', function () {
+      $menu = Menu::with('subMenu')
+        ->select('id', 'name', 'url', 'permission_id', 'icon', 'main_menu', 'sort')
+        ->withIcon()
+        ->sorted()
+        ->get();
+
+      return $menu;
+    });
   }
 }
 
@@ -208,37 +193,42 @@ if (! function_exists('updateImage')) {
 /*** site logo ***/
 if (! function_exists('siteLogo')) {
   function siteLogo() {
-    static $logo = null;
-    if (is_null($logo)) {
-      $setting = Setting::first();
-      $logo = $setting ? imageAsset($setting->logo) : null;
-    }
-    // dd($logo);
-    return $logo;
+    return cache()->rememberForever('site_logo', function () {
+      static $logo = null;
+      if (is_null($logo)) {
+        $setting = Setting::select('logo')->first();
+        $logo = $setting ? imageAsset($setting->logo) : null;
+      }
+      return $logo;
+    });
   }
 }
 
 /*** app name ***/
 if (! function_exists('appName')) {
   function appName() {
-    static $appName = null;
-    if (is_null($appName)) {
-      $setting = Setting::first();
-      $appName = $setting ? $setting->app_name . ' ' . $setting->app_version : null;
-    }
-    return $appName;
+    return cache()->rememberForever('app_name', function () {
+      static $appName = null;
+      if (is_null($appName)) {
+        $setting = Setting::select('app_name', 'app_version')->first();
+        $appName = $setting ? $setting->app_name . ' ' . $setting->app_version : null;
+      }
+      return $appName;
+    });
   }
 }
 
 /*** holder name ***/
 if (! function_exists('holderName')) {
   function holderName() {
-    static $holderName = null;
-    if (is_null($holderName)) {
-      $setting = Setting::first();
-      $holderName = $setting ? $setting->name : null;
-    }
-    return $holderName;
+    return cache()->rememberForever('holder_name', function () {
+      static $holderName = null;
+      if (is_null($holderName)) {
+        $setting = Setting::select('name')->first();
+        $holderName = $setting ? $setting->name : null;
+      }
+      return $holderName;
+    });
   }
 }
 

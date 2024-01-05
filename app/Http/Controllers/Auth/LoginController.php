@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Auth;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Providers\RouteServiceProvider;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 
@@ -38,6 +37,7 @@ class LoginController extends Controller
      */
     public function __construct()
     {
+        $this->middleware('throttle:5,1')->only('login');
         $this->middleware('guest')->except('logout');
     }
 
@@ -52,7 +52,7 @@ class LoginController extends Controller
      * @return void
      */
     public function login(Request $request)
-    {   
+    {
         $request->validate([
             'email_or_username' => 'required|string',
             'password' => 'required|string',
