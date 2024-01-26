@@ -197,7 +197,7 @@ if (! function_exists('siteLogo')) {
       static $logo = null;
       if (is_null($logo)) {
         $setting = Setting::select('logo')->first();
-        $logo = $setting ? imageAsset($setting->logo) : null;
+        $logo = $setting && $setting->logo ? imageAsset($setting->logo) : null;
       }
       return $logo;
     });

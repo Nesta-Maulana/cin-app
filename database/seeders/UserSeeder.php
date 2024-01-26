@@ -18,22 +18,22 @@ class UserSeeder extends Seeder
     {
         User::insert([
             [
-                'name' => 'Webdev',
-                'username' => 'webdev',
-                'email' => 'webdev@shofyan.my.id',
-                'password' => '$2y$10$kpfYig8ZOtKlXnc6dmCR9O4HTifCsBT4ETHtgPWTcQKQWCn2I8p1C',
+                'name' => 'Super',
+                'username' => 'super',
+                'email' => 'super@shofyan.my.id',
+                'password' => '$2y$10$$2y$10$.GKkvpnuCU9bci0//4P8/./yKIsFxDhxyZziA23QOHzRC6/gemSQ6',
             ],
             [
                 'name' => 'Admin',
                 'username' => 'admin',
                 'email' => 'admin@shofyan.my.id',
-                'password' => '$2y$10$ofZbNRKN3e49KOEcIFwWm.eZbJb2Zp3ZCtGUFxNFg0W34oRQNlbYq',
+                'password' => '$2y$10$$2y$10$.GKkvpnuCU9bci0//4P8/./yKIsFxDhxyZziA23QOHzRC6/gemSQ6',
             ],
             [
                 'name' => 'Operator',
                 'username' => 'operator',
                 'email' => 'operator@shofyan.my.id',
-                'password' => '$2y$10$ofZbNRKN3e49KOEcIFwWm.eZbJb2Zp3ZCtGUFxNFg0W34oRQNlbYq',
+                'password' => '$2y$10$$2y$10$.GKkvpnuCU9bci0//4P8/./yKIsFxDhxyZziA23QOHzRC6/gemSQ6',
             ],
         ]);
 
