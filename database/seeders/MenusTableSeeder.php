@@ -29,7 +29,7 @@ class MenusTableSeeder extends Seeder
                 'permission_id' => 2,
                 'sort' => 1,
                 'updated_at' => '2023-06-08 06:17:37',
-                'url' => 'admin/user-admin',
+                'url' => 'admin/user',
             ),
             1 =>
             array (

@@ -2,15 +2,15 @@
 
 namespace App\Http\Livewire\Admin;
 
+use App\Models\Permission;
+use App\Repositories\Master\Role\RoleRepositoryInterface;
 use Livewire\Component;
-use App\Models\Role as Model;
 use Livewire\WithPagination;
 use Jantinnerezo\LivewireAlert\LivewireAlert;
 
 class ShowRole extends Component
 {
-    use LivewireAlert;
-    use WithPagination;
+    use LivewireAlert, WithPagination;
     protected $paginationTheme = 'bootstrap';
     protected $paginationClasses = 'd-flex align-items-center';
 
@@ -19,29 +19,41 @@ class ShowRole extends Component
     public $selected = [];
     public $selectAll = false;
 
-    public $title, $model, $modelId;
+    public $title, $modelId;
+    protected $roleRepository;
 
-    public function mount(Model $model)
+    public function mount(RoleRepositoryInterface $roleRepository)
     {
-        $this->model = $model;
+        $this->roleRepository = $roleRepository;
     }
 
     public function render()
     {
-        $table = $this->model
-            ->whereNotIn('id', [1])
-            ->filter($this->search)
-            ->paginate($this->paginate);
-
-        return view('livewire.admin.show-role', [
-            'table' => $table,
-        ]);
+        try {
+            $scope = [
+                'exceptSuperAdmin' => []
+            ];
+            $with = [
+                'users',
+                'permissions'
+            ];
+            $table = $this->roleRepository->getData($scope, $with, [], $this->paginate);
+            $total_permission = Permission::count('id');
+            return view('livewire.admin.show-role', [
+                'table' => $table,
+                'total_permission' => $total_permission
+            ]);
+        } catch (\Exception $e) {
+            return view('livewire.admin.show-role', [
+                'table' => collect([]), // Return empty collection in case of error
+            ])->withErrors(['message' => 'Error fetching roles: ' . $e->getMessage()]);
+        }
     }
 
     // Misc
     public function resetCreateForm()
-    {   
-        $data = ['modelId',];
+    {
+        $data = ['modelId'];
         foreach ($data as $item) {
             $this->$item = "";
         }
@@ -49,8 +61,8 @@ class ShowRole extends Component
 
     public function closeModal()
     {
-        $this->dispatchBrowserEvent('close-modal'); 
-        $this->resetErrorBag(); 
+        $this->dispatchBrowserEvent('close-modal');
+        $this->resetErrorBag();
         $this->resetCreateForm();
     }
 
@@ -64,17 +76,24 @@ class ShowRole extends Component
         $this->modelId = $id;
     }
 
-    public function updatedSelectAll($value) 
+    public function updatedSelectAll($value)
     {
-        $model = $this->model
-            ->whereNotIn('id', [1])
-            ->filter($this->search)
-            ->get();
+        try {
+            $conditions = [
+                ['id', '!=', 1]
+            ];
 
-        if ($value) {
-            $this->selected = $model->pluck('id');
-        } else {
-            $this->selected = [];
+            $model = $this->roleRepository->getData([], [], [], null, $conditions);
+
+            if ($value) {
+                $this->selected = $model->pluck('id')->toArray();
+            } else {
+                $this->selected = [];
+            }
+        } catch (\Exception $e) {
+            $this->alert('error', 'Error updating select all: ' . $e->getMessage(), [
+                'showCloseButton' => true,
+            ]);
         }
     }
 }

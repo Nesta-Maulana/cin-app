@@ -18,9 +18,9 @@ class RoleSeeder extends Seeder
     public function run()
     {
         \DB::table('roles')->delete();
-        
+
         \DB::table('roles')->insert(array (
-            0 => 
+            0 =>
             array (
                 'id' => 1,
                 'name' => 'Super Admin',
@@ -28,7 +28,7 @@ class RoleSeeder extends Seeder
                 'created_at' => NULL,
                 'updated_at' => NULL,
             ),
-            1 => 
+            1 =>
             array (
                 'id' => 2,
                 'name' => 'Admin',
@@ -36,15 +36,7 @@ class RoleSeeder extends Seeder
                 'created_at' => NULL,
                 'updated_at' => NULL,
             ),
-            2 => 
-            array (
-                'id' => 3,
-                'name' => 'Operator',
-                'guard_name' => 'web',
-                'created_at' => NULL,
-                'updated_at' => NULL,
-            ),
         ));
-        
+
     }
 }

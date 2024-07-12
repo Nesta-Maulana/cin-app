@@ -16,7 +16,7 @@ class SetRolePermission extends Component
 
     public function render()
     {
-        if (Permission::count() == count($this->selected)) {
+        if (Permission::count('id') == count($this->selected)) {
             $this->selectAll = true;
         }
 
@@ -36,7 +36,7 @@ class SetRolePermission extends Component
 
     public function updatedSelected()
     {
-        if (Permission::count() == count($this->selected)) {
+        if (Permission::count('id') == count($this->selected)) {
             $this->selectAll = true;
         } else {
             $this->selectAll = false;

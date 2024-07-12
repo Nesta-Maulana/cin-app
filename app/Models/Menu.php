@@ -6,10 +6,12 @@ use App\Models\Permission;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Menu extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
     protected $guarded = ['id'];
 
     protected static function boot()
@@ -24,6 +26,10 @@ class Menu extends Model
             static::clearMenuCache();
         });
     }
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()->logAll();
+    }
 
     public static function clearMenuCache()
     {
@@ -32,8 +38,8 @@ class Menu extends Model
 
     public function scopeFilter($query, $search)
     {
-        $query->when($search ?? false, function($query, $search){
-            return $query->where('name', 'like', "%$search%");
+        $query->when($search ?? false, function ($query, $search) {
+            return $query->where('name', 'ilike', "%$search%");
         });
     }
 
@@ -54,7 +60,7 @@ class Menu extends Model
      */
     public function parent()
     {
-        return $this->belongsTo(Menu::class, 'main_menu');
+        return $this->belongsTo(Menu::class, 'main_menu','id');
     }
 
     /**
@@ -69,7 +75,7 @@ class Menu extends Model
 
     public function hasSubMenu()
     {
-        return $this->subMenu()->count() > 0;
+        return $this->subMenu()->count('id') > 0;
     }
 
     public function scopeWithIcon($query)
@@ -80,5 +86,9 @@ class Menu extends Model
     public function scopeSorted($query)
     {
         return $query->orderBy('sort', 'asc');
+    }
+    public function scopeJustParent($query)
+    {
+        return $query->whereNull('main_menu');
     }
 }

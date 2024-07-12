@@ -26,8 +26,6 @@ class Setting extends Model
 
     public static function clearSettingCache()
     {
-        Cache::forget('site_logo');
-        Cache::forget('app_name');
-        Cache::forget('holder_name');
+        Cache::flush();
     }
 }

@@ -9,40 +9,41 @@
             <div></div>
             <div class="text-md-end text-start d-flex align-items-center justify-content-end flex-md-row flex-column">
                 @if (!$selected)
-                <div class="my-1 me-md-2">
-                    <label>
-                        <select wire:model="paginate" class="form-select">
-                            <option value="10">10</option>
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
-                    </label>
-                </div>
-                @can('create-permission')
-                <div class="flex-wrap my-1">
-                    <a href="{{ route('permission.create') }}" class="btn btn-secondary text-white add-new btn-primary">
-                        <span>
-                            <i class="ti ti-plus me-0 me-sm-1 ti-xs"></i>
-                            <span>
-                                {{ $title }}
-                            </span>
-                        </span>
-                    </a>
-                </div>
-                @endcan
+                    <div class="my-1 me-md-2">
+                        <label>
+                            <select wire:model="paginate" class="form-select">
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </label>
+                    </div>
+                    @can('create-permission')
+                        <div class="flex-wrap my-1">
+                            <a href="{{ route('permission.create') }}"
+                                class="btn btn-secondary text-white add-new btn-primary">
+                                <span>
+                                    <i class="fa fa-plus me-0 me-sm-1 fa-xs"></i>
+                                    <span>
+                                        {{ $title }}
+                                    </span>
+                                </span>
+                            </a>
+                        </div>
+                    @endcan
                 @else
-                <div class="my-1 me-md-2">
-                    <span class="px-1">
-                        {{ count($selected) }} data terpilih
-                    </span>
-                </div>
-                <div class="flex-wrap my-1">
-                    <a href="#" class="btn btn-secondary add-new btn-label-primary" data-bs-toggle="modal"
-                        data-bs-target="#modalSelectedStatus">
-                        Update Status
-                    </a>
-                </div>
+                    <div class="my-1 me-md-2">
+                        <span class="px-1">
+                            {{ count($selected) }} data terpilih
+                        </span>
+                    </div>
+                    <div class="flex-wrap my-1">
+                        <a href="#" class="btn btn-secondary add-new btn-label-primary" data-bs-toggle="modal"
+                            data-bs-target="#modalSelectedStatus">
+                            Update Status
+                        </a>
+                    </div>
                 @endif
             </div>
         </div>
@@ -50,67 +51,62 @@
         <div class="table-responsive">
             <table class="table border-top">
                 <thead>
-                    <tr>
-                        <th>Nama Permission</th>
+                    <tr class="text-center">
+                        <th class="text-start">Permission Name</th>
                         <th>Group</th>
                         <th>Assigned To</th>
-                        <th></th>
+                        <th>#</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($table as $key => $item)
-                    @php
-                    $updateRoute = route('permission.update', $item->id);
-                    @endphp
+                        @php
+                            $updateRoute = route('permission.update', $item->id);
+                        @endphp
 
-                    <tr wire:key="row{{ $item->id }}">
-                        <td class="col-3 ps-4">
-                            {{ $item->name }}
-                        </td>
+                        <tr wire:key="row{{ $item->id }}" class="text-center">
+                            <td class="text-start">
+                                {{ $item->name }}
+                            </td>
 
-                        <td class="col-3">
-                            {{ $item->group }}
-                        </td>
+                            <td>
+                                {{ $item->group }}
+                            </td>
 
-                        <td class="col-6">
-                            @php
-                            $roles = $item->getRoleNames()->toArray();
-                            $roles = array_diff($roles, ['Super Admin']);
-                            @endphp
-                            <div class="d-flex">
+                            <td>
+                                @php
+                                    $roles = $item->roles->pluck('name')->toArray();
+                                    $roles = array_diff($roles, ['Super Admin']);
+                                @endphp
                                 @foreach ($roles as $role)
-                                <div class="d-flex align-items-center lh-1 me-3 mb-3 mb-sm-0">
-                                    <span class="badge badge-dot bg-{{ roleColor($role) }} me-1"></span>
-                                    <small class="text-secondary">{{ $role }}</small>
-                                </div>
+                                    <span class="badge bg-{{ roleColor($role) }} me-1">
+                                        {{ $role }}
+                                    </span>
                                 @endforeach
-                            </div>
-                        </td>
+                            </td>
 
-                        <td>
-                            <div class="d-flex align-items-center">
+                            <td>
                                 @can('update-permission')
-                                <a href="{{ route('permission.edit', $item->id) }}" class="action-btn" title="edit">
-                                    <i class="ti ti-edit ti-sm me-2 fs-5"></i>
-                                </a>
+                                    <a href="{{ route('permission.edit', $item->id) }}" class="action-btn" title="edit">
+                                        <i class="fa fa-edit fa-sm me-2 fs-5"></i>
+                                    </a>
                                 @endcan
 
                                 @can('delete-permission')
-                                <a href="javascript:;" class="action-btn" title="delete" data-bs-toggle="modal"
-                                    data-bs-target="#modalDelete{{ $item->id }}">
-                                    <i class="ti ti-trash ti-sm mx-2 fs-5"></i>
-                                </a>
-                                @include('admin.modal.delete')
+                                    <a href="javascript:;" class="action-btn" title="delete" data-bs-toggle="modal"
+                                        data-bs-target="#modalDelete{{ $item->id }}">
+                                        <i class="fa fa-trash fa-sm mx-2 fs-5"></i>
+                                    </a>
+                                    @include('admin.modal.delete')
                                 @endcan
-                            </div>
-                        </td>
-                    </tr>
+                            </td>
+                        </tr>
                     @empty
-                    <div class="text-center col-md-7 mx-auto px-3 pt-3">
-                        <div class="alert alert-secondary">
-                            Data tidak ditemukan
+                        <div class="text-center col-md-7 mx-auto px-3 pt-3">
+                            <div class="alert alert-secondary">
+                                Data tidak ditemukan
+                            </div>
                         </div>
-                    </div>
                     @endforelse
                 </tbody>
             </table>

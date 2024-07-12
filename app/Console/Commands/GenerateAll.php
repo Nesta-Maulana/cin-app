@@ -35,8 +35,9 @@ class GenerateAll extends Command
         $pathParts = explode('/', $path);
         $modelName = end($pathParts);
         $controllerName = Str::studly(Str::singular($path)) . 'Controller';
-        
+
         $this->generateModel($modelName);
+        // generate repository
         $this->generateController($controllerName, $modelName, $path);
         $this->generateLivewire($modelName, $path);
         $this->generateResources($modelName, $path);
@@ -59,7 +60,7 @@ class GenerateAll extends Command
         Artisan::call('make:controller', [
             'name' => $name,
             '--type' => 'custom',
-            '--model' => $model, 
+            '--model' => $model,
         ]);
     }
 
@@ -69,20 +70,20 @@ class GenerateAll extends Command
         $classStubPath = resource_path('stubs/livewire/class.stub');
         $classNamespace = (dirname($path) === '.') ? 'App\Http\Livewire' : 'App\Http\Livewire\\' . str_replace('/', '\\', ucwords(dirname($path), '/'));
         $classDir = (dirname($path) === '.') ? '' : dirname($path);
-        
+
         $viewName = Str::kebab($className);
         $viewStubPath = resource_path('stubs/livewire/view.stub');
         $viewDirPath = Str::kebab($classDir);
         $viewDir = str_replace('/', '.', $viewDirPath) . '.' . $viewName;
         $routeName = Str::kebab($modelName);
         $permissionName = Str::kebab($modelName);
-        
+
         // Class
         $classPath = app_path("Http/Livewire/{$classDir}/{$className}.php");
         if (!is_dir(dirname($classPath))) {
             mkdir(dirname($classPath), 0755, true);
         }
-        
+
         copy($classStubPath, $classPath);
 
         $search = ['{{ classNamespace }}', '{{ className }}', '{{ modelName }}', '{{ viewDir }}'];
@@ -110,7 +111,7 @@ class GenerateAll extends Command
     {
         $model = $modelName;
         $dirname = dirname($path) === '.' ? '' : dirname($path);
-        
+
         $partPath = explode('/', $path);
         $slugParts = array_map(function($part) {
             return Str::kebab($part);

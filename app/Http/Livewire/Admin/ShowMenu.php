@@ -2,15 +2,17 @@
 
 namespace App\Http\Livewire\Admin;
 
+use App\Repositories\Master\Menu\MenuRepositoryInterface;
 use Livewire\Component;
-use App\Models\Menu as Model;
 use Livewire\WithPagination;
 use Jantinnerezo\LivewireAlert\LivewireAlert;
+use Illuminate\Support\Facades\Cache;
 
 class ShowMenu extends Component
 {
     use LivewireAlert;
     use WithPagination;
+
     protected $paginationTheme = 'bootstrap';
     protected $paginationClasses = 'd-flex align-items-center';
 
@@ -18,45 +20,55 @@ class ShowMenu extends Component
     public $search = "";
     public $selected = [];
     public $selectAll = false;
+    public $title, $modelId;
 
-    public $title, $model, $modelId;
+    protected $menuRepository;
+
+    public function mount(MenuRepositoryInterface $menuRepository)
+    {
+        $this->menuRepository = $menuRepository;
+    }
 
     public function hydrate()
     {
+        $this->menuRepository = app(MenuRepositoryInterface::class);
         $this->emit('dragdrop');
-    }
-
-    public function mount(Model $model)
-    {
-        $this->model = $model;
     }
 
     public function render()
     {
-        $table = $this->model
-            ->filter($this->search)
-            ->orderBy('main_menu', 'asc')
-            ->orderBy('sort', 'asc')
-            ->paginate($this->paginate);
+        $scope = [];
+        if (!empty($this->search)) {
+            $scope['filter'] = [$this->search];
+        }
+        $with = [
+            'subMenu' => [
+                'parent',
+                'permission'
+            ],
+        ];
+
+        $table = $this->menuRepository->getData(
+            $scope,
+            $with,
+            ['main_menu' => 'asc', 'sort' => 'asc'],
+            $this->paginate,
+        );
 
         return view('livewire.admin.show-menu', [
             'table' => $table,
         ]);
     }
 
-    // Misc
     public function resetCreateForm()
-    {   
-        $data = ['modelId',];
-        foreach ($data as $item) {
-            $this->$item = "";
-        }
+    {
+        $this->modelId = null;
     }
 
     public function closeModal()
     {
-        $this->dispatchBrowserEvent('close-modal'); 
-        $this->resetErrorBag(); 
+        $this->dispatchBrowserEvent('close-modal');
+        $this->resetErrorBag();
         $this->resetCreateForm();
     }
 
@@ -70,14 +82,24 @@ class ShowMenu extends Component
         $this->modelId = $id;
     }
 
-    public function updatedSelectAll($value) 
+    public function updatedSelectAll($value)
     {
-        $model = $this->model
-            ->filter($this->search)
-            ->get();
+        $conditions = [];
+        if ($this->search) {
+            $conditions[] = ['name', 'like', "%{$this->search}%"];
+        }
+
+        $model = $this->menuRepository->getData(
+            [],
+            [],
+            [],
+            null,
+            $conditions,
+            'all'
+        );
 
         if ($value) {
-            $this->selected = $model->pluck('id');
+            $this->selected = $model->pluck('id')->toArray();
         } else {
             $this->selected = [];
         }
@@ -86,7 +108,7 @@ class ShowMenu extends Component
     public function updateParentOrder($parent)
     {
         foreach ($parent as $key => $item) {
-            $menu = $this->model->find($item['value']);
+            $menu = $this->menuRepository->find($item['value']);
             $menu->update([
                 'sort' => $item['order'],
             ]);
@@ -96,30 +118,41 @@ class ShowMenu extends Component
             'showCloseButton' => true,
         ]);
     }
-    
+
     public function updateChildGroup($data)
     {
         foreach ($data as $key => $menu) {
             $parent_id = $menu['value'];
-            $parent = $this->model::find($parent_id);
+            $parent = $this->menuRepository->find($parent_id);
             $parent->update([
                 'sort' => $menu['order'],
             ]);
 
             $child = $menu['items'];
             if ($child) {
-                foreach ($child as $key => $child) {
-                    $childMenu = $this->model->find($child['value']);
+                foreach ($child as $key => $childvalue) {
+                    $childMenu = $this->menuRepository->find($childvalue['value']);
                     $childMenu->update([
-                        'sort' => $child['order'],
+                        'sort' => $childvalue['order'],
                         'main_menu' => $parent_id,
                     ]);
                 }
             }
         }
 
-        return $this->alert('success', alertMsg('update'), [
+        Cache::flush();
+        $this->alert('success', alertMsg('update'), [
             'showCloseButton' => true,
         ]);
+        $this->syncCache();
+    }
+
+    public function syncCache()
+    {
+        Cache::flush();
+        $this->alert('success', 'Cache has been synced successfully.', [
+            'showCloseButton' => true,
+        ]);
+        return redirect()->route('menu.index'); // Redirect to a specific route
     }
 }

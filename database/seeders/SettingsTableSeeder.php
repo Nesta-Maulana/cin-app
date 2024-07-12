@@ -18,19 +18,28 @@ class SettingsTableSeeder extends Seeder
 
         \DB::table('settings')->delete();
 
-        \DB::table('settings')->insert(array (
-            0 =>
-            array (
-                'address' => 'Sukabumi, Jawa Barat',
-                'app_name' => 'Chore',
-                'app_version' => NULL,
-                'created_at' => '2023-05-11 14:46:48',
-                'id' => 1,
-                'logo' => NULL,
-                'name' => 'Shofyan Ariantho',
-                'updated_at' => '2023-06-08 06:21:44',
-            ),
-        ));
+        \DB::table('settings')->insert(
+            array(
+                array(
+                    'id' => 1,
+                    'name' => 'App Setting & Copyright',
+                    'created_at' => '2023-05-11 14:46:48',
+                    'updated_at' => '2024-06-04 09:07:32',
+                    'category' => 'system',
+                    'data' => json_encode(
+                        array(
+                            'app_name' => 'Anveshana Panel',
+                            'app_version' => '1.0.0',
+                            'name' => 'Prana Vorge Technologies',
+                            'address' => "Jalan Lawang Gintung, Kota Bogor Selatan",
+                            'logo' => 'setting/tDpqYxYcbV0M538mnapxhktBb1hEXAMvr1LnXG46.png',
+                            'updated_by' => 1,
+                            'updated_at' => '2024-06-04 09:07:31',
+                        )
+                    ),
+                )
+            )
+        );
 
 
     }

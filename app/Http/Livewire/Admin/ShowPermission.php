@@ -2,15 +2,16 @@
 
 namespace App\Http\Livewire\Admin;
 
+use App\Repositories\Master\Permission\PermissionRepositoryInterface;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Models\Permission as Model;
 use Jantinnerezo\LivewireAlert\LivewireAlert;
 
 class ShowPermission extends Component
 {
     use LivewireAlert;
     use WithPagination;
+
     protected $paginationTheme = 'bootstrap';
     protected $paginationClasses = 'd-flex align-items-center';
 
@@ -19,39 +20,52 @@ class ShowPermission extends Component
     public $selected = [];
     public $selectAll = false;
 
-    public $title, $model, $modelId;
+    public $title, $modelId;
+    protected $permissionRepository;
 
-    public function mount(Model $model)
+    public function mount(PermissionRepositoryInterface $permissionRepository)
     {
-        $this->model = $model;
+        $this->permissionRepository = $permissionRepository;
+    }
+    public function hydrate()
+    {
+        $this->permissionRepository = app(PermissionRepositoryInterface::class);
     }
 
     public function render()
     {
-        $table = $this->model
-            ->filter($this->search)
-            ->orderBy('group', 'asc')
-            ->orderBy('id', 'asc')
-            ->paginate($this->paginate);
-
-        return view('livewire.admin.show-permission', [
-            'table' => $table,
-        ]);
+        try {
+            $scope = [];
+            $orderBy = ['id' => 'asc', 'group' => 'asc'];
+            $with  =[
+                'roles'
+            ];
+            // Apply search filter
+            if (!empty($this->search)) {
+                $scope['filter'] = [$this->search];
+            }
+            $table = $this->permissionRepository->getData($scope, $with, $orderBy, $this->paginate);
+            return view('livewire.admin.show-permission', [
+                'table' => $table,
+            ]);
+        } catch (\Exception $e) {
+            $this->alert('error', 'Error fetching permissions: ' . $e->getMessage());
+            return view('livewire.admin.show-permission', [
+                'table' => collect([]),
+            ]);
+        }
     }
 
     // Misc
     public function resetCreateForm()
-    {   
-        $data = ['modelId',];
-        foreach ($data as $item) {
-            $this->$item = "";
-        }
+    {
+        $this->modelId = null;
+        $this->resetErrorBag();
     }
 
     public function closeModal()
     {
-        $this->dispatchBrowserEvent('close-modal'); 
-        $this->resetErrorBag(); 
+        $this->dispatchBrowserEvent('close-modal');
         $this->resetCreateForm();
     }
 
@@ -65,16 +79,23 @@ class ShowPermission extends Component
         $this->modelId = $id;
     }
 
-    public function updatedSelectAll($value) 
+    public function updatedSelectAll($value)
     {
-        $model = $this->model
-            ->filter($this->search)
-            ->get();
+        try {
+            $model = $this->permissionRepository->getData(
+                ['filter' => [$this->search]],
+                [],
+                [],
+                null
+            );
 
-        if ($value) {
-            $this->selected = $model->pluck('id');
-        } else {
-            $this->selected = [];
+            if ($value) {
+                $this->selected = $model->pluck('id')->toArray();
+            } else {
+                $this->selected = [];
+            }
+        } catch (\Exception $e) {
+            $this->alert('error', 'Error fetching permissions: ' . $e->getMessage());
         }
     }
 }

@@ -2,13 +2,13 @@
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\MenuController;
-use App\Http\Controllers\Admin\RoleController;
-use App\Http\Controllers\Admin\SettingController;
-use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\MyAccountController;
-use App\Http\Controllers\Admin\UserAdminController;
-use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Master\MenuController;
+use App\Http\Controllers\Master\RoleController;
+use App\Http\Controllers\Master\SettingController;
+use App\Http\Controllers\Master\DashboardController;
+use App\Http\Controllers\Master\MyAccountController;
+use App\Http\Controllers\Master\ManageUserController;
+use App\Http\Controllers\Master\PermissionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,13 +27,15 @@ Route::get('/', function () {
     return Auth::check() ? redirect()->route('dashboard') : redirect()->route('login');
 });
 
-Route::prefix('admin')->middleware(['auth', 'auth.status'])->group(function () {
-    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+Route::middleware(['auth', 'auth.status'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('my-account', [MyAccountController::class, 'edit'])->name('my-account.edit');
     Route::put('my-account', [MyAccountController::class, 'update'])->name('my-account.update');
+    Route::get('my-account/log-activity', [MyAccountController::class, 'logActivity'])->name('my-account.log-activity');
 
-    Route::resource('user-admin', UserAdminController::class);
-    Route::put('/user-admin/{id}/password', [UserAdminController::class, 'updatePassword'])->name('user-admin.update.password');
+    Route::resource('user', ManageUserController::class);
+    Route::put('/user/{id}/password', [ManageUserController::class, 'updatePassword'])->name('user.update.password');
+
     Route::resource('role', RoleController::class);
     Route::resource('permission', PermissionController::class);
     Route::resource('menu', MenuController::class);

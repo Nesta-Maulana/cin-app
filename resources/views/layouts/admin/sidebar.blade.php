@@ -1,59 +1,33 @@
-<aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
-    <!-- Logo -->
-    <div class="app-brand demo">
-        <a href="/" class="app-brand-link">
-            <img src="{{ siteLogo() }}" alt="Logo" class="app-brand-logo demo" style="height: 100%; width: 2.1rem">
-            <span class="app-brand-text demo menu-text fw-bold" style="font-size: 1.25rem">{{ appName() }}</span>
-        </a>
-
-        <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
-            <i class="ti menu-toggle-icon d-none d-xl-block ti-sm align-middle"></i>
-            <i class="ti ti-x d-block d-xl-none ti-sm align-middle"></i>
-        </a>
+<div class="main-menu menu-fixed menu-light menu-accordion menu-shadow" data-scroll-to-active="true">
+    <div class="navbar-header">
+        <ul class="nav navbar-nav flex-row">
+            <li class="nav-item me-auto">
+                <a class="navbar-brand" href="javascript:void(0)">
+                    <span class="brand-logo">
+                        <img src="{{ siteLogo() }}" alt="Logo" {{-- class="app-brand-logo demo" style="height: 100%; width: 2.1rem" --}}>
+                    </span>
+                    <h2 class="brand-text">
+                        @php
+                            $app_name = appName();
+                            $check_word = explode(' ', $app_name);
+                            if (count($check_word) > 1) {
+                                $app_name = str_replace(' ', '<br />', $app_name);
+                            }
+                            echo $app_name;
+                        @endphp
+                    </h2>
+                </a>
+            </li>
+            <li class="nav-item nav-toggle">
+                <a class="nav-link modern-nav-toggle pe-0" data-bs-toggle="collapse">
+                    <i class="d-block d-xl-none text-primary toggle-icon font-medium-4" data-feather="x"></i>
+                    <i class="d-none d-xl-block collapse-toggle-icon font-medium-4  text-primary" data-feather="disc"
+                        data-ticon="disc"></i>
+                </a>
+            </li>
+        </ul>
     </div>
-
-    <div class="menu-inner-shadow"></div>
-
-    <!-- Menu -->
-    <ul class="menu-inner py-1">
-        <li class="menu-item" id="dashboard">
-            <a href="{{ route('dashboard') }}" class="menu-link">
-                <i class="menu-icon tf-icons ti ti-device-laptop"></i>
-                <div>Dashboard</div>
-            </a>
-        </li>
-
-        <li class="menu-header small text-uppercase">
-            <span class="menu-header-text">Apps</span>
-        </li>
-
-        @foreach (getMenu() as $main)
-            @if (canAccessMenu($main))
-                <li class="menu-item">
-                    <a href="@if ($main->url) {{ url($main->url) }} @else {{ __('#') }} @endif"
-                        class="menu-link @if ($main->hasSubMenu()) menu-toggle @endif">
-                        <i class="menu-icon tf-icons ti ti-{{ $main->icon }}"></i>
-                        <div>{{ $main->name }}</div>
-                    </a>
-
-                    @if ($main->hasSubMenu())
-                        <ul class="menu-sub">
-                            @foreach ($main->subMenu as $sub)
-                                @if (
-                                    !$sub->permission ||
-                                        auth()->user()->can($sub->permission->name))
-                                    <li class="menu-item">
-                                        <a href="@if ($sub->url) {{ url($sub->url) }} @else {{ __('#') }} @endif"
-                                            class="menu-link">
-                                            <div>{{ $sub->name }}</div>
-                                        </a>
-                                    </li>
-                                @endif
-                            @endforeach
-                        </ul>
-                    @endif
-                </li>
-            @endif
-        @endforeach
-    </ul>
-</aside>
+    <hr>
+    <div class="shadow-bottom"></div>
+    @include('layouts.admin.menu')
+</div>

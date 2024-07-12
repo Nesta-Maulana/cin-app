@@ -16,7 +16,7 @@ class CheckActiveUser
      */
     public function handle(Request $request, Closure $next)
     {
-        if (auth()->user()->status == 0) {
+        if (auth()->user()->is_active == 0) {
             $user = auth()->user();
             auth()->logout();
             return redirect()->route('login')->withError('Your account has been deactivated!');

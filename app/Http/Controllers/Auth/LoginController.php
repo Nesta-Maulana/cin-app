@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
+use Illuminate\Http\JsonResponse;
 
 class LoginController extends Controller
 {
@@ -28,7 +29,7 @@ class LoginController extends Controller
      * @var string
      */
     // protected $redirectTo = RouteServiceProvider::HOME;
-    protected $redirectTo = '/admin';
+    protected $redirectTo = '/dashboard';
 
     /**
      * Create a new controller instance.
@@ -64,12 +65,36 @@ class LoginController extends Controller
             'password' => $request->password
         ];
 
+
         if (auth()->attempt($credentials)) {
-            return redirect()->intended('/admin');
+            activity()
+            ->causedBy(auth()->user())
+            ->log('User logged in');
+            return redirect()->intended($this->redirectTo);
         }
 
         throw ValidationException::withMessages([
             'email_or_username' => [trans('auth.failed')]
         ]);
+    }
+    public function logout(Request $request)
+    {
+        activity()
+        ->causedBy(auth()->user())
+        ->log('User logged out');
+
+        $this->guard()->logout();
+
+        $request->session()->invalidate();
+
+        $request->session()->regenerateToken();
+
+        if ($response = $this->loggedOut($request)) {
+            return $response;
+        }
+
+        return $request->wantsJson()
+            ? new JsonResponse([], 204)
+            : redirect('/');
     }
 }

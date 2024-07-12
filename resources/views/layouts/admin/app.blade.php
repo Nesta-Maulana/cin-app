@@ -1,100 +1,146 @@
 <!DOCTYPE html>
-
-<html lang="en" class="light-style layout-navbar-fixed layout-menu-fixed" dir="ltr" data-theme="theme-default"
-    data-assets-path="{{ asset('theme/assets/') }}/" data-template="vertical-menu-template-starter">
+<html class="loading" lang="en" data-textdirection="ltr">
+<!-- BEGIN: Head-->
 
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
-
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=0,minimal-ui">
+    <meta name="description" content="We are Kreasi Sawala Nusantara">
+    <meta name="keywords"
+        content="dashboard , Kreasi Sawala Nusantara, Anveshana Bot, Anveshana, Anveshana Technology, web app">
+    <meta name="author" content="PIXINVENT">
     <title>{{ appName() }} | {{ holderName() }}</title>
+    <link rel="apple-touch-icon" href="{{ asset('theme/app-assets/images/ico/apple-icon-120.png') }}">
+    <link rel="shortcut icon" type="image/x-icon" href="{{ siteLogo() }}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500;1,600"
+        rel="stylesheet">
 
-    <meta name="description" content="" />
-    <link rel="icon" type="image/x-icon" href="{{ asset('theme/favicon.ico') }}" />
+    <!-- BEGIN: Vendor CSS-->
+    <link rel="stylesheet" type="text/css" href="{{ asset('theme/app-assets/vendors/css/vendors.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('theme/app-assets/vendors/css/forms/select/select2.min.css') }}" />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap"
-        rel="stylesheet" />
+    <!-- END: Vendor CSS-->
 
-    <!-- Icons -->
-    <link rel="stylesheet" href="{{ asset('theme/assets/vendor/fonts/fontawesome.css') }}" />
-    <link rel="stylesheet" href="{{ asset('theme/assets/vendor/fonts/tabler-icons.css') }}" />
-    <link rel="stylesheet" href="{{ asset('theme/assets/vendor/fonts/flag-icons.css') }}" />
+    <!-- BEGIN: Theme CSS-->
+    <link rel="stylesheet" type="text/css" href="{{ asset('theme/app-assets/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ asset('theme/app-assets/css/bootstrap-extended.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ asset('theme/app-assets/css/colors.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ asset('theme/app-assets/css/components.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ asset('theme/app-assets/css/themes/dark-layout.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ asset('theme/app-assets/css/themes/bordered-layout.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ asset('theme/app-assets/css/themes/semi-dark-layout.min.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+        integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-    <!-- Core CSS -->
-    <link rel="stylesheet" href="{{ asset('theme/assets/vendor/css/rtl/core.css') }}"
-        class="template-customizer-core-css" />
-    <link rel="stylesheet" href="{{ asset('theme/assets/vendor/css/rtl/theme-default.css') }}"
-        class="template-customizer-theme-css" />
-    <link rel="stylesheet" href="{{ asset('theme/assets/css/demo.css') }}" />
-
-    <!-- Vendors CSS -->
-    <link rel="stylesheet" href="{{ asset('theme/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css') }}" />
-    <link rel="stylesheet" href="{{ asset('theme/assets/vendor/libs/node-waves/node-waves.css') }}" />
-    <link rel="stylesheet" href="{{ asset('theme/assets/vendor/libs/select2/select2.css') }}" />
-
-    <!-- Page CSS -->
+    <!-- BEGIN: Page CSS-->
+    <link rel="stylesheet" type="text/css"
+        href="{{ asset('theme/app-assets/css/core/menu/menu-types/vertical-menu.css') }}">
     @stack('style')
 
-    <!-- Helpers -->
-    <script src="{{ asset('theme/assets/vendor/js/helpers.js') }}"></script>
-    <script src="{{ asset('theme/assets/vendor/js/template-customizer.js') }}"></script>
-    <script src="{{ asset('theme/assets/js/config.js') }}"></script>
+    <!-- END: Page CSS-->
 
+    <!-- BEGIN: Custom CSS-->
+    <link rel="stylesheet" type="text/css" href="{{ asset('theme/assets/css/style.css') }}">
+    <!-- END: Custom CSS-->
     @livewireStyles
 </head>
+<!-- END: Head-->
 
-<body>
+<!-- BEGIN: Body-->
+
+<body class="vertical-layout vertical-menu-modern  navbar-floating footer-static  " data-open="click"
+    data-menu="vertical-menu-modern" data-col="">
+    <!-- BEGIN: Header-->
     @include('sweetalert::alert')
+    @include('layouts.admin.navbar')
+    <!-- END: Header-->
 
-    <div class="layout-wrapper layout-content-navbar">
-        <div class="layout-container">
-            @include('layouts.admin.sidebar')
+    <!-- BEGIN: Main Menu-->
+    @include('layouts.admin.sidebar')
+    <!-- END: Main Menu-->
 
-            <div class="layout-page">
-                @include('layouts.admin.navbar')
-
-                <div class="content-wrapper">
-
-                    <div class="container-xxl flex-grow-1 container-p-y">
+    <!-- BEGIN: Content-->
+    <div class="app-content content ">
+        <div class="content-overlay"></div>
+        <div class="header-navbar-shadow"></div>
+        <div class="content-wrapper container-xxl p-0">
+            <div class="content-header row">
+                <div class="content-header-left col-md-9 col-12 mb-2">
+                    <div class="row breadcrumbs-top">
+                        <div class="col-12">
+                            <h2 class="content-header-title float-start mb-0" id="title-breadcumb">
+                            </h2>
+                            <div class="breadcrumb-wrapper" id="breadcumb">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="content-body">
+                <div class="row">
+                    <div class="col-12">
                         @yield('content')
                     </div>
-
-                    @include('layouts.admin.footer')
-
-                    <div class="content-backdrop fade"></div>
                 </div>
             </div>
         </div>
-
-        <!-- Overlay -->
-        <div class="layout-overlay layout-menu-toggle"></div>
-
-        <!-- Drag Target Area To SlideIn Menu On Small Screens -->
-        <div class="drag-target"></div>
     </div>
+    <!-- END: Content-->
 
-    <script src="{{ asset('theme/assets/vendor/libs/jquery/jquery.js') }}"></script>
-    <script src="{{ asset('theme/assets/vendor/libs/popper/popper.js') }}"></script>
-    <script src="{{ asset('theme/assets/vendor/js/bootstrap.js') }}"></script>
-    <script src="{{ asset('theme/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}"></script>
-    <script src="{{ asset('theme/assets/vendor/libs/node-waves/node-waves.js') }}"></script>
-    <script src="{{ asset('theme/assets/vendor/libs/hammer/hammer.js') }}"></script>
-    <script src="{{ asset('theme/assets/vendor/js/menu.js') }}"></script>
-    <script src="{{ asset('theme/sidebar.js') }}"></script>
+    <div class="sidenav-overlay"></div>
+    <div class="drag-target"></div>
 
-    <!-- Vendors JS -->
+    <!-- BEGIN: Footer-->
+    <footer class="footer footer-static footer-light">
+        <p class="clearfix mb-0">
+            <span class="float-md-start d-block d-md-inline-block ">
+                COPYRIGHT &copy; 2024.
+                <a class="ms-25" href="https://www.kominfo.go.id/" target="_blank">
+                    {{ holderName() }}
+                </a>
+                <span class="d-none d-sm-inline-block">, All rights
+                    Reserved
+                </span>
+            </span>
+            <span class="float-md-end d-none d-md-block">
+                Hand-crafted & Made with<i class="fa-solid fa-heart"
+                    style="color: var(--bs-pink);font-size:14px !important"></i> | App Version {{ appVersion() }}
+            </span>
+        </p>
+    </footer>
+    <button class="btn btn-primary btn-icon scroll-top" type="button">
+        <i class="fa-solid fa-arrow-up"></i>
+    </button>
+    <!-- END: Footer-->
+
+
+    <!-- BEGIN: Vendor JS-->
+    <script src="{{ asset('theme/app-assets/vendors/js/vendors.min.js') }}"></script>
+    <!-- BEGIN Vendor JS-->
+    <script src="{{ asset('theme/app-assets/vendors/js/forms/select/select2.full.min.js') }}"></script>
+
+    <!-- BEGIN: Page Vendor JS-->
     @stack('vendor-script')
 
-    <!-- Main JS -->
-    <script src="{{ asset('theme/assets/js/main.js') }}"></script>
+    <!-- END: Page Vendor JS-->
 
-    <!-- Page JS -->
+    <!-- BEGIN: Theme JS-->
+    <script src="{{ asset('theme/app-assets/js/core/app-menu.js') }}"></script>
+    <script src="{{ asset('theme/app-assets/js/core/app.js') }}"></script>
+    <script src="{{ asset('theme/sidebar.js') }}"></script>
+    <script src="{{ asset('theme/app-assets/js/scripts/forms/form-select2.js') }}"></script>
+
+    <!-- END: Theme JS-->
     @livewireScripts
+
+    <!-- BEGIN: Page JS-->
     @stack('script')
+
+    <!-- END: Page JS-->
+
 </body>
+<!-- END: Body-->
 
 </html>

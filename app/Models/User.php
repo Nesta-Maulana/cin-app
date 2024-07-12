@@ -11,6 +11,7 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Spatie\Activitylog\Models\Activity;
 
 class User extends Authenticatable
 {
@@ -26,7 +27,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'status',
+        'is_active',
     ];
 
     /**
@@ -61,24 +62,31 @@ class User extends Authenticatable
 
     public function scopeFilter($query, $search)
     {
-        $query->when($search ?? false, function($query, $search){
-            return $query->where('username', 'like', "%$search%")
-                ->orWhere('email', 'like', "%$search%")
-                ->orWhere('name', 'like', "%$search%");
+        $query->when($search ?? false, function ($query, $search) {
+            return $query->where(function($query) use ($search) {
+                $query->where('username', 'ilike', "%$search%")
+                      ->orWhere('email', 'ilike', "%$search%")
+                      ->orWhere('name', 'ilike', "%$search%");
+            });
         });
     }
 
     public function scopeAdministrator($query)
     {
-        return $query->whereHas('roles', function ($query) {
-            $query->whereIn('name', ['admin', 'operator']);
-        });
+        return $query->whereHas('roles');
     }
 
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
             ->useLogName('user')
-            ->logOnly(['username', 'name', 'email', 'status']);
+            ->logOnly(['username', 'name', 'email', 'is_active']);
     }
+
+    public function userActivities()
+    {
+        return $this->hasMany(ActivityLog::class, 'causer_id', 'id');
+    }
+
+
 }
