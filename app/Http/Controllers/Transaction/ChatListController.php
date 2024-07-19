@@ -1,38 +1,38 @@
 <?php
 
-namespace {{ namespace }};
+namespace App\Http\Controllers\Transaction;
 
-use {{ rootNamespace }}Http\Controllers\Controller;
-use {{ namespaceRepository }}\{{ repositoryInterface }};
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
+use App\Repositories\Transaction\ChatList\ChatListRepositoryInterface;
 use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
-class {{ classname }} extends Controller
+class ChatListController extends Controller
 {
     public $view, $route;
     protected $repository;
-    public function __construct({{ repositoryInterface }} $repository)
+    public function __construct(ChatListRepositoryInterface $repository)
     {
         $this->repository = $repository;
-        $this->view = '{{ view }}';
-        $this->route = '';
+        $this->view = 'transaction.chat-list';
+        $this->route = 'chat-list';
 
-        $this->middleware("can:create-{$this->route}")->only('create','store');
-        $this->middleware("can:read-{$this->route}")->only('index');
-        $this->middleware("can:update-{$this->route}")->only('edit','update');
-        $this->middleware("can:delete-{$this->route}")->only('destroy');
+        $this->middleware("can:create-$this->route")->only('create', 'store');
+        $this->middleware("can:read-$this->route")->only('index');
+        $this->middleware("can:update-$this->route")->only('edit', 'update');
+        $this->middleware("can:delete-$this->route")->only('destroy');
     }
 
     public function index()
     {
-        return view("{$this->view}.index");
+        return view("$this->view.index");
     }
 
     public function create()
     {
-        return view("{$this->view}.create");
+        return view("$this->view.create");
     }
 
     public function store(Request $request)
@@ -49,23 +49,24 @@ class {{ classname }} extends Controller
             Log::error($e->getMessage());
             alertNotif('error', $e->getMessage());
         }
-        return redirect()->route("{$this->route}.index");
+        return redirect()->route("$this->route.index");
     }
 
     public function edit($id)
     {
         try {
             $data = $this->repository->find($id);
-            return view("{$this->view}.edit", compact('data'));
+            return view("$this->view.edit", compact('data'));
         } catch (Exception $e) {
             Log::error($e->getMessage());
             alertNotif('error', $e->getMessage());
-            return redirect()->route("{$this->route}.index");
+            return redirect()->route("$this->route.index");
         }
     }
 
     public function update(Request $request, $id)
     {
+        $repository = $this->repository->find($id);
         $data = $request->validate([
             //
         ]);
@@ -79,7 +80,7 @@ class {{ classname }} extends Controller
             Log::error($e->getMessage());
             alertNotif('error', $e->getMessage());
         }
-        return redirect()->route("{$this->route}.index");
+        return redirect()->route("$this->route.index");
     }
 
     public function destroy($id)
@@ -92,6 +93,6 @@ class {{ classname }} extends Controller
             Log::error($e->getMessage());
             alertNotif('error', $e->getMessage());
         }
-        return redirect()->route("{$this->route}.index");
+        return redirect()->route("$this->route.index");
     }
 }

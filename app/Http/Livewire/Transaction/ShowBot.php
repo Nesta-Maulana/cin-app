@@ -1,14 +1,14 @@
 <?php
 
-namespace {{ classNamespace }};
+namespace App\Http\Livewire\Transaction;
 
 use Livewire\Component;
-use App\Models\{{ modelName }} as Model;
+use App\Models\Bot as Model;
 use Livewire\WithPagination;
 use Jantinnerezo\LivewireAlert\LivewireAlert;
-use {{ namespaceRepository }}\{{ repositoryInterface }};
+use App\Repositories\Transaction\Bot\BotRepositoryInterface;
 
-class {{ className }} extends Component
+class ShowBot extends Component
 {
     use LivewireAlert;
     use WithPagination;
@@ -24,37 +24,36 @@ class {{ className }} extends Component
 
     protected $repository;
 
-    public function mount({{ repositoryInterface }} $repository)
+    public function mount(BotRepositoryInterface $repository)
     {
         $this->repository = $repository;
     }
     public function hydrate()
     {
-        $this->repository = app({{ repositoryInterface }}::class);
+        $this->repository = app(BotRepositoryInterface::class);
     }
 
     public function render()
     {
-       try {
+        try {
             $scope = [];
             $orderBy = ['id' => 'asc'];
-            $with  =[];
+            $with = [];
             // Apply search filter
             if (!empty($this->search)) {
                 $scope['filter'] = [$this->search];
             }
             $table = $this->repository->getData($scope, $with, $orderBy, $this->paginate);
-            return view('{{ viewDir }}', [
+            return view('livewire.transaction.show-bot', [
                 'table' => $table,
             ]);
         } catch (\Exception $e) {
             $this->alert('error', 'Error fetching permissions: ' . $e->getMessage());
-            return view('{{ viewDir }}', [
+            return view('livewire.transaction.show-bot', [
                 'table' => collect([]),
             ]);
         }
     }
-
     // Misc
     public function resetCreateForm()
     {
@@ -78,14 +77,14 @@ class {{ className }} extends Component
 
     public function modelId($id)
     {
-        $this->repositoryId = $id;
+        $this->modelId = $id;
     }
 
     public function updatedSelectAll($value)
     {
         $model = $this->repository
             // ->filter($this->search)
-            ->get();
+            ->getData();
 
         if ($value) {
             $this->selected = $model->pluck('id');
@@ -94,5 +93,3 @@ class {{ className }} extends Component
         }
     }
 }
-
-

@@ -2,14 +2,14 @@
 
 namespace {{ namespace }};
 
-use App\Models\{{model}};
+use App\Models\{{ model }};
 use App\Repositories\BaseRepository;
 
 class {{ name }} extends BaseRepository implements {{ name_interface }}
 {
     protected $model;
 
-    public function __construct({{model}} $model)
+    public function __construct({{ model }} $model)
     {
         parent::__construct($model);
     }

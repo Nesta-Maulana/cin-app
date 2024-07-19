@@ -37,8 +37,8 @@ class GenerateAll extends Command
         $controllerName = Str::studly(Str::singular($path)) . 'Controller';
 
         $this->generateModel($modelName);
-        // generate repository
-        $this->generateController($controllerName, $modelName, $path);
+        $this->generateRepository($path);
+        $this->generateController($path);
         $this->generateLivewire($modelName, $path);
         $this->generateResources($modelName, $path);
         $this->generatePermissions($modelName);
@@ -54,18 +54,25 @@ class GenerateAll extends Command
         ]);
     }
 
-    private function generateController($name, $model)
+    private function generateController($path)
     {
-        $view = strtolower($model);
-        Artisan::call('make:controller', [
-            'name' => $name,
-            '--type' => 'custom',
-            '--model' => $model,
+        Artisan::call('app:generate-controller', [
+            'name' => $path
         ]);
+
+    }
+    private function generateRepository($path)
+    {
+        Artisan::call('app:generate-repository', [
+            'name' => $path
+        ]);
+
     }
 
     private function generateLivewire($modelName, $path)
     {
+
+
         $className = 'Show' . ucfirst($modelName);
         $classStubPath = resource_path('stubs/livewire/class.stub');
         $classNamespace = (dirname($path) === '.') ? 'App\Http\Livewire' : 'App\Http\Livewire\\' . str_replace('/', '\\', ucwords(dirname($path), '/'));
@@ -86,8 +93,11 @@ class GenerateAll extends Command
 
         copy($classStubPath, $classPath);
 
-        $search = ['{{ classNamespace }}', '{{ className }}', '{{ modelName }}', '{{ viewDir }}'];
-        $replace = [$classNamespace, $className, $modelName, $viewDir];
+        $repositoryNamespace = 'App\\Repositories\\' . str_replace("\\", "/", str_replace("App\\Http\\Controllers\\", '', $path));
+        $repositoryClass = class_basename($path) . 'RepositoryInterface';
+
+        $search = ['{{ classNamespace }}', '{{ className }}', '{{ modelName }}', '{{ viewDir }}', '{{ namespaceRepository }}', '{{ repositoryInterface }}'];
+        $replace = [$classNamespace, $className, $modelName, $viewDir, $repositoryNamespace, $repositoryClass];
         $contents = file_get_contents($classPath);
         $contents = str_replace($search, $replace, $contents);
         file_put_contents($classPath, $contents);
@@ -113,7 +123,7 @@ class GenerateAll extends Command
         $dirname = dirname($path) === '.' ? '' : dirname($path);
 
         $partPath = explode('/', $path);
-        $slugParts = array_map(function($part) {
+        $slugParts = array_map(function ($part) {
             return Str::kebab($part);
         }, $partPath);
         $resourceDir = implode('/', $slugParts);

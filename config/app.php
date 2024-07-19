@@ -196,6 +196,7 @@ return [
         App\Providers\RouteServiceProvider::class,
         Barryvdh\Debugbar\ServiceProvider::class,
         App\Providers\RepositoryServiceProvider::class,
+        App\Providers\BotServiceProvider::class,
 
     ],
 

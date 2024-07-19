@@ -18,9 +18,9 @@
                         </select>
                     </label>
                 </div>
-                @can('create-{{ permissionName }}')
+                @can('create-contact')
                 <div class="flex-wrap my-1">
-                    <a href="{{ route('{{ routeName }}.create') }}" class="btn btn-secondary text-white add-new btn-primary">
+                    <a href="{{ route('contact.create') }}" class="btn btn-secondary text-white add-new btn-primary">
                         <span>
                             <i class="fa fa-plus me-0 me-sm-1 fa-xs"></i>
                             <span>
@@ -50,7 +50,7 @@
             <table class="table border-top">
                 <thead>
                     <tr>
-                        @can('update-{{ permissionName }}')
+                        @can('update-contact')
                             <th>
                                 <input style="width: 17px; height: 17px;" wire:model="selectAll" type="checkbox" class="form-check-input">
                             </th>
@@ -62,11 +62,11 @@
                 <tbody>
                     @forelse($table as $key => $item)
                     @php
-                    $updateRoute = route('{{ routeName }}.update', $item->id);
+                    $updateRoute = route('contact.update', $item->id);
                     @endphp
 
                     <tr wire:key="row{{ $item->id }}">
-                        @can('update-{{ permissionName }}')
+                        @can('update-contact')
                             <td>
                                 <input style="width: 17px; height: 17px;" wire:model="selected" value="{{ $item->id }}" type="checkbox"
                                     class="dt-checkboxes form-check-input">
@@ -78,13 +78,13 @@
 
                         <td>
                             <div class="d-flex align-items-center">
-                                @can('update-{{ permissionName }}')
-                                    <a href="{{ route('{{ routeName }}.edit', $item->id) }}" class="action-btn" title="edit">
+                                @can('update-contact')
+                                    <a href="{{ route('contact.edit', $item->id) }}" class="action-btn" title="edit">
                                         <i class="fa fa-edit fa-sm me-2 fs-5"></i>
                                     </a>
                                 @endcan
 
-                                @can('delete-{{ permissionName }}')
+                                @can('delete-contact')
                                     <a href="javascript:;" class="action-btn" title="delete" data-bs-toggle="modal"
                                         data-bs-target="#modalDelete{{ $item->id }}">
                                         <i class="fa fa-trash fa-sm mx-2 fs-5"></i>

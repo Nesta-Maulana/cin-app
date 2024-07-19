@@ -1,14 +1,14 @@
 <?php
 
-namespace {{ classNamespace }};
+namespace App\Http\Livewire\Transaction;
 
 use Livewire\Component;
-use App\Models\{{ modelName }} as Model;
+use App\Models\ChatList as Model;
 use Livewire\WithPagination;
 use Jantinnerezo\LivewireAlert\LivewireAlert;
-use {{ namespaceRepository }}\{{ repositoryInterface }};
+use App\Repositories\Transaction\ChatList\ChatListRepositoryInterface;
 
-class {{ className }} extends Component
+class ShowChatList extends Component
 {
     use LivewireAlert;
     use WithPagination;
@@ -24,13 +24,13 @@ class {{ className }} extends Component
 
     protected $repository;
 
-    public function mount({{ repositoryInterface }} $repository)
+    public function mount(ChatListRepositoryInterface $repository)
     {
         $this->repository = $repository;
     }
     public function hydrate()
     {
-        $this->repository = app({{ repositoryInterface }}::class);
+        $this->repository = app(ChatListRepositoryInterface::class);
     }
 
     public function render()
@@ -44,12 +44,12 @@ class {{ className }} extends Component
                 $scope['filter'] = [$this->search];
             }
             $table = $this->repository->getData($scope, $with, $orderBy, $this->paginate);
-            return view('{{ viewDir }}', [
+            return view('transaction.show-chat-list', [
                 'table' => $table,
             ]);
         } catch (\Exception $e) {
             $this->alert('error', 'Error fetching permissions: ' . $e->getMessage());
-            return view('{{ viewDir }}', [
+            return view('transaction.show-chat-list', [
                 'table' => collect([]),
             ]);
         }
@@ -85,7 +85,7 @@ class {{ className }} extends Component
     {
         $model = $this->repository
             // ->filter($this->search)
-            ->get();
+            ->getData();
 
         if ($value) {
             $this->selected = $model->pluck('id');

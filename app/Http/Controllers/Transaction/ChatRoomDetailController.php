@@ -1,22 +1,22 @@
 <?php
 
-namespace {{ namespace }};
+namespace App\Http\Controllers\Transaction;
 
-use {{ rootNamespace }}Http\Controllers\Controller;
-use {{ namespaceRepository }}\{{ repositoryInterface }};
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
+use App\Repositories\Transaction\ChatRoomDetail\ChatRoomDetailRepositoryInterface;
 use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
-class {{ classname }} extends Controller
+class ChatRoomDetailController extends Controller
 {
     public $view, $route;
     protected $repository;
-    public function __construct({{ repositoryInterface }} $repository)
+    public function __construct(ChatRoomDetailRepositoryInterface $repository)
     {
         $this->repository = $repository;
-        $this->view = '{{ view }}';
+        $this->view = 'transaction.chatroomdetail';
         $this->route = '';
 
         $this->middleware("can:create-{$this->route}")->only('create','store');

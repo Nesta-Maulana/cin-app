@@ -1,22 +1,22 @@
 <?php
 
-namespace {{ namespace }};
+namespace App\Http\Controllers\Master;
 
-use {{ rootNamespace }}Http\Controllers\Controller;
-use {{ namespaceRepository }}\{{ repositoryInterface }};
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
+use App\Repositories\Master\Contact\ContactRepositoryInterface;
 use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
-class {{ classname }} extends Controller
+class ContactController extends Controller
 {
     public $view, $route;
     protected $repository;
-    public function __construct({{ repositoryInterface }} $repository)
+    public function __construct(ContactRepositoryInterface $repository)
     {
         $this->repository = $repository;
-        $this->view = '{{ view }}';
+        $this->view = 'master.contact';
         $this->route = '';
 
         $this->middleware("can:create-{$this->route}")->only('create','store');

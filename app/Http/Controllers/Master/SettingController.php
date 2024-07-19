@@ -24,32 +24,16 @@ class SettingController extends Controller
         $this->middleware('can:delete-' . $this->route)->only('destroy');
     }
 
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function index()
     {
         return view($this->view . '.index');
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
         return view($this->view . '.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -67,25 +51,12 @@ class SettingController extends Controller
         return redirect()->route($this->route . '.index');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Setting  $setting
-     * @return \Illuminate\Http\Response
-     */
     public function edit($id)
     {
         $data = $this->model->findOrFail($id);
         return view($this->view . '.edit', compact('data'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Setting  $setting
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, $id)
     {
         $model = $this->model->find($id);
@@ -105,12 +76,6 @@ class SettingController extends Controller
         return redirect()->route($this->route . '.index');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function destroy($id)
     {
         $model = $this->model->find($id);
