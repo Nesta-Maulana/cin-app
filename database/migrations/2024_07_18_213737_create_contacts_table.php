@@ -14,6 +14,7 @@ return new class extends Migration {
     {
         Schema::create('contacts', function (Blueprint $table) {
             $table->id();
+            $table->bigInteger('bot_id')->nullable()->default('0')->comment('connected to bot if not 0, 0 database master');
             $table->string('name');
             $table->string('country_code', 5)->default('62');
             $table->string('contact_number');

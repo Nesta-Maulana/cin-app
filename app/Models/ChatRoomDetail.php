@@ -20,5 +20,8 @@ class ChatRoomDetail extends Model
     {
         return $query->where("message_id", $message_id);
     }
-
+    public function chatRoom()
+    {
+        return $this->belongsTo(ChatRoom::class, 'chat_room_id', 'id');
+    }
 }

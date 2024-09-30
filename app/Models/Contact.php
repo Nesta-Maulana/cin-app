@@ -12,6 +12,10 @@ class Contact extends Model
 {
     use HasFactory, LogsActivity;
     protected $guarded = ['id'];
+    protected $casts = [
+        'data' => 'array', // Automatically casts the 'data' column to an array
+    ];
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()->logAll();

@@ -35,7 +35,14 @@ class BaseRepository implements BaseRepositoryInterface
             // Apply scopes
             foreach ($scope as $method => $parameters) {
                 if (method_exists($this->model, 'scope' . ucfirst($method))) {
-                    $query = $query->$method(...$parameters);
+                    if (is_array($parameters))
+                    {
+                        $query = $query->$method(...$parameters);
+                    }
+                    else
+                    {
+                        $query = $query->$method($parameters);
+                    }
                 }
             }
 
@@ -68,11 +75,11 @@ class BaseRepository implements BaseRepositoryInterface
             foreach ($orderBy as $column => $direction) {
                 $query = $query->orderBy($column, $direction);
             }
-
             // Apply pagination if needed
             if ($paginate) {
                 return $query->paginate($paginate);
             }
+            Log::info($query->toSql());
             if ($typeSelect === 'first') {
                 return $query->first();
             } elseif ($typeSelect === 'last') {

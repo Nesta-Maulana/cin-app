@@ -1,6 +1,7 @@
 <?php
 namespace App\Services;
 
+use App\Jobs\SyncChatJob;
 use App\Models\Bot;
 use App\Repositories\Master\Contact\ContactRepositoryInterface;
 use App\Repositories\Transaction\ChatRoom\ChatRoomRepositoryInterface;
@@ -281,7 +282,7 @@ class BotService
                 'Authorization' => 'Bearer ' . $bot->token
             ])->post(env('APP_BOT_URL') . '/' . $bot->session_name . '/typing', [
                         'phone' => $data['phone_number'],
-                        'value' => $data['isTyping'],
+                        'value' => $data['isTyping'] ?? false,
                         'isGroup' => $data['isGroup'] ?? false,
                     ]);
             $data = $response->json();
@@ -305,6 +306,7 @@ class BotService
     }
     public function sendListMessage($bot, $data)
     {
+        Log::info($data);
         try {
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $bot->token
@@ -316,19 +318,22 @@ class BotService
                         'sections' => [$data['sections']],
                     ]);
             $data = $response->json();
-            if ($data['status'] == 'success') {
-                $result = [
-                    'status' => $response->status(),
-                    'data' => $data,
-                    'message' => $response->getReasonPhrase()
-                ];
-            } else {
-                Log::error($data);
-                $result = [
-                    'status' => $response->status(),
-                    'data' => $data,
-                    'message' => $response->getReasonPhrase()
-                ];
+            switch ($data['status']) {
+                case 'success':
+                    $result = [
+                        'status' => $response->status(),
+                        'data' => $data,
+                        'message' => $response->getReasonPhrase()
+                    ];
+                    break;
+                default:
+                    Log::error($data);
+                    $result = [
+                        'status' => $response->status(),
+                        'data' => $data,
+                        'message' => $response->getReasonPhrase()
+                    ];
+                    break;
             }
             return $result;
         } catch (\Exception $e) {
@@ -342,22 +347,22 @@ class BotService
             return $result;
         }
     }
-    public function generateListMessage($bot, $contact, $data, $autoReplies, $first = false)
+    public function generateListMessage($bot, $contact, $autoReplies)
     {
-        $data['phoneNumber'] = $contact->country_code . $contact->contact_number;
+        $data['phoneNumber'] = "{$contact->country_code}{$contact->contact_number}";
+        $data['description'] = "Halo $contact->name, Kamu menghubungi layanan customer service {$bot->tenant->tenant_name}.\nKamu ingin terhubung dengan siapa nih?";
+        $data['buttonText'] = "Pilih Layanan";
         Log::info($autoReplies);
-        // $data['description'] = "Halo $contact->name, Kamu menghubungi layanan customer service Kreasi Sawala Nusantara.\nKamu ingin terhubung dengan siapa nih?";
-        // $data['buttonText'] = "Pilih Layanan";
         $formatting = [];
-        if ($first) {
-            foreach ($autoReplies as $key => $autoReply) {
-                $i = [
-                    "rowId" => $autoReply->id . '-0',
-                    "title" => $autoReply->name,
-                    "description" => $autoReply->description
-                ];
-                $formatting[] = $i;
-            }
+        foreach ($autoReplies as $key => $autoReply) {
+            $i = [
+                "rowId" => $autoReply->id . '-0',
+                "title" => $autoReply->name,
+                "description" => $autoReply->description
+            ];
+            $formatting[] = $i;
+        }
+        /* if ($first) {
         } else {
             foreach ($autoReplies as $key => $autoReply) {
                 $i = [
@@ -367,7 +372,7 @@ class BotService
                 ];
                 $formatting[] = $i;
             }
-        }
+        } */
 
         $data['sections'] = [
             "title" => "List Layanan " /* . $autoReplies[0]->autoReplyHeader->name */ ,
@@ -386,29 +391,24 @@ class BotService
         $response = $response->json();
         if ($response['status'] == 'success') {
             $data = $response['response'];
-            $chunks = array_chunk($data, 500);
-            $this->contactRepository = app(ContactRepositoryInterface::class);
-            foreach ($data as $key => $chunk) {
-                $phone_number = explode("@", $chunk['id']);
-                if ($phone_number[1] !== 'g.us') {
-                    $phone_number = $phone_number[0];
-
-                    $contact_data = $this->contactRepository->contactFromBot($bot, $phone_number);
-                    $chat_room_data = [
-                        'contact_id' => $contact_data->id,
-                        'unread_count' => $chunk['unreadCount']
-                    ];
-                    $this->chatRoomRepository = app(ChatRoomRepositoryInterface::class);
-                    $chat_room = (is_null($contact_data->chatRoom)) ? $this->chatRoomRepository->create($chat_room_data) : $this->chatRoomRepository->update($contact_data->chatRoom->id, $chat_room_data);
-
-                    $this->chatRoomDetailRepository = app(ChatRoomDetailRepositoryInterface::class);
-                    foreach ($chunk['msgs'] as $key_message => $message) {
-                        $chat_room_detail = $this->chatRoomDetailRepository->storeMessage($chat_room, $message);
-                    }
-                }
+            $chunks = array_chunk($data, 2);
+            foreach ($chunks as $chunk) {
+                SyncChatJob::dispatch($chunk, $bot);
             }
         }
-        return $data;
+        return response()->json(['status' => 'Processing started']);
+    }
+    public function checkContact($bot, $phone_number)
+    {
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $bot->token
+        ])->get(env('APP_BOT_URL') . '/' . $bot->session_name . '/check-number-status/' . $phone_number, []);
+        $response = $response->json();
+
+        if ($response['response']['numberExists'] === false) {
+            return false;
+        }
+        return true;
     }
 
     public function getContact($bot, $phone_number)
@@ -417,15 +417,19 @@ class BotService
             'Authorization' => 'Bearer ' . $bot->token
         ])->get(env('APP_BOT_URL') . '/' . $bot->session_name . '/contact/' . $phone_number, []);
         $response = $response->json();
-        if (!is_null($response['response']))
-        {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $bot->token
-            ])->get(env('APP_BOT_URL') . '/' . $bot->session_name . '/contact/' . $phone_number, []);
-            $response = $response->json();
+
+        return $response;
+    }
+
+    public function getMessage($bot, $phone_number)
+    {
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $bot->token
+        ])->get(env('APP_BOT_URL') . '/' . $bot->session_name . '/get-messages/' . $phone_number, []);
+        $response = $response->json();
+        if ($response['status'] == 'error') {
+            $response = false;
         }
         return $response;
-
-
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire\Transaction;
 
+use App\Repositories\Transaction\ChatRoomDetail\ChatRoomDetailRepositoryInterface;
 use Livewire\Component;
 use App\Models\ChatRoom as Model;
 use Livewire\WithPagination;
@@ -24,33 +25,36 @@ class ShowChatRoom extends Component
 
     protected $repository;
 
-    public function mount(ChatRoomRepositoryInterface $repository)
+    public function mount(ChatRoomDetailRepositoryInterface $repository)
     {
         $this->repository = $repository;
     }
     public function hydrate()
     {
-        $this->repository = app(ChatRoomRepositoryInterface::class);
+        $this->repository = app(ChatRoomDetailRepositoryInterface::class);
     }
 
     public function render()
     {
-       try {
-            $scope = [];
-            $orderBy = ['id' => 'asc'];
-            $with  =[];
+        try {
+            $orderBy = ['message_time' => 'asc'];
+            $with = [
+                'chatRoom' => [
+                    'contact'
+                ]
+            ];
             // Apply search filter
-            if (!empty($this->search)) {
-                $scope['filter'] = [$this->search];
-            }
-            $table = $this->repository->getData($scope, $with, $orderBy, $this->paginate);
-            return view('transaction.show-chat-room', [
-                'table' => $table,
+            $scope = [];
+            $chat = $this->repository->getData($scope, $with, $orderBy, null, [
+                ['chat_room_id', '=', '43']
+            ]);
+            return view('livewire.transaction.show-chat-room', [
+                'chat' => $chat,
             ]);
         } catch (\Exception $e) {
             $this->alert('error', 'Error fetching permissions: ' . $e->getMessage());
-            return view('transaction.show-chat-room', [
-                'table' => collect([]),
+            return view('livewire.transaction.show-chat-room', [
+                'chat' => collect([]),
             ]);
         }
     }
@@ -92,6 +96,11 @@ class ShowChatRoom extends Component
         } else {
             $this->selected = [];
         }
+    }
+    public function syncRoomChat()
+    {
+        $this->render();
+        $this->dispatchBrowserEvent('sync-room-chat-complete');
     }
 }
 

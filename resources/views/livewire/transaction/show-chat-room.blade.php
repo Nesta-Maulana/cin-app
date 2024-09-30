@@ -1,138 +1,163 @@
-<div>
-    <div class="card">
-        <div class="card-header border-bottom d-md-flex justify-content-md-between align-items-md-center">
-            <div class="my-1 text-center text-md-start">
-                <label>
-                    <input wire:model.debounce.500ms="search" type="search" class="form-control" placeholder="Search..">
-                </label>
-            </div>
-            <div class="text-md-end text-start d-flex align-items-center justify-content-end flex-md-row flex-column">
-                @if (!$selected)
-                <div class="my-1 me-md-2">
-                    <label>
-                        <select wire:model="paginate" class="form-select">
-                            <option value="10">10</option>
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
-                    </label>
-                </div>
-                @can('create-chat-room')
-                <div class="flex-wrap my-1">
-                    <a href="{{ route('chat-room.create') }}" class="btn btn-secondary text-white add-new btn-primary">
-                        <span>
-                            <i class="fa fa-plus me-0 me-sm-1 fa-xs"></i>
-                            <span>
-                                {{ $title }}
-                            </span>
-                        </span>
-                    </a>
-                </div>
-                @endcan
-                @else
-                <div class="my-1 me-md-2">
-                    <span class="px-1">
-                        {{ count($selected) }} data terpilih
-                    </span>
-                </div>
-                <div class="flex-wrap my-1">
-                    <a href="#" class="btn btn-secondary add-new btn-label-primary" data-bs-toggle="modal"
-                        data-bs-target="#modalSelectedStatus">
-                        Update Status
-                    </a>
-                </div>
-                @endif
-            </div>
+<div class="content-right">
+    <div class="content-wrapper container-xxl p-0">
+        <div class="content-header row">
         </div>
-
-        <div class="table-responsive">
-            <table class="table border-top">
-                <thead>
-                    <tr>
-                        @can('update-chat-room')
-                            <th>
-                                <input style="width: 17px; height: 17px;" wire:model="selectAll" type="checkbox" class="form-check-input">
-                            </th>
-                        @endcan
-                        <th></th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($table as $key => $item)
-                    @php
-                    $updateRoute = route('chat-room.update', $item->id);
-                    @endphp
-
-                    <tr wire:key="row{{ $item->id }}">
-                        @can('update-chat-room')
-                            <td>
-                                <input style="width: 17px; height: 17px;" wire:model="selected" value="{{ $item->id }}" type="checkbox"
-                                    class="dt-checkboxes form-check-input">
-                            </td>
-                        @endcan
-                        <td>
-
-                        </td>
-
-                        <td>
+        <div class="content-body">
+            <div class="body-content-overlay"></div>
+            <!-- Main chat area -->
+            <section class="chat-app-window">
+                <!-- To load Conversation -->
+                <div class="start-chat-area d-none">
+                    <div class="mb-1 start-chat-icon">
+                        <i class="fa fa-message"></i>
+                    </div>
+                    <h4 class="sidebar-toggle start-chat-text">Start Conversation</h4>
+                </div>
+                <!--/ To load Conversation -->
+                <!-- Active Chat -->
+                <div class="active-chat">
+                    <!-- Chat Header -->
+                    <div class="chat-navbar">
+                        <header class="chat-header">
                             <div class="d-flex align-items-center">
-                                @can('update-chat-room')
-                                    <a href="{{ route('chat-room.edit', $item->id) }}" class="action-btn" title="edit">
-                                        <i class="fa fa-edit fa-sm me-2 fs-5"></i>
-                                    </a>
-                                @endcan
-
-                                @can('delete-chat-room')
-                                    <a href="javascript:;" class="action-btn" title="delete" data-bs-toggle="modal"
-                                        data-bs-target="#modalDelete{{ $item->id }}">
-                                        <i class="fa fa-trash fa-sm mx-2 fs-5"></i>
-                                    </a>
-                                @include('admin.modal.delete')
-                                @endcan
-
-                                {{--
-                                <a wire:click="modelId({{ $item->id }})" href="javascript:;"
-                                    class="action-btn dropdown-toggle hide-arrow" title="more"
-                                    data-bs-toggle="dropdown">
-                                    <i class="fa fa-dots-vertical fa-sm mx-1 fs-5"></i>
-                                </a>
-
-                                <div wire:ignore class="dropdown-menu dropdown-menu-end m-0" id="myDropdown">
-                                    <a href="javascript:;" class="dropdown-item" data-bs-toggle="modal"
-                                        data-bs-target="#modalPassword">Password</a>
-                                    <a href="javascript:;" class="dropdown-item" data-bs-toggle="modal"
-                                        data-bs-target="#modalStatus">Change Status</a>
-                                </div> --}}
+                                <div class="sidebar-toggle d-block d-lg-none me-1">
+                                    <i data-feather="menu" class="font-medium-5"></i>
+                                </div>
+                                <input type="hidden" id="chat_room_id" value="{{ $chat[0]->chatRoom->id }}">
+                                <button wire:click="syncRoomChat" class="btn btn-sm btn-label-primary hidden"
+                                    id="syncRoomChat">
+                                    <i class="fa-solid fa-refresh fa-xs me-1"></i>
+                                    Sync
+                                </button>
+                                <div class="avatar avatar-border user-profile-toggle m-0 me-1">
+                                    <img src="@if (isset($chat[0]->chatRoom->contact->data['profilePicThumbObj']['img'])) {{ $chat[0]->chatRoom->contact->data['profilePicThumbObj']['img'] }}
+                                    @else {{ asset('default-user.jpg') }} @endif"
+                                        alt="avatar" height="36" width="36" />
+                                    {{-- <span class="avatar-status-busy"></span> --}}
+                                </div>
+                                <h6 class="mb-0">{{ $chat[0]->chatRoom->contact->name }}</h6>
                             </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <div class="text-center col-md-7 mx-auto px-3 pt-3">
-                        <div class="alert alert-secondary">
-                            Data tidak ditemukan
+                        </header>
+                    </div>
+                    <!--/ Chat Header -->
+
+                    <!-- User Chat messages -->
+                    <div class="user-chats ps ps--active-y" style="overflow:none !important">
+                        <div class="chats" style="overflow:scroll !important">
+                            @php
+                                $last_date = formatDate($chat[0]->message_time);
+                            @endphp
+                            <div class="divider">
+                                <div class="divider-text">{{ $last_date }}</div>
+                            </div>
+                            @foreach ($chat as $item)
+                                @if (formatDate($item->message_time) !== $last_date)
+                                    @php
+                                        $last_date = formatDate($item->message_time);
+                                    @endphp
+                                    <div class="divider">
+                                        <div class="divider-text">{{ $last_date }}</div>
+                                    </div>
+                                @endif
+                                @if ($item->is_from_me)
+                                    <div class="chat">
+                                        <div class="chat-avatar">
+                                            <span class="avatar box-shadow-1 cursor-pointer">
+                                                <img src="{{ asset('bot.png') }}" alt="avatar" height="36"
+                                                    width="36" />
+                                            </span>
+                                        </div>
+                                        <div class="chat-body">
+                                            <div class="chat-content">
+                                                <p>{{ $item->message }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="chat chat-left">
+                                        <div class="chat-avatar">
+                                            <span class="avatar box-shadow-1 cursor-pointer">
+                                                <img src="@if (isset($item->chatRoom->contact->data['profilePicThumbObj']['img'])) {{ $item->chatRoom->contact->data['profilePicThumbObj']['img'] }}
+                                                @else {{ asset('default-user.jpg') }} @endif"
+                                                    alt="avatar" height="36" width="36" />
+                                            </span>
+                                        </div>
+                                        <div class="chat-body">
+                                            <div class="chat-content">
+                                                <p>{{ $item->message }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+                            @endforeach
+                            <input type="hidden" name="last_updated_chat" id="last_updated_chat"
+                                value="{{ formatDateTimeJKT($item->message_time) }}">
                         </div>
                     </div>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                    <!-- User Chat messages -->
 
-        <div class="card-body d-md-flex justify-content-md-between align-items-center pt-3 pb-2">
-            <div class="align-self-start my-2 d-none d-md-block text-muted">
-                <small>
-                    Showing {{ $table->firstItem() }} to {{ $table->lastItem() }} of {{ $table->total() }} data
-                </small>
-            </div>
-            {{ $table->links() }}
+                    <!-- Submit Chat form -->
+                    <form class="chat-app-form" action="javascript:void(0);" onsubmit="enterChat();">
+                        <div class="input-group input-group-merge me-1 form-send-message">
+                            <span class="speech-to-text input-group-text">
+                                <i class="cursor-pointer fa fa-microphone-lines"></i>
+                            </span>
+                            <input type="text" class="form-control message"
+                                placeholder="Type your message or use speech to text" />
+                            <span class="input-group-text">
+                                <label for="attach-doc" class="attachment-icon form-label mb-0">
+                                    <i class="cursor-pointer text-secondary fa fa-file"></i>
+                                    <input type="file" id="attach-doc" hidden /> </label></span>
+                        </div>
+                        <button type="button" class="btn btn-primary send" onclick="enterChat();">
+                            <i data-feather="send" class="d-lg-none"></i>
+                            <span class="d-none d-lg-block">Send</span>
+                        </button>
+                    </form>
+                    <!--/ Submit Chat form -->
+                </div>
+                <!--/ Active Chat -->
+            </section>
+            <!--/ Main chat area -->
+
+
         </div>
     </div>
-
-    <script>
-        window.addEventListener('close-modal', event => {
-            $('.dropdown-toggle').dropdown('hide');
-            // $('#modalStatus').modal('hide');
-        })
-    </script>
 </div>
+<script>
+    function scrollToBottom() {
+        userChats = $('.user-chats'),
+            userChats.animate({
+                scrollTop: userChats[0].scrollHeight
+            }, 400);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        scrollToBottom();
+    });
+
+    Livewire.hook('message.processed', (message, component) => {
+        scrollToBottom();
+    });
+    window.addEventListener('sync-room-chat-complete', event => {
+        scrollToBottom();
+    });
+</script>
+<script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+<script>
+    // Enable pusher logging - don't include this in production
+    Pusher.logToConsole = true;
+
+    var pusher = new Pusher('4b399ecfe9e3ad045af5', {
+        cluster: 'ap1'
+    });
+
+    var channel = pusher.subscribe("updated_chat");
+    channel.bind("updated_room_chat", function(data) {
+        if (data.chat_room_id !== $('#chat_room_id').val()) {
+            if (data.last_updated !== $('#last_updated_chat').val()) {
+                $('#syncRoomChat').click();
+            }
+        }
+    });
+</script>

@@ -2,8 +2,15 @@
 
 namespace App\Http\Controllers\Transaction;
 
+use App\Events\RoomChatBroadcast;
 use App\Http\Controllers\Controller;
+use App\Repositories\Master\Answer\AnswerRepositoryInterface;
+use App\Repositories\Master\BotService\BotServiceRepositoryInterface;
+use App\Repositories\Master\Contact\ContactRepositoryInterface;
+use App\Repositories\Master\Question\QuestionRepositoryInterface;
 use App\Repositories\Transaction\Bot\BotRepositoryInterface;
+use App\Repositories\Transaction\ChatRoom\ChatRoomRepositoryInterface;
+use App\Repositories\Transaction\ChatRoomDetail\ChatRoomDetailRepositoryInterface;
 use App\Services\BotService;
 use Exception;
 use Illuminate\Http\Request;
@@ -13,11 +20,25 @@ use Illuminate\Support\Facades\Log;
 class BotController extends Controller
 {
     public $view, $route;
-    protected $repository, $botService;
-    public function __construct(BotRepositoryInterface $repository, BotService $botService)
-    {
+    protected $repository, $botService, $contactRepository, $chatRoomRepository, $chatRoomDetailRepository, $botServiceRepository, $questionRepository, $answerRepository;
+    public function __construct(
+        BotRepositoryInterface $repository,
+        BotService $botService,
+        ContactRepositoryInterface $contactRepository,
+        ChatRoomRepositoryInterface $chatRoomRepository,
+        ChatRoomDetailRepositoryInterface $chatRoomDetailRepository,
+        BotServiceRepositoryInterface $botServiceRepository,
+        QuestionRepositoryInterface $questionRepository,
+        AnswerRepositoryInterface $answerRepository
+    ) {
         $this->repository = $repository;
         $this->botService = $botService;
+        $this->contactRepository = $contactRepository;
+        $this->chatRoomRepository = $chatRoomRepository;
+        $this->chatRoomDetailRepository = $chatRoomDetailRepository;
+        $this->botServiceRepository = $botServiceRepository;
+        $this->questionRepository = $questionRepository;
+        $this->answerRepository = $answerRepository;
         $this->view = 'transaction.bot';
         $this->route = 'bot';
 
@@ -140,7 +161,56 @@ class BotController extends Controller
 
     public function chat(Request $request, BotService $botService)
     {
-        Log::info($request->all());
+        if (isset($request->event)) {
+            if ($request->event == 'onmessage') {
+                $bot = $this->repository->getData([], [], [], null, [
+                    [
+                        'session_name',
+                        '=',
+                        $request->session
+                    ]
+                ], 'first');
+
+                $phone_number = explode("@", $request->from);
+                if ($phone_number[1] !== 'g.us') {
+                    $phone_number = $phone_number[0];
+
+                    // check is number valid
+                    if ($this->botService->checkContact($bot, $phone_number)) {
+                        $contact_data = $this->contactRepository->contactFromBot($bot, $phone_number);
+                        $this->botService->setTyping($bot, ['isTyping' => true, 'phone_number' => $phone_number]);
+
+                        $chat_room_data = [
+                            'contact_id' => $contact_data->id,
+                            'unread_count' => is_null($contact_data->chatRoom) ? 1 : $contact_data->chatRoom->unread_count + 1
+                        ];
+                        $chat_room = (is_null($contact_data->chatRoom)) ? $this->chatRoomRepository->create($chat_room_data) : $this->chatRoomRepository->update($contact_data->chatRoom->id, $chat_room_data);
+                        $chat_room_detail = $this->chatRoomDetailRepository->storeMessage($chat_room, $request->toArray());
+                        if ($chat_room->status == '0') {
+                            switch ($request->type) {
+                                case 'chat':
+                                    Log::info('1');
+                                    $checkAutoreply = $this->questionRepository->getData([], [], [], null, [['question_text', '', $request->content]], 'first');
+                                    Log::info('2');
+                                    if (is_null($checkAutoreply)) {
+                                        $bot_services = $this->botServiceRepository->getData([], [], [], null, [['bot_id', '=', $bot->id]], 'all');
+
+                                        $botService->generateListMessage($bot, $contact_data, $bot_services);
+                                    }
+                                    break;
+
+                                default:
+                                    # code...
+                                    break;
+                            }
+                        }
+                    }
+                }
+            }
+            $this->botService->setTyping($bot, ['isTyping' => false, 'phone_number' => $phone_number]);
+
+        }
+        // Log::info($request->all());
         // if (isset($request->event)) {
         //     if ($request->event == 'onmessage') {
         //         $from = $request->from;
@@ -219,9 +289,17 @@ class BotController extends Controller
 
     public function syncChat(Request $request)
     {
-        $bot = $this->repository->find(1);
-        $syncBot    = $this->botService->syncChat($bot);
-        dd($syncBot);
+        try {
+            $bot = $this->repository->find(1);
+            $syncBot = $this->botService->syncChat($bot);
+            alertNotif('success', "Sync Processing started on background");
+            return redirect()->back();
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            alertNotif('error', $e->getMessage());
+            return redirect()->back();
+        }
+
     }
 
 }

@@ -1,138 +1,131 @@
-<div>
-    <div class="card">
-        <div class="card-header border-bottom d-md-flex justify-content-md-between align-items-md-center">
-            <div class="my-1 text-center text-md-start">
-                <label>
-                    <input wire:model.debounce.500ms="search" type="search" class="form-control" placeholder="Search..">
-                </label>
-            </div>
-            <div class="text-md-end text-start d-flex align-items-center justify-content-end flex-md-row flex-column">
-                @if (!$selected)
-                <div class="my-1 me-md-2">
-                    <label>
-                        <select wire:model="paginate" class="form-select">
-                            <option value="10">10</option>
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
-                    </label>
+<div class="sidebar-left">
+    <div class="sidebar">
+        <!-- Admin user profile area -->
+        <div class="chat-profile-sidebar">
+            <header class="chat-profile-header">
+                <span class="close-icon">
+                    <i data-feather="x"></i>
+                </span>
+                <!-- User Information -->
+                <div class="header-profile-sidebar">
+                    <div class="avatar box-shadow-1 avatar-xl avatar-border">
+                        <img src="{{ asset('theme/app-assets/images/portrait/small/avatar-s-11.jpg') }}"
+                            alt="user_avatar" />
+                        <span class="avatar-status-online avatar-status-xl"></span>
+                    </div>
+                    <h4 class="chat-user-name">John Doe</h4>
+                    <span class="user-post">Admin</span>
                 </div>
-                @can('create-chat-list')
-                <div class="flex-wrap my-1">
-                    <a href="{{ route('chat-list.create') }}" class="btn btn-secondary text-white add-new btn-primary">
-                        <span>
-                            <i class="fa fa-plus me-0 me-sm-1 fa-xs"></i>
-                            <span>
-                                {{ $title }}
-                            </span>
-                        </span>
-                    </a>
-                </div>
-                @endcan
-                @else
-                <div class="my-1 me-md-2">
-                    <span class="px-1">
-                        {{ count($selected) }} data terpilih
-                    </span>
-                </div>
-                <div class="flex-wrap my-1">
-                    <a href="#" class="btn btn-secondary add-new btn-label-primary" data-bs-toggle="modal"
-                        data-bs-target="#modalSelectedStatus">
-                        Update Status
-                    </a>
-                </div>
-                @endif
-            </div>
+                <!--/ User Information -->
+            </header>
         </div>
+        <!--/ Admin user profile area -->
 
-        <div class="table-responsive">
-            <table class="table border-top">
-                <thead>
-                    <tr>
-                        @can('update-chat-list')
-                            <th>
-                                <input style="width: 17px; height: 17px;" wire:model="selectAll" type="checkbox" class="form-check-input">
-                            </th>
-                        @endcan
-                        <th></th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($table as $key => $item)
-                    @php
-                    $updateRoute = route('chat-list.update', $item->id);
-                    @endphp
-
-                    <tr wire:key="row{{ $item->id }}">
-                        @can('update-chat-list')
-                            <td>
-                                <input style="width: 17px; height: 17px;" wire:model="selected" value="{{ $item->id }}" type="checkbox"
-                                    class="dt-checkboxes form-check-input">
-                            </td>
-                        @endcan
-                        <td>
-
-                        </td>
-
-                        <td>
-                            <div class="d-flex align-items-center">
-                                @can('update-chat-list')
-                                    <a href="{{ route('chat-list.edit', $item->id) }}" class="action-btn" title="edit">
-                                        <i class="fa fa-edit fa-sm me-2 fs-5"></i>
-                                    </a>
-                                @endcan
-
-                                @can('delete-chat-list')
-                                    <a href="javascript:;" class="action-btn" title="delete" data-bs-toggle="modal"
-                                        data-bs-target="#modalDelete{{ $item->id }}">
-                                        <i class="fa fa-trash fa-sm mx-2 fs-5"></i>
-                                    </a>
-                                @include('admin.modal.delete')
-                                @endcan
-
-                                {{--
-                                <a wire:click="modelId({{ $item->id }})" href="javascript:;"
-                                    class="action-btn dropdown-toggle hide-arrow" title="more"
-                                    data-bs-toggle="dropdown">
-                                    <i class="fa fa-dots-vertical fa-sm mx-1 fs-5"></i>
-                                </a>
-
-                                <div wire:ignore class="dropdown-menu dropdown-menu-end m-0" id="myDropdown">
-                                    <a href="javascript:;" class="dropdown-item" data-bs-toggle="modal"
-                                        data-bs-target="#modalPassword">Password</a>
-                                    <a href="javascript:;" class="dropdown-item" data-bs-toggle="modal"
-                                        data-bs-target="#modalStatus">Change Status</a>
-                                </div> --}}
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <div class="text-center col-md-7 mx-auto px-3 pt-3">
-                        <div class="alert alert-secondary">
-                            Data tidak ditemukan
+        <!-- Chat Sidebar area -->
+        <div class="sidebar-content">
+            <span class="sidebar-close-icon">
+                <i class="fa fa-x"></i>
+            </span>
+            <!-- Sidebar header start -->
+            <div class="chat-fixed-search">
+                <div class="d-flex align-items-center w-100">
+                    <div class="sidebar-profile-toggle">
+                        <div class="avatar avatar-border">
+                            <img src="{{ asset('theme/app-assets/images/portrait/small/avatar-s-11.jpg') }}"
+                                alt="user_avatar" height="42" width="42" />
+                            <span class="avatar-status-online"></span>
                         </div>
                     </div>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        <div class="card-body d-md-flex justify-content-md-between align-items-center pt-3 pb-2">
-            <div class="align-self-start my-2 d-none d-md-block text-muted">
-                <small>
-                    Showing {{ $table->firstItem() }} to {{ $table->lastItem() }} of {{ $table->total() }} data
-                </small>
+                    {{-- <div class="input-group input-group-merge ms-1 w-100">
+                        <span class="input-group-text round"><i data-feather="search"
+                                class="text-muted"></i></span>
+                        <input type="text" class="form-control round" id="chat-search"
+                            placeholder="Search or start a new chat" aria-label="Search..."
+                            aria-describedby="chat-search" />
+                    </div> --}}
+                </div>
             </div>
-            {{ $table->links() }}
-        </div>
-    </div>
+            <!-- Sidebar header end -->
 
-    <script>
-        window.addEventListener('close-modal', event => {
-            $('.dropdown-toggle').dropdown('hide');
-            // $('#modalStatus').modal('hide');
-        })
-    </script>
+            <!-- Sidebar Users start -->
+            <div id="users-list" class="chat-user-list-wrapper list-group">
+                <div class="row">
+                    <div class="col-6">
+                        <h4 class="chat-list-title">Chats</h4>
+                    </div>
+                    <div class="col-6 text-end px-2">
+                        <a class="btn btn-sm btn-primary my-2" href="{{ route('bot.sync-chat') }}">
+                            <i class="fa fa-sync"></i> Sync Chat
+                        </a>
+                        <button wire:click="syncChat" class="btn btn-sm btn-label-primary hidden" id="syncChat">
+                            <i class="fa-solid fa-refresh fa-xs me-1"></i>
+                            Sync
+                        </button>
+                    </div>
+                </div>
+                <ul class="chat-users-list chat-list media-list ps ps--active-x ps--active-y"
+                    style="overflow:scroll !important">
+                    <input type="hidden" name="last_updated" id="last_updated" value="{{ $last_updated }}">
+                    @foreach ($chats as $chat)
+                        <li>
+                            <span class="avatar">
+                                <img src="@if (isset($chat->contact->data['profilePicThumbObj']['img'])) {{ $chat->contact->data['profilePicThumbObj']['img'] }}
+                                    @else {{ asset('default-user.jpg') }} @endif"
+                                    height="42" width="42" alt="Generic placeholder image" />
+                                {{-- <span class="avatar-status-offline"></span> --}}
+                            </span>
+                            <div class="chat-info flex-grow-1">
+                                <h5 class="mb-0">{{ $chat->contact->name }}</h5>
+                                <p class="card-text text-truncate">
+                                    @if ($chat->chatDetail[0]->type == 'chat')
+                                        {{ strlen($chat->chatDetail[0]->message) > 20 ? substr($chat->chatDetail[0]->message, 0, 20) . '...' : $chat->chatDetail[0]->message }}
+                                    @else
+                                        <i class="fa fa-file"></i>
+                                        @if (isset($chat->chatDetail[0]->message) && !is_null($chat->chatDetail[0]->message))
+                                            {{ strlen($chat->chatDetail[0]->message) > 20 ? substr($chat->chatDetail[0]->message, 0, 20) . '...' : $chat->chatDetail[0]->message }}
+                                        @else
+                                            Media
+                                        @endif
+                                    @endif
+                                </p>
+                            </div>
+                            <div class="chat-meta text-nowrap">
+                                <small
+                                    class="float-end mb-25 chat-time">{{ formatDateTime($chat->chatDetail[0]->message_time) }}</small>
+                                @if ($chat->unread_count > 0)
+                                    <span class="badge bg-danger rounded-pill float-end">
+                                        {{ $chat->unread_count }}
+                                    </span>
+                                @endif
+                            </div>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+            <!-- Sidebar Users end -->
+        </div>
+        <!--/ Chat Sidebar area -->
+
+    </div>
 </div>
+<script>
+    function syncChat() {
+        Livewire.emit('render');
+    }
+</script>
+<script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+<script>
+    // Enable pusher logging - don't include this in production
+    Pusher.logToConsole = true;
+
+    var pusher = new Pusher('4b399ecfe9e3ad045af5', {
+        cluster: 'ap1'
+    });
+
+    var channel = pusher.subscribe('last_updated_chat');
+    channel.bind('last_updated', function(data) {
+        if (data.last_updated !== $('#last_updated').val()) {
+            $('#syncChat').click();
+        }
+    });
+</script>

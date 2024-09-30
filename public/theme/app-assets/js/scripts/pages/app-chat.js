@@ -135,7 +135,7 @@ $(function () {
   }
 
   // Add class active on click of Chat users list
-  if (chatUsersListWrapper.find('ul li').length) {
+  /* if (chatUsersListWrapper.find('ul li').length) {
     chatUsersListWrapper.find('ul li').on('click', function () {
       var $this = $(this),
         startArea = $('.start-chat-area'),
@@ -156,12 +156,12 @@ $(function () {
         activeChat.addClass('d-none');
       }
     });
-  }
+  } */
 
   // auto scroll to bottom of Chat area
-  chatsUserList.find('li').on('click', function () {
+  /* chatsUserList.find('li').on('click', function () {
     userChats.animate({ scrollTop: userChats[0].scrollHeight }, 400);
-  });
+  }); */
 
   // Main menu toggle should hide app menu
   if (menuToggle.length) {

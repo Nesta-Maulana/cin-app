@@ -9,17 +9,54 @@ NOTE:
 ------
 PLACE HERE YOUR OWN SCSS CODES AND IF NEEDED, OVERRIDE THE STYLES FROM THE OTHER STYLESHEETS.
 WE WILL RELEASE FUTURE UPDATES SO IN ORDER TO NOT OVERWRITE YOUR STYLES IT'S BETTER LIKE THIS.  */
-#title-breadcumb{
+#title-breadcumb {
     text-transform: capitalize;
 }
 
 
-.avatar-initial
-{
+.avatar-initial {
     width: 40px;
     height: 40px;
     line-height: 40px;
 }
+
 .form-select {
     padding: 0.571rem 2rem 0.571rem 1rem;
 }
+
+* {
+    scrollbar-width: thin;
+    /* For Firefox */
+    scrollbar-color: #888 #f1f1f1;
+    /* For Firefox: Thumb color and Track color */
+}
+
+/* For WebKit browsers (Chrome, Safari, Edge) */
+*::-webkit-scrollbar {
+    width: 12px;
+    /* Width of the vertical scrollbar */
+    height: 12px;
+    /* Height of the horizontal scrollbar */
+}
+
+/* Scrollbar Track */
+*::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    /* Track color */
+}
+
+/* Scrollbar Thumb */
+*::-webkit-scrollbar-thumb {
+    background: #888;
+    /* Thumb color */
+    border-radius: 6px;
+    /* Round the corners of the thumb */
+}
+
+/* Scrollbar Thumb on Hover */
+*::-webkit-scrollbar-thumb:hover {
+    background: #555;
+    /* Thumb color on hover */
+}
+
+</style>

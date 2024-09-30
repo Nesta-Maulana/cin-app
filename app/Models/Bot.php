@@ -20,7 +20,7 @@ class Bot extends Model
     }
     public function tenant()
     {
-        return $this->hasOne(User::class, 'id', 'tenant_id')->withDefault(['tenant_name' => 'Central Panel']);
+        return $this->hasOne(User::class, 'id', 'tenant_id')->withDefault(['tenant_name' => 'Kreasi Sawala Nusantara Group']);
     }
     public function getStatusBotAttribute()
     {

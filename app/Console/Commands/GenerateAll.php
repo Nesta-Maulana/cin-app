@@ -44,6 +44,7 @@ class GenerateAll extends Command
         $this->generatePermissions($modelName);
 
         $this->info('Yay! All files generated successfully.');
+        return true;
     }
 
     private function generateModel($name)

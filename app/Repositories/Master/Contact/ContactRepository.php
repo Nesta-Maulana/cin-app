@@ -42,12 +42,12 @@ class ContactRepository extends BaseRepository implements ContactRepositoryInter
 
             $contact_number = ltrim($phone_number, $country_code);
             if (!is_null($contact_data['response'])) {
-                if (!isset($contact_data['response']['pushname']))
-                {
-                    dd($contact_data['response']);
-                }
                 $data = [
-                    'name' => $contact_data['response']['pushname'] ?? $contact_data['response']['verifiedName'],
+                    'bot_id' => $bot->id,
+                    'name' => $contact_data['response']['pushname']
+                        ?? $contact_data['response']['verifiedName']
+                        ?? $contact_data['response']['name']
+                        ?? $contact_data['response']['shortname'],
                     'country_code' => $country_code,
                     'contact_number' => $contact_number,
                     'data' => json_encode($contact_data['response']),

@@ -81,15 +81,13 @@ if (!function_exists('yesOrNo')) {
 if (!function_exists('alertNotif')) {
     function alertNotif($type, $message = null)
     {
-        if ($type == 'save') {
-            return toast('Data Tersimpan!', 'success');
-        } elseif ($type == 'update') {
-            return toast('Data Diperbarui!', 'success');
-        } elseif ($type == 'delete') {
-            return toast('Data Dihapus!', 'success');
-        } elseif ($type == 'error') {
-            return toast(!is_null($message) ? $message : 'Oops! Ada kesalahan', 'error');
-        }
+        return match ($type) {
+            'save' => toast('Data Tersimpan!', 'success'),
+            'update' => toast('Data Diperbarui!', 'success'),
+            'delete' => toast('Data Dihapus!', 'success'),
+            'success' => toast(!is_null($message) ? $message : 'Process Berhasil', 'success'),
+            'error' => toast(!is_null($message) ? $message : 'Oops! Ada kesalahan', 'error'),
+        };
     }
 }
 
@@ -478,5 +476,34 @@ if (!function_exists('monthlyPeriod')) {
         $startDate = Carbon::parse($month)->startOfMonth()->subMonths(1)->addDays(25);
         $endDate = Carbon::parse($month)->startOfMonth()->addDays(24);
         return CarbonPeriod::create($startDate, $endDate);
+    }
+}
+
+if (!function_exists('formatDate')) {
+    function formatDate($dateString)
+    {
+        $date = Carbon::parse($dateString);
+        $formattedDate = $date->locale('id')->isoFormat('DD MMMM YYYY');
+        return $formattedDate;
+
+    }
+}
+if (!function_exists('formatDateTime')) {
+    function formatDateTime($dateString)
+    {
+        $date = Carbon::parse($dateString);
+        $formattedDate = $date->locale('id')->isoFormat('DD MMMM YYYY HH:mm');
+        return $formattedDate;
+
+    }
+}
+if (!function_exists('formatDateTimeJKT')) {
+    function formatDateTimeJKT($dateString)
+    {
+        $date = Carbon::parse($dateString);
+        // Convert to a specific timezone (e.g., Asia/Jakarta)
+        $date->setTimezone('Asia/Jakarta');
+        // Format the date to the desired format
+        return $date->format('Y-m-d H:i:s');
     }
 }
