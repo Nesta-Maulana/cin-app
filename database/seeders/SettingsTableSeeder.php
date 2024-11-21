@@ -28,7 +28,7 @@ class SettingsTableSeeder extends Seeder
                     'category' => 'system',
                     'data' => json_encode(
                         array(
-                            'app_name' => 'Anveshana Panel',
+                            'app_name' => env('APP_NAME').' Panel',
                             'app_version' => '1.0.0',
                             'name' => 'Prana Vorge Technologies',
                             'address' => "Jalan Lawang Gintung, Kota Bogor Selatan",

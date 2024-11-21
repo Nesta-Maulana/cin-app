@@ -35,7 +35,7 @@ class GenerateRepository extends GeneratorCommand
         $interfaceName = $modelName . 'RepositoryInterface';
 
         $replace = [
-            '{{ namespace }}' => $this->getNamespace($name),
+            '{{ namespace }}' => $name,
             '{{ model }}' => $modelName,
             '{{ name }}' => $className,
             '{{ name_interface }}' => $interfaceName,
@@ -53,7 +53,7 @@ class GenerateRepository extends GeneratorCommand
         $interfaceName = $modelName . 'RepositoryInterface';
 
         $replace = [
-            '{{ namespace }}' => $this->getNamespace($name),
+            '{{ namespace }}' => $name,
             '{{ name_interface }}' => $interfaceName,
         ];
 
@@ -103,11 +103,11 @@ class GenerateRepository extends GeneratorCommand
         $name = $this->argument('name');
         $repositoryNamespace = $this->rootNamespace() . 'Repositories\\' . str_replace('/', '\\', $name);
 
-        // Generate the repository class
+        /* // Generate the repository class
         $path = $this->getPath($name);
         $this->files->put($path, $this->sortImports($this->buildClass($repositoryNamespace)));
 
-        $this->info($this->type . ' created successfully.');
+        $this->info($this->type . ' created successfully.'); */
 
         // Generate the repository interface
         $interfacePath = $this->getInterfacePath($name);

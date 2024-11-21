@@ -96,7 +96,7 @@ class GenerateAll extends Command
 
         $repositoryNamespace = 'App\\Repositories\\' . str_replace("\\", "/", str_replace("App\\Http\\Controllers\\", '', $path));
         $repositoryClass = class_basename($path) . 'RepositoryInterface';
-
+        $repositoryNamespace = str_replace('/', '\\',$repositoryNamespace);
         $search = ['{{ classNamespace }}', '{{ className }}', '{{ modelName }}', '{{ viewDir }}', '{{ namespaceRepository }}', '{{ repositoryInterface }}'];
         $replace = [$classNamespace, $className, $modelName, $viewDir, $repositoryNamespace, $repositoryClass];
         $contents = file_get_contents($classPath);
@@ -178,7 +178,7 @@ class GenerateAll extends Command
     {
         $permissionNames = ['create', 'read', 'update', 'delete'];
         foreach ($permissionNames as $permissionName) {
-            $permission = Permission::create([
+            $permission = Permission::firstOrCreate([
                 'name' => $permissionName . '-' . Str::kebab($modelName),
                 'group' => $modelName,
                 'guard_name' => 'web',

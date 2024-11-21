@@ -1,8 +1,6 @@
 <?php
 
 use App\Events\RoomChatBroadcast;
-use App\Http\Controllers\Transaction\BotController;
-use App\Http\Controllers\Transaction\ChatListController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Master\MenuController;
@@ -46,13 +44,5 @@ Route::middleware(['auth', 'auth.status'])->group(function () {
     Route::resource('menu', MenuController::class);
     Route::resource('setting', SettingController::class);
 
-    Route::resource('bot', BotController::class);
-    Route::prefix('bot')->group(function () {
-        Route::get('start-session/{id}', [BotController::class, 'startSession'])->name('bot.start-session');
-        Route::get('close-session/{id}', [BotController::class, 'closeSession'])->name('bot.close-session');
-        Route::get('logout-session/{id}', [BotController::class, 'logoutSession'])->name('bot.logout-session');
-    });
 
-    Route::resource('chat-list', ChatListController::class);
-    Route::get('sync-chat', [BotController::class, 'syncChat'])->name('bot.sync-chat');
 });
