@@ -1,6 +1,10 @@
 <?php
 
 use App\Events\RoomChatBroadcast;
+use App\Http\Controllers\Master\MaterialController;
+use App\Http\Controllers\Master\UnitController;
+use App\Http\Controllers\Transaction\BOMController;
+use App\Http\Controllers\Transaction\PurchaseRequestController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Master\MenuController;
@@ -43,6 +47,15 @@ Route::middleware(['auth', 'auth.status'])->group(function () {
     Route::resource('permission', PermissionController::class);
     Route::resource('menu', MenuController::class);
     Route::resource('setting', SettingController::class);
+
+    Route::resource('unit', UnitController::class);
+    Route::resource('material', MaterialController::class);
+    Route::resource('bom', BOMController::class);
+    Route::resource('requested-bom', BOMController::class, [
+        'as' => 'warehouse'
+    ]);
+    Route::get('purchase-request/generate-po', [PurchaseRequestController::class, 'generatePO'])->name('purchasing.po.summary');
+    Route::resource('purchase-request', PurchaseRequestController::class);
 
 
 });

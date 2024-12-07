@@ -83,6 +83,7 @@ class GenerateAll extends Command
         $viewStubPath = resource_path('stubs/livewire/view.stub');
         $viewDirPath = Str::kebab($classDir);
         $viewDir = str_replace('/', '.', $viewDirPath) . '.' . $viewName;
+        $viewDir = "livewire.$viewDir";
         $routeName = Str::kebab($modelName);
         $permissionName = Str::kebab($modelName);
 

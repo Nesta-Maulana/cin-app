@@ -42,7 +42,9 @@ class GenerateRepository extends GeneratorCommand
         ];
 
         return str_replace(
-            array_keys($replace), array_values($replace), parent::buildClass($name)
+            array_keys($replace),
+            array_values($replace),
+            file_get_contents($this->getStub())
         );
     }
 
@@ -58,7 +60,9 @@ class GenerateRepository extends GeneratorCommand
         ];
 
         return str_replace(
-            array_keys($replace), array_values($replace), file_get_contents($this->getInterfaceStub())
+            array_keys($replace),
+            array_values($replace),
+            file_get_contents($this->getInterfaceStub())
         );
     }
 
@@ -103,11 +107,11 @@ class GenerateRepository extends GeneratorCommand
         $name = $this->argument('name');
         $repositoryNamespace = $this->rootNamespace() . 'Repositories\\' . str_replace('/', '\\', $name);
 
-        /* // Generate the repository class
+        // Generate the repository class
         $path = $this->getPath($name);
         $this->files->put($path, $this->sortImports($this->buildClass($repositoryNamespace)));
 
-        $this->info($this->type . ' created successfully.'); */
+        $this->info($this->type . ' created successfully.');
 
         // Generate the repository interface
         $interfacePath = $this->getInterfacePath($name);

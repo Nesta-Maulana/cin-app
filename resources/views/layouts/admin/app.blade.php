@@ -72,8 +72,7 @@
                         <div class="col-12">
                             <h2 class="content-header-title float-start mb-0" id="title-breadcumb">
                             </h2>
-                            <div class="breadcrumb-wrapper" id="breadcumb">
-                            </div>
+                            <div class="breadcrumb-wrapper" id="breadcumb">@yield('breadcrumb')</div>
                         </div>
                     </div>
                 </div>
