@@ -18,203 +18,393 @@ class PermissionsTableSeeder extends Seeder
 
         \DB::table('permissions')->delete();
 
-        \DB::table('permissions')->insert(array(
-            array(
+        \DB::table('permissions')->insert([
+            [
                 'id' => 1,
                 'name' => 'create-user',
                 'guard_name' => 'web',
                 'created_at' => '2023-04-13 07:02:18',
                 'updated_at' => '2023-04-13 07:02:18',
                 'group' => 'User',
-            ),
-            array(
+            ],
+            [
                 'id' => 2,
                 'name' => 'read-user',
                 'guard_name' => 'web',
                 'created_at' => '2023-04-13 07:02:27',
                 'updated_at' => '2023-04-13 07:02:27',
                 'group' => 'User',
-            ),
-            array(
+            ],
+            [
                 'id' => 3,
                 'name' => 'update-user',
                 'guard_name' => 'web',
                 'created_at' => '2023-04-13 07:02:34',
                 'updated_at' => '2023-04-13 07:02:34',
                 'group' => 'User',
-            ),
-            array(
+            ],
+            [
                 'id' => 4,
                 'name' => 'delete-user',
                 'guard_name' => 'web',
                 'created_at' => '2023-04-13 07:02:41',
                 'updated_at' => '2023-04-13 07:02:41',
                 'group' => 'User',
-            ),
-            array(
+            ],
+            [
                 'id' => 5,
                 'name' => 'create-role',
                 'guard_name' => 'web',
                 'created_at' => '2023-04-13 07:02:50',
                 'updated_at' => '2023-04-13 07:02:50',
                 'group' => 'Role',
-            ),
-            array(
+            ],
+            [
                 'id' => 6,
                 'name' => 'read-role',
                 'guard_name' => 'web',
                 'created_at' => '2023-04-13 07:02:55',
                 'updated_at' => '2023-04-13 07:02:55',
                 'group' => 'Role',
-            ),
-            array(
+            ],
+            [
                 'id' => 7,
                 'name' => 'update-role',
                 'guard_name' => 'web',
                 'created_at' => '2023-04-13 07:03:28',
                 'updated_at' => '2023-04-13 07:03:28',
                 'group' => 'Role',
-            ),
-            array(
+            ],
+            [
                 'id' => 8,
                 'name' => 'delete-role',
                 'guard_name' => 'web',
                 'created_at' => '2023-04-13 07:03:34',
                 'updated_at' => '2023-04-13 07:03:34',
                 'group' => 'Role',
-            ),
-            array(
+            ],
+            [
                 'id' => 9,
                 'name' => 'create-permission',
                 'guard_name' => 'web',
                 'created_at' => '2023-04-13 07:04:19',
                 'updated_at' => '2023-04-13 07:04:19',
                 'group' => 'Permission',
-            ),
-            array(
+            ],
+            [
                 'id' => 10,
                 'name' => 'read-permission',
                 'guard_name' => 'web',
                 'created_at' => '2023-04-13 07:04:27',
                 'updated_at' => '2023-04-13 07:04:27',
                 'group' => 'Permission',
-            ),
-            array(
+            ],
+            [
                 'id' => 11,
                 'name' => 'update-permission',
                 'guard_name' => 'web',
                 'created_at' => '2023-04-13 07:04:36',
                 'updated_at' => '2023-04-13 07:04:36',
                 'group' => 'Permission',
-            ),
-            array(
+            ],
+            [
                 'id' => 12,
                 'name' => 'delete-permission',
                 'guard_name' => 'web',
                 'created_at' => '2023-04-13 07:04:42',
                 'updated_at' => '2023-04-13 07:04:42',
                 'group' => 'Permission',
-            ),
-            array(
+            ],
+            [
                 'id' => 13,
                 'name' => 'create-menu',
                 'guard_name' => 'web',
                 'created_at' => '2023-04-13 08:15:00',
                 'updated_at' => '2023-04-13 08:15:00',
                 'group' => 'Menu',
-            ),
-            array(
+            ],
+            [
                 'id' => 14,
                 'name' => 'read-menu',
                 'guard_name' => 'web',
                 'created_at' => '2023-04-13 08:15:00',
                 'updated_at' => '2023-04-13 08:15:00',
                 'group' => 'Menu',
-            ),
-            array(
+            ],
+            [
                 'id' => 15,
                 'name' => 'update-menu',
                 'guard_name' => 'web',
                 'created_at' => '2023-04-13 08:15:00',
                 'updated_at' => '2023-04-13 08:15:00',
                 'group' => 'Menu',
-            ),
-            array(
+            ],
+            [
                 'id' => 16,
                 'name' => 'delete-menu',
                 'guard_name' => 'web',
                 'created_at' => '2023-04-13 08:15:00',
                 'updated_at' => '2023-04-13 08:15:00',
                 'group' => 'Menu',
-            ),
-            array(
+            ],
+            [
                 'id' => 17,
                 'name' => 'create-setting',
                 'guard_name' => 'web',
                 'created_at' => '2023-04-24 07:47:09',
                 'updated_at' => '2023-04-24 07:47:09',
                 'group' => 'Setting',
-            ),
-            array(
+            ],
+            [
                 'id' => 18,
                 'name' => 'read-setting',
                 'guard_name' => 'web',
                 'created_at' => '2023-04-24 07:47:20',
                 'updated_at' => '2023-04-24 07:47:20',
                 'group' => 'Setting',
-            ),
-            array(
+            ],
+            [
                 'id' => 19,
                 'name' => 'update-setting',
                 'guard_name' => 'web',
                 'created_at' => '2023-04-24 07:47:31',
                 'updated_at' => '2023-04-24 07:47:31',
                 'group' => 'Setting',
-            ),
-            array(
+            ],
+            [
                 'id' => 20,
                 'name' => 'delete-setting',
                 'guard_name' => 'web',
                 'created_at' => '2023-04-24 07:47:40',
                 'updated_at' => '2023-04-24 07:47:40',
                 'group' => 'Setting',
-            ),
-            array(
+            ],
+            [
+                'id' => 21,
+                'name' => 'create-item-type',
+                'guard_name' => 'web',
+                'created_at' => '2025-01-05 14:20:54',
+                'updated_at' => '2025-01-05 14:20:54',
+                'group' => 'ItemType',
+            ],
+            [
+                'id' => 22,
+                'name' => 'read-item-type',
+                'guard_name' => 'web',
+                'created_at' => '2025-01-05 14:20:56',
+                'updated_at' => '2025-01-05 14:20:56',
+                'group' => 'ItemType',
+            ],
+            [
+                'id' => 23,
+                'name' => 'update-item-type',
+                'guard_name' => 'web',
+                'created_at' => '2025-01-05 14:20:56',
+                'updated_at' => '2025-01-05 14:20:56',
+                'group' => 'ItemType',
+            ],
+            [
+                'id' => 24,
+                'name' => 'delete-item-type',
+                'guard_name' => 'web',
+                'created_at' => '2025-01-05 14:20:56',
+                'updated_at' => '2025-01-05 14:20:56',
+                'group' => 'ItemType',
+            ],
+            [
+                'id' => 25,
+                'name' => 'create-item-category',
+                'guard_name' => 'web',
+                'created_at' => '2025-01-05 15:31:16',
+                'updated_at' => '2025-01-05 15:31:16',
+                'group' => 'ItemCategory',
+            ],
+            [
+                'id' => 26,
+                'name' => 'read-item-category',
+                'guard_name' => 'web',
+                'created_at' => '2025-01-05 15:31:17',
+                'updated_at' => '2025-01-05 15:31:17',
+                'group' => 'ItemCategory',
+            ]
+        ]);
+        \DB::table('permissions')->insert([
+            [
+                'id' => 27,
+                'name' => 'update-item-category',
+                'guard_name' => 'web',
+                'created_at' => '2025-01-05 15:31:17',
+                'updated_at' => '2025-01-05 15:31:17',
+                'group' => 'ItemCategory',
+            ],
+            [
+                'id' => 28,
+                'name' => 'delete-item-category',
+                'guard_name' => 'web',
+                'created_at' => '2025-01-05 15:31:17',
+                'updated_at' => '2025-01-05 15:31:17',
+                'group' => 'ItemCategory',
+            ],
+            [
+                'id' => 29,
+                'name' => 'create-unit-of-measurement',
+                'guard_name' => 'web',
+                'created_at' => '2025-01-05 16:38:48',
+                'updated_at' => '2025-01-05 16:38:48',
+                'group' => 'UnitOfMeasurement',
+            ],
+            [
+                'id' => 30,
+                'name' => 'read-unit-of-measurement',
+                'guard_name' => 'web',
+                'created_at' => '2025-01-05 16:38:49',
+                'updated_at' => '2025-01-05 16:38:49',
+                'group' => 'UnitOfMeasurement',
+            ],
+            [
+                'id' => 31,
+                'name' => 'update-unit-of-measurement',
+                'guard_name' => 'web',
+                'created_at' => '2025-01-05 16:38:49',
+                'updated_at' => '2025-01-05 16:38:49',
+                'group' => 'UnitOfMeasurement',
+            ],
+            [
+                'id' => 32,
+                'name' => 'delete-unit-of-measurement',
+                'guard_name' => 'web',
+                'created_at' => '2025-01-05 16:38:49',
+                'updated_at' => '2025-01-05 16:38:49',
+                'group' => 'UnitOfMeasurement',
+            ],
+            [
+                'id' => 33,
+                'name' => 'create-item',
+                'guard_name' => 'web',
+                'created_at' => '2025-01-05 18:38:22',
+                'updated_at' => '2025-01-05 18:38:22',
+                'group' => 'Item',
+            ],
+            [
+                'id' => 34,
+                'name' => 'read-item',
+                'guard_name' => 'web',
+                'created_at' => '2025-01-05 18:38:24',
+                'updated_at' => '2025-01-05 18:38:24',
+                'group' => 'Item',
+            ],
+            [
+                'id' => 35,
+                'name' => 'update-item',
+                'guard_name' => 'web',
+                'created_at' => '2025-01-05 18:38:24',
+                'updated_at' => '2025-01-05 18:38:24',
+                'group' => 'Item',
+            ],
+            [
+                'id' => 36,
+                'name' => 'delete-item',
+                'guard_name' => 'web',
+                'created_at' => '2025-01-05 18:38:24',
+                'updated_at' => '2025-01-05 18:38:24',
+                'group' => 'Item',
+            ],
+            [
+                'id' => 37,
+                'name' => 'create-item-uom',
+                'guard_name' => 'web',
+                'created_at' => '2025-01-05 18:38:51',
+                'updated_at' => '2025-01-05 18:38:51',
+                'group' => 'ItemUom',
+            ],
+            [
+                'id' => 38,
+                'name' => 'read-item-uom',
+                'guard_name' => 'web',
+                'created_at' => '2025-01-05 18:38:53',
+                'updated_at' => '2025-01-05 18:38:53',
+                'group' => 'ItemUom',
+            ],
+            [
+                'id' => 39,
+                'name' => 'update-item-uom',
+                'guard_name' => 'web',
+                'created_at' => '2025-01-05 18:38:53',
+                'updated_at' => '2025-01-05 18:38:53',
+                'group' => 'ItemUom',
+            ],
+            [
+                'id' => 40,
+                'name' => 'delete-item-uom',
+                'guard_name' => 'web',
+                'created_at' => '2025-01-05 18:38:53',
+                'updated_at' => '2025-01-05 18:38:53',
+                'group' => 'ItemUom',
+            ],
+            [
+                'id' => 41,
+                'name' => 'create-item-price-history',
+                'guard_name' => 'web',
+                'created_at' => '2025-01-05 18:39:24',
+                'updated_at' => '2025-01-05 18:39:24',
+                'group' => 'ItemPriceHistory',
+            ],
+            [
+                'id' => 42,
+                'name' => 'read-item-price-history',
+                'guard_name' => 'web',
+                'created_at' => '2025-01-05 18:39:25',
+                'updated_at' => '2025-01-05 18:39:25',
+                'group' => 'ItemPriceHistory',
+            ],
+            [
+                'id' => 43,
+                'name' => 'update-item-price-history',
+                'guard_name' => 'web',
+                'created_at' => '2025-01-05 18:39:25',
+                'updated_at' => '2025-01-05 18:39:25',
+                'group' => 'ItemPriceHistory',
+            ],
+            [
+                'id' => 44,
+                'name' => 'delete-item-price-history',
+                'guard_name' => 'web',
+                'created_at' => '2025-01-05 18:39:25',
+                'updated_at' => '2025-01-05 18:39:25',
+                'group' => 'ItemPriceHistory',
+            ],
+            [
                 'id' => 45,
                 'name' => 'create-customer',
                 'guard_name' => 'web',
                 'created_at' => '2025-01-06 01:20:48',
                 'updated_at' => '2025-01-06 01:20:48',
                 'group' => 'Customer',
-            ),
-            array(
+            ],
+            [
                 'id' => 46,
                 'name' => 'read-customer',
                 'guard_name' => 'web',
                 'created_at' => '2025-01-06 01:20:51',
                 'updated_at' => '2025-01-06 01:20:51',
                 'group' => 'Customer',
-            ),
-            array(
+            ],
+            [
                 'id' => 47,
                 'name' => 'update-customer',
                 'guard_name' => 'web',
                 'created_at' => '2025-01-06 01:20:51',
                 'updated_at' => '2025-01-06 01:20:51',
                 'group' => 'Customer',
-            ),
-            array(
+            ],
+            [
                 'id' => 48,
                 'name' => 'delete-customer',
                 'guard_name' => 'web',
                 'created_at' => '2025-01-06 01:20:51',
                 'updated_at' => '2025-01-06 01:20:51',
                 'group' => 'Customer',
-            ),
-        ));
-
-
-
-
+            ],
+        ]);
     }
 }
