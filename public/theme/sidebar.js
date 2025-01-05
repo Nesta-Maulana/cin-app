@@ -48,13 +48,13 @@ $(function () {
         // Jika ini adalah elemen terakhir dalam path, tambahkan class "active"
         if (i === path.length - 1) {
             breadcrumbItem.classList.add("active");
-            breadcrumbItem.textContent = path[i].replace("-", " ");
+            breadcrumbItem.textContent = path[i].replaceAll("-", " ");
         } else {
             if (isNaN(path[i] * 1)) {
                 console.log(path[i] * 1);
                 var breadcrumbLink = document.createElement("a");
                 breadcrumbLink.href = url + "/" + path[i]; // Atur link sesuai dengan kebutuhan Anda
-                breadcrumbLink.textContent = path[i].replace("-", " ");
+                breadcrumbLink.textContent = path[i].replaceAll("-", " ");
                 breadcrumbItem.append(breadcrumbLink);
             } else {
                 var breadcrumbLink = document.createElement("a");
@@ -67,7 +67,7 @@ $(function () {
         if (i === 1) {
             document.getElementById("title-breadcumb").innerHTML = path[
                 i
-            ].replace("-", " ");
+            ].replaceAll("-", " ");
         }
         breadcrumbList.append(breadcrumbItem);
     }

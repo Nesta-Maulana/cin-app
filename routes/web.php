@@ -1,8 +1,12 @@
 <?php
 
 use App\Events\RoomChatBroadcast;
+use App\Http\Controllers\Master\ItemCategoryController;
+use App\Http\Controllers\Master\ItemController;
+use App\Http\Controllers\Master\ItemTypeController;
 use App\Http\Controllers\Master\MaterialController;
 use App\Http\Controllers\Master\UnitController;
+use App\Http\Controllers\Master\UnitOfMeasurementController;
 use App\Http\Controllers\Transaction\BOMController;
 use App\Http\Controllers\Transaction\PurchaseRequestController;
 use Illuminate\Support\Facades\Auth;
@@ -27,9 +31,6 @@ use App\Http\Controllers\Master\PermissionController;
 */
 
 Auth::routes();
-Route::get("/test-websocket", function () {
-    RoomChatBroadcast::dispatch('test');
-});
 Route::get('/', function () {
     return Auth::check() ? redirect()->route('dashboard') : redirect()->route('login');
 });
@@ -48,14 +49,13 @@ Route::middleware(['auth', 'auth.status'])->group(function () {
     Route::resource('menu', MenuController::class);
     Route::resource('setting', SettingController::class);
 
-    Route::resource('unit', UnitController::class);
-    Route::resource('material', MaterialController::class);
-    Route::resource('bom', BOMController::class);
-    Route::resource('requested-bom', BOMController::class, [
-        'as' => 'warehouse'
-    ]);
-    Route::get('purchase-request/generate-po', [PurchaseRequestController::class, 'generatePO'])->name('purchasing.po.summary');
-    Route::resource('purchase-request', PurchaseRequestController::class);
+    Route::resource('item-type', ItemTypeController::class);
 
+    Route::get('/get-parent-categories', [ItemCategoryController::class, 'getParentCategories'])->name('get-parent-categories');
+    Route::get('/get-categories-by-item-type', [ItemCategoryController::class, 'getCategoriesByItemType'])->name('get-categories-by-item-type');
+    Route::resource('item-category', ItemCategoryController::class);
+
+    Route::resource('unit-of-measurement', UnitOfMeasurementController::class);
+    Route::resource('item', ItemController::class);
 
 });

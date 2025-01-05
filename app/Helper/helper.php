@@ -82,11 +82,11 @@ if (!function_exists('alertNotif')) {
     function alertNotif($type, $message = null)
     {
         return match ($type) {
-            'save' => toast('Data Tersimpan!', 'success'),
-            'update' => toast('Data Diperbarui!', 'success'),
-            'delete' => toast('Data Dihapus!', 'success'),
-            'success' => toast(!is_null($message) ? $message : 'Process Berhasil', 'success'),
-            'error' => toast(!is_null($message) ? $message : 'Oops! Ada kesalahan', 'error'),
+            'save' => toast('Data Saved! / 数据已保存！', 'success'),
+            'update' => toast('Data Updated! / 数据已更新！', 'success'),
+            'delete' => toast('Data Deleted! / 数据已删除！', 'success'),
+            'success' => toast(!is_null($message) ? $message : 'Process Successful / 处理成功', 'success'),
+            'error' => toast(!is_null($message) ? $message : 'Oops! There was an error / 哎呀！发生错误', type: 'error'),
         };
     }
 }
