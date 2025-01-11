@@ -7,7 +7,6 @@
                 </label>
             </div>
             <div class="text-md-end text-start d-flex align-items-center justify-content-end flex-md-row flex-column">
-                @if (!$selected)
                 <div class="my-1 me-md-2">
                     <label>
                         <select wire:model="paginate" class="form-select">
@@ -19,30 +18,17 @@
                     </label>
                 </div>
                 @can('create-customer')
-                <div class="flex-wrap my-1">
-                    <a href="{{ route('customer.create') }}" class="btn btn-secondary text-white add-new btn-primary">
-                        <span>
-                            <i class="fa fa-plus me-0 me-sm-1 fa-xs"></i>
+                    <div class="flex-wrap my-1">
+                        <a href="{{ route('customer.create') }}" class="btn btn-secondary text-white add-new btn-primary">
                             <span>
-                                {{ $title }}
+                                <i class="fa fa-plus me-0 me-sm-1 fa-xs"></i>
+                                <span>
+                                    {{ $title }}
+                                </span>
                             </span>
-                        </span>
-                    </a>
-                </div>
+                        </a>
+                    </div>
                 @endcan
-                @else
-                <div class="my-1 me-md-2">
-                    <span class="px-1">
-                        {{ count($selected) }} data terpilih
-                    </span>
-                </div>
-                <div class="flex-wrap my-1">
-                    <a href="#" class="btn btn-secondary add-new btn-label-primary" data-bs-toggle="modal"
-                        data-bs-target="#modalSelectedStatus">
-                        Update Status
-                    </a>
-                </div>
-                @endif
             </div>
         </div>
 
@@ -50,70 +36,66 @@
             <table class="table border-top">
                 <thead>
                     <tr>
-                        @can('update-customer')
-                            <th>
-                                <input style="width: 17px; height: 17px;" wire:model="selectAll" type="checkbox" class="form-check-input">
-                            </th>
-                        @endcan
-                        <th></th>
-                        <th></th>
+                        <th>#</th>
+                        <th>Customer Code</th>
+                        <th>Customer Name</th>
+                        <th>Customer Address</th>
+                        <th>Customer Tax Number</th>
+                        <th>Customer Contact</th>
+                        <th>Customer Phone</th>
+                        <th>Customer Email</th>
+                        <th>Status</th>
+                        <th>#</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($table as $key => $item)
                     @php
-                    $updateRoute = route('customer.update', $item->id);
+                        $no = 1;
                     @endphp
+                    @forelse($table as $key => $item)
+                        @php
+                            $updateRoute = route('customer.update', $item->id);
+                        @endphp
 
-                    <tr wire:key="row{{ $item->id }}">
-                        @can('update-customer')
+                        <tr wire:key="row{{ $item->id }}">
+                            <td>{{ $no++ }}</td>
+                            <td>{{ $item->customer_code }}</td>
+                            <td>{{ $item->customer_name }}</td>
+                            <td>{{ $item->customer_address }}</td>
+                            <td>{{ $item->customer_tax_number }}</td>
+                            <td>{{ $item->customer_contact }}</td>
+                            <td>{{ $item->customer_phone_number }}</td>
+                            <td>{{ $item->customer_email }}</td>
+                            <td>{!! $item->status !!}</td>
                             <td>
-                                <input style="width: 17px; height: 17px;" wire:model="selected" value="{{ $item->id }}" type="checkbox"
-                                    class="dt-checkboxes form-check-input">
+                                <div class="d-flex align-items-center">
+                                    <a href="{{ route('customer.show', $item->id) }}" class="action-btn"
+                                        title="Detail">
+                                        <i class="fa fa-eye fa-sm me-2 fs-5"></i>
+                                    </a>
+                                    @can('update-customer')
+                                        <a href="{{ route('customer.edit', $item->id) }}" class="action-btn"
+                                            title="edit">
+                                            <i class="fa fa-edit fa-sm me-2 fs-5"></i>
+                                        </a>
+                                    @endcan
+
+                                    @can('delete-customer')
+                                        <a href="javascript:;" class="action-btn" title="delete" data-bs-toggle="modal"
+                                            data-bs-target="#modalDelete{{ $item->id }}">
+                                            <i class="fa fa-trash fa-sm me-2 fs-5"></i>
+                                        </a>
+                                        @include('admin.modal.delete')
+                                    @endcan
+                                </div>
                             </td>
-                        @endcan
-                        <td>
-
-                        </td>
-
-                        <td>
-                            <div class="d-flex align-items-center">
-                                @can('update-customer')
-                                    <a href="{{ route('customer.edit', $item->id) }}" class="action-btn" title="edit">
-                                        <i class="fa fa-edit fa-sm me-2 fs-5"></i>
-                                    </a>
-                                @endcan
-
-                                @can('delete-customer')
-                                    <a href="javascript:;" class="action-btn" title="delete" data-bs-toggle="modal"
-                                        data-bs-target="#modalDelete{{ $item->id }}">
-                                        <i class="fa fa-trash fa-sm mx-2 fs-5"></i>
-                                    </a>
-                                @include('admin.modal.delete')
-                                @endcan
-
-                                {{--
-                                <a wire:click="modelId({{ $item->id }})" href="javascript:;"
-                                    class="action-btn dropdown-toggle hide-arrow" title="more"
-                                    data-bs-toggle="dropdown">
-                                    <i class="fa fa-dots-vertical fa-sm mx-1 fs-5"></i>
-                                </a>
-
-                                <div wire:ignore class="dropdown-menu dropdown-menu-end m-0" id="myDropdown">
-                                    <a href="javascript:;" class="dropdown-item" data-bs-toggle="modal"
-                                        data-bs-target="#modalPassword">Password</a>
-                                    <a href="javascript:;" class="dropdown-item" data-bs-toggle="modal"
-                                        data-bs-target="#modalStatus">Change Status</a>
-                                </div> --}}
-                            </div>
-                        </td>
-                    </tr>
+                        </tr>
                     @empty
-                    <div class="text-center col-md-7 mx-auto px-3 pt-3">
-                        <div class="alert alert-secondary">
-                            Data tidak ditemukan
+                        <div class="text-center col-md-7 mx-auto px-3 pt-3">
+                            <div class="alert alert-secondary">
+                                Data Not Found / 找不到数据
+                            </div>
                         </div>
-                    </div>
                     @endforelse
                 </tbody>
             </table>

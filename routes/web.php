@@ -1,14 +1,13 @@
 <?php
 
 use App\Events\RoomChatBroadcast;
+use App\Http\Controllers\Master\CustomerController;
 use App\Http\Controllers\Master\ItemCategoryController;
 use App\Http\Controllers\Master\ItemController;
 use App\Http\Controllers\Master\ItemTypeController;
-use App\Http\Controllers\Master\MaterialController;
-use App\Http\Controllers\Master\UnitController;
+use App\Http\Controllers\Master\JobCategoryController;
 use App\Http\Controllers\Master\UnitOfMeasurementController;
-use App\Http\Controllers\Transaction\BOMController;
-use App\Http\Controllers\Transaction\PurchaseRequestController;
+use App\Http\Controllers\Transaction\CustomerOrderController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Master\MenuController;
@@ -57,5 +56,8 @@ Route::middleware(['auth', 'auth.status'])->group(function () {
 
     Route::resource('unit-of-measurement', UnitOfMeasurementController::class);
     Route::resource('item', ItemController::class);
+    Route::resource('customer', CustomerController::class);
+    Route::resource('job-category', JobCategoryController::class);
+    Route::resource('customer-order', CustomerOrderController::class);
 
 });

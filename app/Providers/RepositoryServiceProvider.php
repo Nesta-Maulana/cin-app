@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Repositories\BaseRepository;
 use App\Repositories\BaseRepositoryInterface;
+use App\Repositories\Master\Customer\CustomerRepository;
+use App\Repositories\Master\Customer\CustomerRepositoryInterface;
 use App\Repositories\Master\Item\ItemRepository;
 use App\Repositories\Master\Item\ItemRepositoryInterface;
 use App\Repositories\Master\ItemCategory\ItemCategoryRepository;
@@ -14,6 +16,8 @@ use App\Repositories\Master\ItemType\ItemTypeRepository;
 use App\Repositories\Master\ItemType\ItemTypeRepositoryInterface;
 use App\Repositories\Master\ItemUom\ItemUomRepository;
 use App\Repositories\Master\ItemUom\ItemUomRepositoryInterface;
+use App\Repositories\Master\JobCategory\JobCategoryRepository;
+use App\Repositories\Master\JobCategory\JobCategoryRepositoryInterface;
 use App\Repositories\Master\Menu\MenuRepository;
 use App\Repositories\Master\Menu\MenuRepositoryInterface;
 use App\Repositories\Master\Permission\PermissionRepository;
@@ -24,6 +28,10 @@ use App\Repositories\Master\UnitOfMeasurement\UnitOfMeasurementRepository;
 use App\Repositories\Master\UnitOfMeasurement\UnitOfMeasurementRepositoryInterface;
 use App\Repositories\Master\User\UserRepository;
 use App\Repositories\Master\User\UserRepositoryInterface;
+use App\Repositories\Services\File\FileRepository;
+use App\Repositories\Services\File\FileRepositoryInterface;
+use App\Repositories\Transaction\CustomerOrder\CustomerOrderRepository;
+use App\Repositories\Transaction\CustomerOrder\CustomerOrderRepositoryInterface;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -46,6 +54,10 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(ItemRepositoryInterface::class, ItemRepository::class);
         $this->app->bind(ItemUomRepositoryInterface::class, ItemUomRepository::class);
         $this->app->bind(ItemPriceHistoryRepositoryInterface::class, ItemPriceHistoryRepository::class);
+        $this->app->bind(CustomerRepositoryInterface::class, CustomerRepository::class);
+        $this->app->bind(FileRepositoryInterface::class, FileRepository::class);
+        $this->app->bind(JobCategoryRepositoryInterface::class, JobCategoryRepository::class);
+        $this->app->bind(CustomerOrderRepositoryInterface::class, CustomerOrderRepository::class);
     }
 
     /**

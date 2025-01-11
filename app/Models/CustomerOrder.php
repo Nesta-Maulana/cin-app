@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
-class Customer extends Model
+class CustomerOrder extends Model
 {
     use HasFactory, LogsActivity;
     protected $guarded = ['id'];
@@ -35,9 +36,9 @@ class Customer extends Model
     {
         return $this->morphMany(File::class, 'reference', 'class_name', 'reference_id');
     }
-    public function customerOrders()
+    public function customer()
     {
-        return $this->hasMany(CustomerOrder::class);
+        return $this->belongsTo(Customer::class);
     }
 
 

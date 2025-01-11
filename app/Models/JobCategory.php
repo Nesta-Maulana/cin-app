@@ -1,13 +1,12 @@
 <?php
 
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
-class Customer extends Model
+class JobCategory extends Model
 {
     use HasFactory, LogsActivity;
     protected $guarded = ['id'];
@@ -31,14 +30,4 @@ class Customer extends Model
             return '<span class="badge rounded-pill badge-light-success">Active</span>';
         }
     }
-    public function files()
-    {
-        return $this->morphMany(File::class, 'reference', 'class_name', 'reference_id');
-    }
-    public function customerOrders()
-    {
-        return $this->hasMany(CustomerOrder::class);
-    }
-
-
 }
