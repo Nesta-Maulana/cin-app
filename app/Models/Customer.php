@@ -35,6 +35,14 @@ class Customer extends Model
     {
         return $this->morphMany(File::class, 'reference', 'class_name', 'reference_id');
     }
+    public function approvalRequest($event)
+    {
+        return $this->morphOne(ApprovalRequest::class, 'reference', 'class_name', 'reference_id')
+            ->whereHas('approval', function ($query) use ($event) {
+                $query->where('event', $event);
+            })->where('status', 'pending');
+    }
+
     public function customerOrders()
     {
         return $this->hasMany(CustomerOrder::class);

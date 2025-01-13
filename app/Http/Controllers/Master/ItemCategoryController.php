@@ -59,7 +59,7 @@ class ItemCategoryController extends Controller
     }
     public function getCategoriesByItemType(Request $request)
     {
-        $itemTypeId = $request->input('item_type_id');
+        $itemTypeId = $request->input(key: 'item_type_id');
         // Ambil parent categories berdasarkan item_type_id dan parent_id null
         $parentCategories = $this->repository->getData(
             ['parent'],
@@ -69,6 +69,22 @@ class ItemCategoryController extends Controller
             [
                 ['item_type_id', '=', $itemTypeId]
             ],
+            'all'
+        )->mapWithKeys(function ($category) {
+            $name = ($category->parent ? $category->parent->name . ' -> ' : '') . $category->name;
+            return [$category->id => $name];
+        });
+        return response()->json($parentCategories);
+    }
+    public function getCategories(Request $request)
+    {
+        // Ambil parent categories berdasarkan item_type_id dan parent_id null
+        $parentCategories = $this->repository->getData(
+            ['parent'],
+            [],
+            [],
+            null,
+            [],
             'all'
         )->mapWithKeys(function ($category) {
             $name = ($category->parent ? $category->parent->name . ' -> ' : '') . $category->name;

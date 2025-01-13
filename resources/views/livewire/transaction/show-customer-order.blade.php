@@ -32,7 +32,7 @@
                                 class="btn btn-secondary text-white add-new btn-primary">
                                 <span>
                                     <i class="fa fa-plus me-0 me-sm-1 fa-xs"></i>
-                                    <span>{{ $title }}</span>
+                                    <span>Create Order / 创建订单</span>
                                 </span>
                             </a>
                         </div>
@@ -67,6 +67,7 @@
                         @endcan
                         <th>Order Number / 订单编号</th>
                         <th>Customer Name / 客户名称</th>
+                        <th>Project Name / 项目名称</th>
                         <th>Order Date / 订单日期</th>
                         <th>Status / 状态</th>
                         <th>Total Amount / 总金额</th>
@@ -88,11 +89,20 @@
                             @endcan
                             <td>{{ $item->order_number }}</td>
                             <td>{{ $item->customer->customer_name }}</td>
+                            <td>{{ $item->project_name ?? '-' }}</td>
                             <td>{{ $item->order_date->format('Y-m-d') }}</td>
                             <td>{{ ucfirst($item->order_status) }}</td>
                             <td>{{ number_format($item->total_amount, 2) }}</td>
                             <td>
                                 <div class="d-flex align-items-center">
+                                    @can('view-customer-order')
+                                        <!-- View Detail Button -->
+                                        <a href="{{ route('customer-order.show', $item->id) }}" class="action-btn"
+                                            title="View / 查看">
+                                            <i class="fa fa-eye fa-sm me-2 fs-5"></i>
+                                        </a>
+                                    @endcan
+
                                     @can('update-customer-order')
                                         <a href="{{ route('customer-order.edit', $item->id) }}" class="action-btn"
                                             title="Edit / 编辑">
@@ -112,6 +122,7 @@
                                     @endcan
                                 </div>
                             </td>
+
                         </tr>
                     @empty
                         <div class="text-center col-md-7 mx-auto px-3 pt-3">

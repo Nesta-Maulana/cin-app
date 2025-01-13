@@ -12,7 +12,9 @@ class CustomerOrder extends Model
 {
     use HasFactory, LogsActivity;
     protected $guarded = ['id'];
-
+    protected $casts = [
+        'order_date' => 'date', // Cast order_date to a Date instance
+    ];
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()->logAll();
@@ -39,6 +41,14 @@ class CustomerOrder extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class);
+    }
+    public function personInCharge()
+    {
+        return $this->belongsTo(User::class);
+    }
+    public function jobCategory()
+    {
+        return $this->belongsTo(JobCategory::class);
     }
 
 

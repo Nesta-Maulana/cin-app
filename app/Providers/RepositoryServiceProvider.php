@@ -4,6 +4,10 @@ namespace App\Providers;
 
 use App\Repositories\BaseRepository;
 use App\Repositories\BaseRepositoryInterface;
+use App\Repositories\Master\Approval\ApprovalRepository;
+use App\Repositories\Master\Approval\ApprovalRepositoryInterface;
+use App\Repositories\Master\ApprovalLevel\ApprovalLevelRepository;
+use App\Repositories\Master\ApprovalLevel\ApprovalLevelRepositoryInterface;
 use App\Repositories\Master\Customer\CustomerRepository;
 use App\Repositories\Master\Customer\CustomerRepositoryInterface;
 use App\Repositories\Master\Item\ItemRepository;
@@ -30,8 +34,14 @@ use App\Repositories\Master\User\UserRepository;
 use App\Repositories\Master\User\UserRepositoryInterface;
 use App\Repositories\Services\File\FileRepository;
 use App\Repositories\Services\File\FileRepositoryInterface;
+use App\Repositories\Transaction\ApprovalRequest\ApprovalRequestRepository;
+use App\Repositories\Transaction\ApprovalRequest\ApprovalRequestRepositoryInterface;
 use App\Repositories\Transaction\CustomerOrder\CustomerOrderRepository;
 use App\Repositories\Transaction\CustomerOrder\CustomerOrderRepositoryInterface;
+use App\Repositories\Transaction\ItemRequest\ItemRequestRepository;
+use App\Repositories\Transaction\ItemRequest\ItemRequestRepositoryInterface;
+use App\Repositories\Transaction\ItemRequestDetail\ItemRequestDetailRepository;
+use App\Repositories\Transaction\ItemRequestDetail\ItemRequestDetailRepositoryInterface;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -58,6 +68,11 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(FileRepositoryInterface::class, FileRepository::class);
         $this->app->bind(JobCategoryRepositoryInterface::class, JobCategoryRepository::class);
         $this->app->bind(CustomerOrderRepositoryInterface::class, CustomerOrderRepository::class);
+        $this->app->bind(ItemRequestRepositoryInterface::class, ItemRequestRepository::class);
+        $this->app->bind(ItemRequestDetailRepositoryInterface::class, ItemRequestDetailRepository::class);
+        $this->app->bind(ApprovalRepositoryInterface::class, ApprovalRepository::class);
+        $this->app->bind(ApprovalLevelRepositoryInterface::class, ApprovalLevelRepository::class);
+        $this->app->bind(ApprovalRequestRepositoryInterface::class, ApprovalRequestRepository::class);
     }
 
     /**

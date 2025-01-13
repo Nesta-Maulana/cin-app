@@ -14,7 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('customer_orders', function (Blueprint $table) {
-            //
+            $table->foreignId('person_in_charge_id')->nullable()->constrained('users')->nullOnDelete();
         });
     }
 
@@ -26,7 +26,8 @@ return new class extends Migration
     public function down()
     {
         Schema::table('customer_orders', function (Blueprint $table) {
-            //
+            $table->dropForeign(['person_in_charge_id']);
+            $table->dropColumn('person_in_charge_id');
         });
     }
 };

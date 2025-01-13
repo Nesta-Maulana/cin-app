@@ -18,7 +18,8 @@
 
                 <!-- Card Body -->
                 <div class="card-body">
-                    <form action="{{ route('customer-order.store') }}" method="POST">
+                    <form action="{{ route('customer-order.store') }}" method="POST" enctype="multipart/form-data"
+                        id="customerOrderForm">
                         @csrf
 
                         <!-- Validation Errors -->
@@ -35,15 +36,11 @@
 
                         <!-- Customer Order Fields -->
                         <div class="row">
-                            <!-- Order Number -->
                             <div class="mb-3 col-md-6">
-                                <label for="order_number" class="form-label">Order Number / 订单编号 <span
-                                        class="text-danger">*</span></label>
+                                <label for="order_number" class="form-label">Order Number / 订单编号</label>
                                 <input class="form-control" type="text" id="order_number" name="order_number"
-                                    value="{{ old('order_number') }}" placeholder="Enter order number / 输入订单编号" required />
+                                    value="{{ $orderNumber }}" readonly />
                             </div>
-
-                            <!-- Customer -->
                             <div class="mb-3 col-md-6">
                                 <label for="customer_id" class="form-label">Customer / 客户 <span
                                         class="text-danger">*</span></label>
@@ -60,13 +57,11 @@
                         </div>
 
                         <div class="row">
-                            <!-- Project Name -->
                             <div class="mb-3 col-md-6">
                                 <label for="project_name" class="form-label">Project Name / 项目名称</label>
                                 <input class="form-control" type="text" id="project_name" name="project_name"
                                     value="{{ old('project_name') }}" placeholder="Enter project name / 输入项目名称" />
                             </div>
-                            <!-- Job Category -->
                             <div class="mb-3 col-md-6">
                                 <label for="job_category_id" class="form-label">Job Category / 作业类别</label>
                                 <select class="form-select" id="job_category_id" name="job_category_id">
@@ -79,12 +74,9 @@
                                     @endforeach
                                 </select>
                             </div>
-
-
                         </div>
 
                         <div class="row">
-                            <!-- Order Date -->
                             <div class="mb-3 col-md-6">
                                 <label for="order_date" class="form-label">Order Date / 订单日期 <span
                                         class="text-danger">*</span></label>
@@ -92,9 +84,65 @@
                                     value="{{ old('order_date') }}" required />
                             </div>
                             <div class="mb-3 col-md-6">
-                                <label for="dpp" class="form-label">DPP / 基本税额</label>
-                                <input type="number" step="0.01" class="form-control" name="dpp"
+                                <label for="dpp" class="form-label">DPP / 基本税额 <span
+                                        class="text-danger">*</span></label>
+                                <input type="number" step="0.01" class="form-control" id="dpp" name="dpp"
                                     placeholder="e.g., 100.00 / 例如 100.00" value="{{ old('dpp', 0) }}" required />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="mb-3 col-md-6">
+                                <label for="ppn" class="form-label">PPN (%) / 增值税 (%) <span
+                                        class="text-danger">*</span></label>
+                                <input type="number" step="0.01" class="form-control" id="ppn" name="ppn"
+                                    placeholder="Enter PPN percentage / 输入增值税百分比" value="{{ old('ppn', 0) }}" required />
+                            </div>
+                            <div class="mb-3 col-md-6">
+                                <label for="total" class="form-label">Total / 总金额</label>
+                                <input type="number" step="0.01" class="form-control" id="total" name="total"
+                                    readonly />
+                            </div>
+                        </div>
+
+                        <!-- File Upload Section -->
+                        <div class="row">
+                            <div class="mb-3 col-md-12">
+                                <label class="form-label">Files / 文件</label>
+                                <table class="table table-bordered" id="file-upload-table">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>File Name / 文件名称</th>
+                                            <th>File / 文件</th>
+                                            <th>Description / 描述</th>
+                                            <th>Action / 操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="file-container">
+                                        <!-- Customer Order File -->
+                                        <tr>
+                                            <td>
+                                                <input type="text" name="file_names[customer_order_file]"
+                                                    class="form-control" value="Customer Order File" readonly />
+                                            </td>
+                                            <td>
+                                                <input type="file" name="files[customer_order_file]"
+                                                    class="form-control" accept=".pdf,.jpg,.jpeg,.png,.zip" required />
+                                            </td>
+                                            <td>
+                                                <textarea name="descriptions[customer_order_file]" class="form-control" rows="1"
+                                                    placeholder="Description (Optional) / 描述（可选）"></textarea>
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-danger btn-sm" disabled>Cannot
+                                                    Delete / 无法删除</button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <button type="button" class="btn btn-success btn-sm mt-3" id="add-file-row">
+                                    <i class="fa fa-plus-circle"></i> Add File / 添加文件
+                                </button>
                             </div>
                         </div>
 
@@ -121,3 +169,55 @@
         </div>
     </div>
 @endsection
+
+@push('script')
+    <script>
+        // Add dynamic file rows
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileContainer = document.getElementById('file-container');
+            const addFileButton = document.getElementById('add-file-row');
+            let fileIndex = 1;
+
+            addFileButton.addEventListener('click', function() {
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td>
+                        <input type="text" name="file_names[${fileIndex}]" class="form-control" placeholder="Enter file name / 输入文件名称" required />
+                    </td>
+                    <td>
+                        <input type="file" name="files[${fileIndex}]" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.zip" required />
+                    </td>
+                    <td>
+                        <textarea name="descriptions[${fileIndex}]" class="form-control" rows="1" placeholder="Description (Optional) / 描述（可选）"></textarea>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-danger btn-sm remove-file-row">Delete / 删除</button>
+                    </td>
+                `;
+                fileContainer.appendChild(newRow);
+                fileIndex++;
+            });
+
+            fileContainer.addEventListener('click', function(event) {
+                if (event.target.classList.contains('remove-file-row')) {
+                    event.target.closest('tr').remove();
+                }
+            });
+
+            // Calculate total amount dynamically
+            const dppInput = document.getElementById('dpp');
+            const ppnInput = document.getElementById('ppn');
+            const totalInput = document.getElementById('total');
+
+            function calculateTotal() {
+                const dpp = parseFloat(dppInput.value) || 0;
+                const ppn = parseFloat(ppnInput.value) || 0;
+                const total = dpp + (ppn / 100) * dpp;
+                totalInput.value = total.toFixed(2);
+            }
+
+            dppInput.addEventListener('input', calculateTotal);
+            ppnInput.addEventListener('input', calculateTotal);
+        });
+    </script>
+@endpush

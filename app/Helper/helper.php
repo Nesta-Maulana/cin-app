@@ -507,3 +507,19 @@ if (!function_exists('formatDateTimeJKT')) {
         return $date->format('Y-m-d H:i:s');
     }
 }
+
+
+function getModels()
+{
+    $path = app_path('Models');
+    $files = scandir($path);
+
+    $models = [];
+    foreach ($files as $file) {
+        if (preg_match('/\.php$/', $file)) {
+            $models[] = 'App\\Models\\' . str_replace('.php', '', $file);
+        }
+    }
+
+    return $models;
+}

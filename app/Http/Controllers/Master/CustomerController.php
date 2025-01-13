@@ -241,12 +241,11 @@ class CustomerController extends Controller
         try {
             $repository = $this->repository->find($id);
             // Set customer to inactive
-            $repository->update(['is_active' => false]);
-
+            $this->repository->update($id, ['is_active' => false], true);
             // Set related files to inactive
-            $repository->files()->update(['is_active' => false]);
+            // $repository->files()->update(['is_active' => false]);
 
-            alertNotif('delete');
+            alertNotif('success','Request customers deleted successfully / 请求客户已成功删除');
         } catch (Exception $e) {
             Log::error($e->getMessage());
             alertNotif('error', $e->getMessage());

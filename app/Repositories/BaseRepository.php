@@ -2,6 +2,8 @@
 
 namespace App\Repositories;
 
+use App\Models\Approval;
+use App\Models\ApprovalRequest;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
@@ -10,11 +12,13 @@ use Log;
 
 class BaseRepository implements BaseRepositoryInterface
 {
-    protected $model;
+    protected $model, $modelApproval, $modelApprovalRequest;
 
     public function __construct(Model $model)
     {
         $this->model = $model;
+        $this->modelApproval = new Approval();
+        $this->modelApprovalRequest = new ApprovalRequest();
     }
 
     public function all()
@@ -35,12 +39,9 @@ class BaseRepository implements BaseRepositoryInterface
             // Apply scopes
             foreach ($scope as $method => $parameters) {
                 if (method_exists($this->model, 'scope' . ucfirst($method))) {
-                    if (is_array($parameters))
-                    {
+                    if (is_array($parameters)) {
                         $query = $query->$method(...$parameters);
-                    }
-                    else
-                    {
+                    } else {
                         $query = $query->$method($parameters);
                     }
                 }
@@ -124,10 +125,25 @@ class BaseRepository implements BaseRepositoryInterface
         }
     }
 
-    public function create(array $data)
+    public function create(array $data, $requireApproval = false)
     {
         try {
-            return $this->model->create($data);
+            $create = $this->model->create($data);
+            $className = get_class($this->model);
+            if ($requireApproval) {
+                $approval = $this->modelApproval->where('class_name', $className)->where('event', 'create')->first();
+                if ($approval) {
+                    $approvalRequest = $this->modelApprovalRequest->create([
+                        'approval_id' => $approval->id,
+                        'class_name' => $className,
+                        'reference_id' => $create->id,
+                        'status' => 'pending',
+                        'remarks' => 'Pending approval for ' . $approval->approvalLevels()->first()->approver->name
+                    ]);
+                }
+            }
+            return $create;
+
         } catch (QueryException $e) {
             Log::error($e->getMessage());
             throw new Exception("Database error creating record: " . $e->getMessage());
@@ -137,11 +153,26 @@ class BaseRepository implements BaseRepositoryInterface
         }
     }
 
-    public function update($id, array $data)
+    public function update($id, array $data, $requireApproval = false)
     {
         try {
             $model = $this->find($id);
-            $model->update($data);
+            $className = get_class($this->model);
+            if ($requireApproval) {
+                $approval = $this->modelApproval->where('class_name', $className)->where('event', 'update')->first();
+                if ($approval) {
+                    $approvalRequest = $this->modelApprovalRequest->create([
+                        'approval_id' => $approval->id,
+                        'class_name' => $className,
+                        'reference_id' => $model->id,
+                        'current_level_id' => $approval->approvalLevels()->first()->id,
+                        'status' => 'pending',
+                        'remarks' => 'Pending approval for ' . $approval->approvalLevels()->first()->approver->name
+                    ]);
+                }
+            } else {
+                $model->update($data);
+            }
             return $model;
         } catch (QueryException $e) {
             Log::error($e->getMessage());
