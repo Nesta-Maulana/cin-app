@@ -9,5 +9,6 @@ interface BaseRepositoryInterface
     public function getData(array $scope = [], array $with = [], array $orderBy = [], $paginate = null, array $conditions = [], $typeSelect = 'all');
     public function create(array $data, $requireApproval = false);
     public function update($id, array $data, $requireApproval = false);
+    public function checkApproval($event, $id);
     public function delete($id);
 }

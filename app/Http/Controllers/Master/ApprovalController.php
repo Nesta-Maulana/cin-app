@@ -323,6 +323,7 @@ class ApprovalController extends Controller
                         // Pindah ke level berikutnya
                         $approvalRequest->update([
                             'current_level_id' => $nextLevel->id,
+                            'remarks' => "Pending approval for {$nextLevel->approver->name}",
                         ]);
                     } else {
                         // Jika level terakhir, tandai approval request sebagai selesai
@@ -330,13 +331,12 @@ class ApprovalController extends Controller
                             'status' => 'approved',
                         ]);
 
-                        // Update column sesuai dengan konfigurasi pada approval
-                        if ($approvalRequest->approval->column_update) {
-                            $referenceModel = app($approvalRequest->class_name);
-                            $referenceModel::find($approvalRequest->reference_id)->update([
-                                $approvalRequest->approval->column_update => $currentLevel->updated_value_on_approve,
-                            ]);
-                        }
+                    }
+                    if ($approvalRequest->approval->column_update) {
+                        $referenceModel = app($approvalRequest->class_name);
+                        $referenceModel::find($approvalRequest->reference_id)->update([
+                            $approvalRequest->approval->column_update => $currentLevel->updated_value_on_approve,
+                        ]);
                     }
                 } elseif ($validated['approval_status'] === 'reject') {
                     // Jika ditolak, tandai approval request sebagai 'rejected'

@@ -51,5 +51,11 @@ class CustomerOrder extends Model
         return $this->belongsTo(JobCategory::class);
     }
 
-
+    public function approvalRequest($event)
+    {
+        return $this->morphOne(ApprovalRequest::class, 'reference', 'class_name', 'reference_id')
+            ->whereHas('approval', function ($query) use ($event) {
+                $query->where('event', $event);
+            })->where('status', 'pending');
+    }
 }

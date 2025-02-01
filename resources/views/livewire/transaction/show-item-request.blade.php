@@ -74,6 +74,9 @@
                 </thead>
                 <tbody>
                     @forelse($table as $item)
+                        @php
+                            $approvalRequest = $item->approvalRequest('create')->first();
+                        @endphp
                         <tr wire:key="row{{ $item->id }}">
                             @can('update-item-request')
                                 <td>
@@ -106,7 +109,7 @@
                                     @endcan
 
                                     @can('delete-item-request')
-                                        @if (in_array($item->request_status, ['Draft', 'Waiting Approval Manager']))
+                                        @if (in_array($item->request_status, ['Draft', 'Need Approval Manager']))
                                             @if ($item->created_by == auth()->user()->id)
                                                 <a href="javascript:;" class="action-btn" title="Delete / 删除"
                                                     data-bs-toggle="modal"
@@ -120,8 +123,30 @@
                                             @endif
                                         @endif
                                     @endcan
-
                                     @can('approve-item-request')
+                                        @if (!is_null($approvalRequest))
+                                            @if ($approvalRequest->currentLevel->class_name_approver_type == 'App\Models\User')
+                                                @if (Auth::user()->id == $approvalRequest->currentLevel->approver->approver_reference_id)
+                                                    <a href="javascript:;" class="action-btn" title="Approval Process"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalApprove{{ $approvalRequest->id }}">
+                                                        <i class="fa fa-list-check fa-sm me-2 fs-5"></i>
+                                                    </a>
+                                                @endif
+                                            @endif
+                                            @if ($approvalRequest->currentLevel->class_name_approver_type == 'App\Models\Role')
+                                                @if (Auth::user()->hasRole($approvalRequest->currentLevel->approver->name))
+                                                    <a href="javascript:;" class="action-btn" title="Approval Process"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalApprove{{ $approvalRequest->id }}">
+                                                        <i class="fa fa-list-check fa-sm me-2 fs-5"></i>
+                                                    </a>
+                                                @endif
+                                            @endif
+                                            @include('admin.modal.approval')
+                                        @endif
+                                    @endcan
+                                    {{-- @can('approve-item-request')
                                         @if ($item->request_status == 'Waiting Approval Manager')
                                             <a href="javascript:;" class="action-btn" title="Approve / 审批"
                                                 data-bs-toggle="modal" data-bs-target="#modalApprove{{ $item->id }}">
@@ -132,7 +157,7 @@
                                                 'updateRoute' => route('item-request.update', $item->id),
                                             ])
                                         @endif
-                                    @endcan
+                                    @endcan --}}
                                 </div>
                             </td>
                         </tr>

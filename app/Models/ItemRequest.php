@@ -49,5 +49,11 @@ class ItemRequest extends Model
     {
         return $this->hasMany(ItemRequestDetail::class, 'item_request_id');
     }
-
+    public function approvalRequest($event)
+    {
+        return $this->morphOne(ApprovalRequest::class, 'reference', 'class_name', 'reference_id')
+            ->whereHas('approval', function ($query) use ($event) {
+                $query->where('event', $event);
+            })->where('status', 'pending');
+    }
 }

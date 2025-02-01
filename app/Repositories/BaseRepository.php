@@ -153,26 +153,41 @@ class BaseRepository implements BaseRepositoryInterface
         }
     }
 
+    public function checkApproval($event = 'create', $id): array
+    {
+        $className = get_class($this->model);
+        $approval = $this->modelApproval->where('class_name', $className)->where('event', $event)->first();
+        if ($approval) {
+            $approvalLevelLatest = $this->modelApprovalRequest->where('approval_id', $approval->id)->where('reference_id', $id)->latest()->first();
+            if (is_null($approvalLevelLatest)) {
+                $nextLevel = $approval->approvalLevels()->orderBy('hierarchy_order')->first();
+                $approvalRequest = $this->modelApprovalRequest->create([
+                    'approval_id' => $approval->id,
+                    'class_name' => $className,
+                    'reference_id' => $id,
+                    'current_level_id' => $nextLevel->id,
+                    'status' => 'pending',
+                    'remarks' => 'Pending approval for ' . $nextLevel->approver->name
+                ]);
+                return [
+                    'status' => 200,
+                    'message' => 'Pending approval for ' . $nextLevel->approver->name,
+                    'approval_request_id' => $approvalRequest->id
+                ];
+            }
+        }
+        return [
+            'status' => 404,
+            'message' => 'No pending approval found',
+            'approval_request_id' => null
+        ];
+    }
+
     public function update($id, array $data, $requireApproval = false)
     {
         try {
             $model = $this->find($id);
-            $className = get_class($this->model);
-            if ($requireApproval) {
-                $approval = $this->modelApproval->where('class_name', $className)->where('event', 'update')->first();
-                if ($approval) {
-                    $approvalRequest = $this->modelApprovalRequest->create([
-                        'approval_id' => $approval->id,
-                        'class_name' => $className,
-                        'reference_id' => $model->id,
-                        'current_level_id' => $approval->approvalLevels()->first()->id,
-                        'status' => 'pending',
-                        'remarks' => 'Pending approval for ' . $approval->approvalLevels()->first()->approver->name
-                    ]);
-                }
-            } else {
-                $model->update($data);
-            }
+            $model->update($data);
             return $model;
         } catch (QueryException $e) {
             Log::error($e->getMessage());

@@ -78,6 +78,7 @@
                     @forelse($table as $key => $item)
                         @php
                             $updateRoute = route('customer-order.update', $item->id);
+                            $approvalRequest = $item->approvalRequest('delete')->first();
                         @endphp
 
                         <tr wire:key="row{{ $item->id }}">
@@ -91,7 +92,7 @@
                             <td>{{ $item->customer->customer_name }}</td>
                             <td>{{ $item->project_name ?? '-' }}</td>
                             <td>{{ $item->order_date->format('Y-m-d') }}</td>
-                            <td>{{ ucfirst($item->order_status) }}</td>
+                            <td>{!! ucfirst($item->status) !!}</td>
                             <td>{{ number_format($item->total_amount, 2) }}</td>
                             <td>
                                 <div class="d-flex align-items-center">
@@ -111,14 +112,45 @@
                                     @endcan
 
                                     @can('delete-customer-order')
-                                        <a href="javascript:;" class="action-btn" title="Delete / 删除" data-bs-toggle="modal"
-                                            data-bs-target="#modalDelete{{ $item->id }}">
-                                            <i class="fa fa-trash fa-sm mx-2 fs-5"></i>
-                                        </a>
-                                        @include('admin.modal.delete', [
-                                            'id' => $item->id,
-                                            'updateRoute' => route('customer-order.destroy', $item->id),
-                                        ])
+                                        @if (!is_null($approvalRequest))
+                                            <a href="javascript:;" class="action-btn disabled"
+                                                title="Delete Waiting Approval from {{ $approvalRequest->currentLevel->approver->name }}">
+                                                <i class="fa fa-lock fa-sm me-2 fs-5 text-secondary"></i>
+                                            </a>
+                                        @else
+                                            @if ($item->is_active)
+                                                <a href="javascript:;" class="action-btn" title="Delete"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalDelete{{ $item->id }}">
+                                                    <i class="fa fa-trash fa-sm me-2 fs-5"></i>
+                                                </a>
+                                                @include('admin.modal.delete')
+                                            @endif
+                                        @endif
+                                    @endcan
+
+                                    @can('approve-delete-customer-order')
+                                        @if (!is_null($approvalRequest))
+                                            @if ($approvalRequest->currentLevel->class_name_approver_type == 'App\Models\User')
+                                                @if (Auth::user()->id == $approvalRequest->currentLevel->approver->approver_reference_id)
+                                                    <a href="javascript:;" class="action-btn" title="Approval Process"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalApprove{{ $approvalRequest->id }}">
+                                                        <i class="fa fa-list-check fa-sm me-2 fs-5"></i>
+                                                    </a>
+                                                @endif
+                                            @endif
+                                            @if ($approvalRequest->currentLevel->class_name_approver_type == 'App\Models\Role')
+                                                @if (Auth::user()->hasRole($approvalRequest->currentLevel->approver->name))
+                                                    <a href="javascript:;" class="action-btn" title="Approval Process"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalApprove{{ $approvalRequest->id }}">
+                                                        <i class="fa fa-list-check fa-sm me-2 fs-5"></i>
+                                                    </a>
+                                                @endif
+                                            @endif
+                                            @include('admin.modal.approval')
+                                        @endif
                                     @endcan
                                 </div>
                             </td>

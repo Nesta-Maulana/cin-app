@@ -297,13 +297,16 @@ class CustomerOrderController extends Controller
     {
         try {
             $repository = $this->repository->find($id);
-            // Set customer to inactive
-            $repository->update(['is_active' => false,'order_status'=>'Cancelled']);
+            $checkApproval = $this->repository->checkApproval('delete', $id);
+            if ($checkApproval['status'] == 200) {
+                alertNotif('success', $checkApproval['message']);
+            } else {
+                dd($checkApproval);
+                $repository = $this->repository->update($id, ['is_active' => false, 'order_status' => 'Cancelled'], true);
+                $repository->files()->update(['is_active' => false]);
+                alertNotif('delete');
+            }
 
-            // Set related files to inactive
-            $repository->files()->update(['is_active' => false]);
-
-            alertNotif('delete');
         } catch (Exception $e) {
             Log::error($e->getMessage());
             alertNotif('error', $e->getMessage());

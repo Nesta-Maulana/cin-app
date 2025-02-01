@@ -44,12 +44,14 @@
                             <div class="mb-3 col-md-6">
                                 <label for="event" class="form-label">Event / 事件 <span
                                         class="text-danger">*</span></label>
-                                <select id="event" name="event" class="form-select" required>
+                                <input class="form-control" type="text" id="event" name="event"
+                                    value="{{ old('event') }}" placeholder="Enter event name / 输入事件名称" required />
+                                {{-- <select id="event" name="event" class="form-select" required>
                                     <option value="" disabled selected>Select event / 选择事件</option>
                                     <option value="create">Create / 创建</option>
                                     <option value="update">Update / 更新</option>
                                     <option value="delete">Delete / 删除</option>
-                                </select>
+                                </select> --}}
                             </div>
                         </div>
 

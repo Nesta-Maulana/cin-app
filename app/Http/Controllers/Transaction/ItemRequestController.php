@@ -113,6 +113,7 @@ class ItemRequestController extends Controller
                     'remark' => $data['remark'] ?? null,
                     'request_status' => $data['request_status'],
                 ]);
+                $checkApproval  = $this->repository->checkApproval('create', $itemRequest->id);
                 // Save Item Request Details
                 foreach ($data['items'] as $index => $itemId) {
                     $itemUom = $this->itemUomRepository->find($data['uoms'][$index]);

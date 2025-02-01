@@ -7,7 +7,7 @@
 
                 <!-- Modal Header -->
                 <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title" id="modalCenterTitle">
+                    <h5 class="modal-title text-white" id="modalCenterTitle">
                         <i class="fa fa-exclamation-circle me-2"></i> Delete Confirmation
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
