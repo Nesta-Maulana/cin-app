@@ -442,14 +442,14 @@ class ApprovalController extends Controller
                         'status' => 'rejected',
                     ]);
 
-                    if (count($currentLevel->updated_value_on_reject) > 0) {
+                    if (count($currentLevel->updated_values_on_reject) > 0) {
                         $referenceModel = app($approvalRequest->class_name);
                         $referenceInstance = $referenceModel::find($approvalRequest->reference_id);
 
                         if ($referenceInstance) {
                             // Jika ada multiple columns yang diperbarui (JSONB support)
                             $updateData = [];
-                            foreach ($currentLevel->updated_value_on_reject as $column => $value) {
+                            foreach ($currentLevel->updated_values_on_reject as $column => $value) {
                                 $updateData[$column] = $value;
                             }
 
