@@ -3,7 +3,8 @@
         <div class="card-header border-bottom d-md-flex justify-content-md-between align-items-md-center">
             <div class="my-1 text-center text-md-start">
                 <label>
-                    <input wire:model.debounce.500ms="search" type="search" class="form-control" placeholder="Search..">
+                    <input wire:model.debounce.500ms="search" type="search" class="form-control"
+                        placeholder="Search / 搜索..">
                 </label>
             </div>
             <div class="text-md-end text-start d-flex align-items-center justify-content-end flex-md-row flex-column">
@@ -31,13 +32,13 @@
                 @else
                     <div class="my-1 me-md-2">
                         <span class="px-1">
-                            {{ count($selected) }} data terpilih
+                            {{ count($selected) }} data selected / 选中的数据
                         </span>
                     </div>
                     <div class="flex-wrap my-1">
                         <a href="#" class="btn btn-secondary add-new btn-label-primary" data-bs-toggle="modal"
                             data-bs-target="#modalSelectedStatus">
-                            Update Status
+                            Update Status / 更新状态
                         </a>
                     </div>
                 @endif
@@ -48,44 +49,44 @@
             <table class="table border-top">
                 <thead class="table-light text-center">
                     <tr>
-                        <th>User</th>
-                        <th>Username</th>
-                        <th>Role</th>
-                        <th>Status</th>
-                        <th></th>
+                        <th>User / 用户</th>
+                        <th>Username / 用户名</th>
+                        <th>Department / 部门</th>
+                        <th>Role / 角色</th>
+                        <th>Status / 状态</th>
+                        <th>Action / 操作</th>
                     </tr>
                 </thead>
-                <tbody class="text-center">
+                <tbody>
                     @forelse($table as $key => $item)
                         @php
                             $updateRoute = route('user.update', $item->id);
                         @endphp
-
                         <tr wire:key="row{{ $item->id }}">
-                            <td>
-                                <div class="d-flex justify-content-start align-items-center user-name">
-                                    <div class="avatar-wrapper">
-                                        <div class="avatar avatar-sm me-3">
-                                            <span class="avatar-initial rounded-circle bg-primary">
-                                                {{ userInitial($item->id) }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex flex-column">
-                                        <a href="#" class="text-body text-truncate">
-                                            <span class="fw-semibold">
-                                                {{ $item->name }}
-                                            </span>
-                                        </a>
-                                        <small class="text-muted">{{ $item->email }}</small>
-                                    </div>
-                                </div>
+                            <td class="text-left">
+                                {{ $item->name }} <br>
+                                <small class="text-muted">{{ $item->email }}</small>
                             </td>
 
-                            <td>
+                            <td class="text-center">
                                 {{ $item->username }}
                             </td>
-                            <td>
+
+                            <!-- Department Column -->
+                            <td class="text-center">
+                                @if ($item->departments->count() > 0)
+                                    @foreach ($item->departments as $department)
+                                        <span class="badge bg-primary">
+                                            <small>{{ $department->name }}</small>
+                                        </span>
+                                    @endforeach
+                                @else
+                                    <span class="text-muted">No Department / 无部门</span>
+                                @endif
+                            </td>
+
+                            <!-- Role Column -->
+                            <td class="text-center">
                                 @if (isset($item->roles) && count($item->roles) > 0)
                                     @php
                                         $role = $item->roles->first();
@@ -97,36 +98,32 @@
                             </td>
 
                             <td class="text-center">
-
                                 {!! isActive($item->id, $item->is_active) !!}
-
                             </td>
 
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    @can('update-user')
-                                        <a href="{{ route('user.edit', $item->id) }}" class="action-btn" title="edit">
-                                            <i class="fa-solid fa-edit fa-sm me-2 fs-5"></i>
-                                        </a>
-                                        <a href="javascript:void(0)" class="action-btn" title="Reset Password"
-                                            wire:click="updatePassword('{{ $item->id }}')">
-                                            <i class="fa-solid fa-unlock-keyhole fa-sm mx-2 fs-5"></i>
-                                        </a>
-                                    @endcan
-                                    @can('delete-user')
-                                        @include('admin.modal.delete')
-                                        <a href="javascript:;" class="action-btn" title="delete" data-bs-toggle="modal"
-                                            data-bs-target="#modalDelete{{ $item->id }}">
-                                            <i class="fa-solid fa-trash fa-sm mx-2 fs-5"></i>
-                                        </a>
-                                    @endcan
-                                </div>
+                            <td class="text-center">
+                                @can('update-user')
+                                    <a href="{{ route('user.edit', $item->id) }}" class="action-btn" title="Edit / 编辑">
+                                        <i class="fa-solid fa-edit fa-md me-1"></i>
+                                    </a>
+                                    <a href="javascript:void(0)" class="action-btn" title="Reset Password / 重置密码"
+                                        wire:click="updatePassword('{{ $item->id }}')">
+                                        <i class="fa-solid fa-unlock-keyhole fa-md me-1"></i>
+                                    </a>
+                                @endcan
+                                @can('delete-user')
+                                    @include('admin.modal.delete')
+                                    <a href="javascript:;" class="action-btn" title="Delete / 删除" data-bs-toggle="modal"
+                                        data-bs-target="#modalDelete{{ $item->id }}">
+                                        <i class="fa-solid fa-trash fa-md me-1"></i>
+                                    </a>
+                                @endcan
                             </td>
                         </tr>
                     @empty
                         <div class="text-center col-md-7 mx-auto px-3 pt-3">
                             <div class="alert alert-secondary">
-                                Data tidak ditemukan
+                                No data found / 数据未找到
                             </div>
                         </div>
                     @endforelse
@@ -137,7 +134,8 @@
         <div class="card-body d-md-flex justify-content-md-between align-items-center pt-3 pb-2">
             <div class="align-self-start my-2 d-none d-md-block text-muted">
                 <small>
-                    Showing {{ $table->firstItem() }} to {{ $table->lastItem() }} of {{ $table->total() }} data
+                    Showing {{ $table->firstItem() }} to {{ $table->lastItem() }} of {{ $table->total() }} records /
+                    显示 {{ $table->firstItem() }} 到 {{ $table->lastItem() }} 共 {{ $table->total() }} 条数据
                 </small>
             </div>
             {{ $table->links() }}

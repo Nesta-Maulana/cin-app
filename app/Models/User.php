@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Support\Facades\Hash;
@@ -63,10 +64,10 @@ class User extends Authenticatable
     public function scopeFilter($query, $search)
     {
         $query->when($search ?? false, function ($query, $search) {
-            return $query->where(function($query) use ($search) {
+            return $query->where(function ($query) use ($search) {
                 $query->where('username', 'ilike', "%$search%")
-                      ->orWhere('email', 'ilike', "%$search%")
-                      ->orWhere('name', 'ilike', "%$search%");
+                    ->orWhere('email', 'ilike', "%$search%")
+                    ->orWhere('name', 'ilike', "%$search%");
             });
         });
     }
@@ -88,5 +89,9 @@ class User extends Authenticatable
         return $this->hasMany(ActivityLog::class, 'causer_id', 'id');
     }
 
-
+    public function departments(): BelongsToMany
+    {
+        return $this->belongsToMany(Department::class, 'user_department', 'user_id', 'department_id')
+            ->withTimestamps();
+    }
 }

@@ -32,11 +32,22 @@
                         @endif
 
                         <div class="row mt-2">
-                            <div class="mb-1 col-md-12">
+                            <div class="mb-1 col-md-6">
                                 <label for="name" class="form-label">Nama Lengkap</label>
                                 <input class="form-control" type="text" id="name" name="name"
                                     placeholder="Nama Lengkap" autocomplete="off" value="{{ old('name') }}" autofocus
                                     required />
+                            </div>
+                            <div class="mb-1 col-md-6">
+                                <label for="department_id" class="form-label">Department</label>
+                                <select class="form-select select2" multiple name="department_id[]" id="department_id"
+                                    wire:model="department_id" required>
+                                    <option value="">- Choose Department -</option>
+                                    @foreach ($departments as $department_id => $department)
+                                        <option value="{{ $department_id }}" @selected(in_array($department_id, old('department_id', [])))>
+                                            {{ $department }}</option>
+                                    @endforeach
+                                </select>
                             </div>
 
                             <div class="mb-1 col-md-6">

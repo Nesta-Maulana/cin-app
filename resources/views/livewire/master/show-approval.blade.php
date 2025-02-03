@@ -122,18 +122,38 @@
                                             <th>Reference ID / 参考ID</th>
                                             <th>On Approve / 批准时更新</th>
                                             <th>On Reject / 拒绝时更新</th>
+                                            <th>Department / 部门</th>
                                             <th>Required / 必需</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @forelse($item->approvalLevels as $level)
+                                        @forelse($item->approvalLevels->sortBy('hierarchy_order') as $level)
                                             <tr>
                                                 <td>{{ $loop->iteration }}</td>
                                                 <td>{{ $level->hierarchy_order }}</td>
                                                 <td>{{ $level->class_name_approver_type }}</td>
                                                 <td>{{ $level->approver->name }}</td>
-                                                <td>{{ $level->updated_value_on_approve }}</td>
-                                                <td>{{ $level->updated_value_on_reject }}</td>
+                                                <td>
+                                                    @if (!empty($level->updated_values_on_approve))
+                                                        @foreach ($level->updated_values_on_approve as $column => $value)
+                                                            <span class="d-block"><strong>{{ $column }}</strong>:
+                                                                {{ $value }}</span>
+                                                        @endforeach
+                                                    @else
+                                                        <span class="text-muted">No updated values on approve</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @if (!empty($level->updated_values_on_reject))
+                                                        @foreach ($level->updated_values_on_reject as $column => $value)
+                                                            <span class="d-block"><strong>{{ $column }}</strong>:
+                                                                {{ $value }}</span>
+                                                        @endforeach
+                                                    @else
+                                                        <span class="text-muted">No updated values on reject</span>
+                                                    @endif
+                                                </td>
+                                                <td>{{ $level->department->name ?? 'All Departments / 所有部门' }}</td>
                                                 <td>
                                                     <span
                                                         class="badge {{ $level->required ? 'bg-success' : 'bg-secondary' }}">
@@ -143,7 +163,7 @@
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="7" class="text-center">No Levels Found / 没有找到级别</td>
+                                                <td colspan="8" class="text-center">No Levels Found / 没有找到级别</td>
                                             </tr>
                                         @endforelse
                                     </tbody>
@@ -152,7 +172,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center">No Approvals Found / 没有找到审批</td>
+                            <td colspan="8" class="text-center">No Approvals Found / 没有找到审批</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -164,8 +184,7 @@
             <div class="align-self-start my-2 d-none d-md-block text-muted">
                 <small>
                     Showing {{ $table->firstItem() }} to {{ $table->lastItem() }} of
-                    {{ $table->total() }}
-                    data
+                    {{ $table->total() }} data
                 </small>
             </div>
             {{ $table->links() }}

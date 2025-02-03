@@ -16,6 +16,10 @@ class ApprovalLevel extends Model
      * @var array
      */
     protected $guarded = ['id'];
+    protected $casts = [
+        'updated_values_on_approve' => 'array',
+        'updated_values_on_reject' => 'array',
+    ];
 
     public function getActivitylogOptions(): LogOptions
     {
@@ -67,5 +71,8 @@ class ApprovalLevel extends Model
             return '<span class="badge rounded-pill badge-light-success">Active</span>';
         }
     }
-
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
 }

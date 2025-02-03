@@ -112,6 +112,7 @@ class ItemRequestController extends Controller
                     'customer_order_id' => $data['customer_order_id'],
                     'remark' => $data['remark'] ?? null,
                     'request_status' => $data['request_status'],
+                    'created_by' => auth()->user()->id
                 ]);
                 $checkApproval  = $this->repository->checkApproval('create', $itemRequest->id);
                 // Save Item Request Details

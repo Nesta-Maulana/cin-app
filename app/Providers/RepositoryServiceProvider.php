@@ -10,6 +10,8 @@ use App\Repositories\Master\ApprovalLevel\ApprovalLevelRepository;
 use App\Repositories\Master\ApprovalLevel\ApprovalLevelRepositoryInterface;
 use App\Repositories\Master\Customer\CustomerRepository;
 use App\Repositories\Master\Customer\CustomerRepositoryInterface;
+use App\Repositories\Master\Department\DepartmentRepository;
+use App\Repositories\Master\Department\DepartmentRepositoryInterface;
 use App\Repositories\Master\Item\ItemRepository;
 use App\Repositories\Master\Item\ItemRepositoryInterface;
 use App\Repositories\Master\ItemCategory\ItemCategoryRepository;
@@ -73,6 +75,7 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(ApprovalRepositoryInterface::class, ApprovalRepository::class);
         $this->app->bind(ApprovalLevelRepositoryInterface::class, ApprovalLevelRepository::class);
         $this->app->bind(ApprovalRequestRepositoryInterface::class, ApprovalRequestRepository::class);
+        $this->app->bind(DepartmentRepositoryInterface::class, DepartmentRepository::class);
     }
 
     /**

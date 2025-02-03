@@ -36,6 +36,22 @@ class RoleSeeder extends Seeder
                 'created_at' => NULL,
                 'updated_at' => NULL,
             ),
+            2 =>
+            array (
+                'id' => 3,
+                'name' => 'Manager',
+                'guard_name' => 'web',
+                'created_at' => NULL,
+                'updated_at' => NULL,
+            ),
+            3 =>
+            array (
+                'id' => 4,
+                'name' => 'Staff',
+                'guard_name' => 'web',
+                'created_at' => NULL,
+                'updated_at' => NULL,
+            ),
         ));
 
     }

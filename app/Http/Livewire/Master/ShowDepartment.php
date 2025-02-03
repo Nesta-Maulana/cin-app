@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Http\Livewire\Transaction;
+namespace App\Http\Livewire\Master;
 
 use Livewire\Component;
-use App\Models\ItemRequest as Model;
+use App\Models\Department as Model;
 use Livewire\WithPagination;
 use Jantinnerezo\LivewireAlert\LivewireAlert;
-use App\Repositories\Transaction\ItemRequest\ItemRequestRepositoryInterface;
+use App\Repositories\Master\Department\DepartmentRepositoryInterface;
 
-class ShowItemRequest extends Component
+class ShowDepartment extends Component
 {
     use LivewireAlert;
     use WithPagination;
@@ -24,32 +24,32 @@ class ShowItemRequest extends Component
 
     protected $repository;
 
-    public function mount(ItemRequestRepositoryInterface $repository)
+    public function mount(DepartmentRepositoryInterface $repository)
     {
         $this->repository = $repository;
     }
     public function hydrate()
     {
-        $this->repository = app(ItemRequestRepositoryInterface::class);
+        $this->repository = app(DepartmentRepositoryInterface::class);
     }
 
     public function render()
     {
-        try {
+       try {
             $scope = [];
             $orderBy = ['id' => 'asc'];
-            $with = [];
+            $with  =[];
             // Apply search filter
             if (!empty($this->search)) {
                 $scope['filter'] = [$this->search];
             }
             $table = $this->repository->getData($scope, $with, $orderBy, $this->paginate);
-            return view('livewire.transaction.show-item-request', [
+            return view('livewire.master.show-department', [
                 'table' => $table,
             ]);
         } catch (\Exception $e) {
             $this->alert('error', 'Error fetching permissions: ' . $e->getMessage());
-            return view('livewire.transaction.show-item-request', [
+            return view('livewire.master.show-department', [
                 'table' => collect([]),
             ]);
         }

@@ -16,7 +16,7 @@ class ShowMenu extends Component
     protected $paginationTheme = 'bootstrap';
     protected $paginationClasses = 'd-flex align-items-center';
 
-    public $paginate = 10;
+    public $paginate = 1000;
     public $search = "";
     public $selected = [];
     public $selectAll = false;

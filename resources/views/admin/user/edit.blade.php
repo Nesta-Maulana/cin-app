@@ -31,12 +31,23 @@
                         @endif
 
                         <div class="row">
-                            <div class="mb-3 col-md-12">
+                            <div class="mb-3 col-md-6">
                                 <label for="name" class="form-label">Nama Lengkap</label>
                                 <input class="form-control" type="text" id="name" name="name"
                                     value="{{ $data->name }}" placeholder="Nama Lengkap" autofocus required />
                             </div>
-
+                            <!-- Department (Multi-Select) -->
+                            <div class="mb-3 col-md-6">
+                                <label for="department_id" class="form-label">Department / 部门</label>
+                                <select class="form-select select2" multiple name="department_id[]" id="department_id"
+                                    wire:model="department_id" required>
+                                    @foreach ($departments as $department_id => $department)
+                                        <option value="{{ $department_id }}" @selected(in_array($department_id, old('department_id', $data->departments->pluck('id')->toArray())))>
+                                            {{ $department }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
                             <div class="mb-3 col-md-6">
                                 <label for="email" class="form-label">E-mail</label>
                                 <input class="form-control @error('email') is-invalid @enderror" type="email"
@@ -62,7 +73,7 @@
                                 </select>
                             </div>
 
-                            @livewire('admin.set-user-permission', ['selected' => $permission,'role_id'=>$role_id])
+                            @livewire('admin.set-user-permission', ['selected' => $permission, 'role_id' => $role_id])
 
                         </div>
                         <div class="my-2">

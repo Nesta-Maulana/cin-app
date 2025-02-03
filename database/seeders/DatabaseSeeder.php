@@ -22,7 +22,7 @@ class DatabaseSeeder extends Seeder
         $this->call(ItemTypeSeeder::class);
         $this->call(ItemCategoriesTableSeeder::class);
         $this->call(UnitOfMeasurementTableSeeder::class);
-        $this->call(ItemsRelatedSeeder::class);
+        // $this->call(ItemsRelatedSeeder::class);
 
     }
 }

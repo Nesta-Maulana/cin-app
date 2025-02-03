@@ -10,6 +10,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Repositories\Master\Approval\ApprovalRepositoryInterface;
 use App\Repositories\Master\ApprovalLevel\ApprovalLevelRepositoryInterface;
+use App\Repositories\Master\Department\DepartmentRepositoryInterface;
 use App\Repositories\Master\Role\RoleRepositoryInterface;
 use App\Repositories\Master\User\UserRepositoryInterface;
 use App\Repositories\Transaction\ApprovalRequest\ApprovalRequestRepositoryInterface;
@@ -21,19 +22,21 @@ use Exception;
 class ApprovalController extends Controller
 {
     public $view, $route;
-    protected $repository, $approvalLevelRepository, $roleRepository, $userRepository, $approvalRequest;
+    protected $repository, $approvalLevelRepository, $roleRepository, $userRepository, $approvalRequest, $departmentRepository;
     public function __construct(
         ApprovalRepositoryInterface $repository,
         ApprovalLevelRepositoryInterface $approvalLevelRepository,
         RoleRepositoryInterface $roleRepository,
         UserRepositoryInterface $userRepository,
-        ApprovalRequestRepositoryInterface $approvalRequest
+        ApprovalRequestRepositoryInterface $approvalRequest,
+        DepartmentRepositoryInterface $departmentRepository
     ) {
         $this->repository = $repository;
         $this->approvalLevelRepository = $approvalLevelRepository;
         $this->roleRepository = $roleRepository;
         $this->userRepository = $userRepository;
         $this->approvalRequest = $approvalRequest;
+        $this->departmentRepository = $departmentRepository;
         $this->view = 'master.approval';
         $this->route = 'approval';
 
@@ -50,7 +53,8 @@ class ApprovalController extends Controller
 
     public function create()
     {
-        return view("{$this->view}.create");
+        $departments = $this->departmentRepository->getData()->pluck('name', 'id');
+        return view("{$this->view}.create", compact('departments'));
     }
     public function getColumnsByModel(Request $request)
     {
@@ -86,8 +90,9 @@ class ApprovalController extends Controller
         return response()->json(['references' => $references]);
     }
 
-    public function store(Request $request)
+    /* public function store(Request $request)
     {
+        dd($request->all());
         // Validasi input
         $data = $request->validate([
             'name' => 'required|string|max:255',
@@ -148,7 +153,86 @@ class ApprovalController extends Controller
 
         return redirect()->route("{$this->route}.index");
     }
+ */
+    public function store(Request $request)
+    {
+        // Validasi input
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'class_name' => 'required|string',
+            'event' => 'required|string',
+            'orders' => 'required|array',
+            'approver_types' => 'required|array',
+            'reference_ids' => 'required|array',
+            'on-approve_columns' => 'required|array',
+            'on-approve_values' => 'required|array',
+            'on-reject_columns' => 'required|array',
+            'on-reject_values' => 'required|array',
+            'department_id' => 'array',
+            'requireds' => 'nullable|array',
+        ], [
+            'name.required' => 'The approval name is required.',
+            'class_name.required' => 'The model class is required.',
+            'event.required' => 'The event is required.',
+            'orders.required' => 'Order levels are required.',
+            'approver_types.required' => 'Approver types are required.',
+            'reference_ids.required' => 'Reference IDs are required.',
+            'on-approve_columns.required' => 'On approve columns are required.',
+            'on-approve_values.required' => 'On approve values are required.',
+            'on-reject_columns.required' => 'On reject columns are required.',
+            'on-reject_values.required' => 'On reject values are required.',
+        ]);
 
+        try {
+            DB::transaction(function () use ($request, $data) {
+                // Simpan data header (Approval)
+                $approval = $this->repository->create([
+                    'name' => $data['name'],
+                    'description' => $data['description'] ?? null,
+                    'class_name' => $data['class_name'],
+                    'event' => $data['event'],
+                    'levels' => count($data['orders']),
+                    'is_active' => true,
+                ]);
+
+                // Simpan data detail (Approval Levels)
+                foreach ($data['orders'] as $index => $order) {
+                    // Menyusun JSON data untuk on approve & on reject
+                    $onApproveData = [
+                        $data['on-approve_columns'][$index] => $data['on-approve_values'][$index]
+                    ];
+
+                    $onRejectData = [
+                        $data['on-reject_columns'][$index] => $data['on-reject_values'][$index]
+                    ];
+                    if ($data['department_id'][$index] == '-') {
+                        $departmentId = null;
+                    } else {
+                        $departmentId = $data['department_id'][$index];
+                    }
+                    // Simpan setiap approval level
+                    $approval->approvalLevels()->create([
+                        'hierarchy_order' => $order * 1,
+                        'class_name_approver_type' => $data['approver_types'][$index],
+                        'approver_reference_id' => $data['reference_ids'][$index],
+                        'updated_values_on_approve' => $onApproveData,
+                        'updated_values_on_reject' => $onRejectData,
+                        'department_id' => $departmentId,
+                        'required' => isset($data['requireds'][$index]) ? (bool) $data['requireds'][$index] : true,
+                        'description' => null, // Jika ada deskripsi per level, bisa ditambahkan
+                    ]);
+                }
+            });
+
+            alertNotif('save');
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            alertNotif('error', $e->getMessage());
+        }
+
+        return redirect()->route("{$this->route}.index");
+    }
 
 
     public function edit($id)
@@ -332,24 +416,50 @@ class ApprovalController extends Controller
                         ]);
 
                     }
-                    if ($approvalRequest->approval->column_update) {
+                    if (count($currentLevel->updated_values_on_approve) > 0) {
                         $referenceModel = app($approvalRequest->class_name);
-                        $referenceModel::find($approvalRequest->reference_id)->update([
-                            $approvalRequest->approval->column_update => $currentLevel->updated_value_on_approve,
-                        ]);
+                        $referenceInstance = $referenceModel::find($approvalRequest->reference_id);
+
+                        if ($referenceInstance) {
+                            // Jika ada multiple columns yang diperbarui (JSONB support)
+                            $updateData = [];
+                            foreach ($currentLevel->updated_values_on_approve as $column => $value) {
+                                $updateData[$column] = $value;
+                            }
+
+                            // Update model hanya jika ada data yang valid
+                            if (!empty($updateData)) {
+                                $referenceInstance->update($updateData);
+                            }
+                        } else {
+                            Log::error("Reference model not found: {$approvalRequest->class_name} ID {$approvalRequest->reference_id}");
+                        }
                     }
+
                 } elseif ($validated['approval_status'] === 'reject') {
                     // Jika ditolak, tandai approval request sebagai 'rejected'
                     $approvalRequest->update([
                         'status' => 'rejected',
                     ]);
 
-                    // Update column sesuai dengan konfigurasi pada approval
-                    if ($approvalRequest->approval->column_update) {
+                    if (count($currentLevel->updated_value_on_reject) > 0) {
                         $referenceModel = app($approvalRequest->class_name);
-                        $referenceModel::find($approvalRequest->reference_id)->update([
-                            $approvalRequest->approval->column_update => $currentLevel->updated_value_on_reject,
-                        ]);
+                        $referenceInstance = $referenceModel::find($approvalRequest->reference_id);
+
+                        if ($referenceInstance) {
+                            // Jika ada multiple columns yang diperbarui (JSONB support)
+                            $updateData = [];
+                            foreach ($currentLevel->updated_value_on_reject as $column => $value) {
+                                $updateData[$column] = $value;
+                            }
+
+                            // Update model hanya jika ada data yang valid
+                            if (!empty($updateData)) {
+                                $referenceInstance->update($updateData);
+                            }
+                        } else {
+                            Log::error("Reference model not found: {$approvalRequest->class_name} ID {$approvalRequest->reference_id}");
+                        }
                     }
                 }
             });

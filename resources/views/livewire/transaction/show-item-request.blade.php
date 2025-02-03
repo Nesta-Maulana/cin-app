@@ -136,11 +136,23 @@
                                             @endif
                                             @if ($approvalRequest->currentLevel->class_name_approver_type == 'App\Models\Role')
                                                 @if (Auth::user()->hasRole($approvalRequest->currentLevel->approver->name))
-                                                    <a href="javascript:;" class="action-btn" title="Approval Process"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#modalApprove{{ $approvalRequest->id }}">
-                                                        <i class="fa fa-list-check fa-sm me-2 fs-5"></i>
-                                                    </a>
+                                                    @if (is_null($approvalRequest->currentLevel->department_id))
+                                                        <a href="javascript:;" class="action-btn" title="Approval Process"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modalApprove{{ $approvalRequest->id }}">
+                                                            <i class="fa fa-list-check fa-sm me-2 fs-5"></i>
+                                                        </a>
+                                                    @else
+                                                        @if (count(array_intersect(
+                                                                    $item->createdBy->departments->pluck('id')->toArray(),
+                                                                    auth()->user()->departments->pluck('id')->toArray())) > 0)
+                                                            <a href="javascript:;" class="action-btn"
+                                                                title="Approval Process" data-bs-toggle="modal"
+                                                                data-bs-target="#modalApprove{{ $approvalRequest->id }}">
+                                                                <i class="fa fa-list-check fa-sm me-2 fs-5"></i>
+                                                            </a>
+                                                        @endif
+                                                    @endif
                                                 @endif
                                             @endif
                                             @include('admin.modal.approval')

@@ -3,6 +3,7 @@
 use App\Events\RoomChatBroadcast;
 use App\Http\Controllers\Master\ApprovalController;
 use App\Http\Controllers\Master\CustomerController;
+use App\Http\Controllers\Master\DepartmentController;
 use App\Http\Controllers\Master\ItemCategoryController;
 use App\Http\Controllers\Master\ItemController;
 use App\Http\Controllers\Master\ItemTypeController;
@@ -75,4 +76,5 @@ Route::middleware(['auth', 'auth.status'])->group(function () {
     Route::post('/item-request-approval', [ItemRequestController::class, 'approval'])->name('item-request-approval');
     Route::resource('item-request', ItemRequestController::class);
 
+    Route::resource('department', DepartmentController::class);
 });

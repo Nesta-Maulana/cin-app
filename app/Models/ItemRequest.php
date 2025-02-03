@@ -56,4 +56,18 @@ class ItemRequest extends Model
                 $query->where('event', $event);
             })->where('status', 'pending');
     }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+    public function scopePerDepartment($query)
+    {
+        $userDepartments = auth()->user()->departments->pluck('id')->toArray();
+
+        return $query->whereHas('createdBy.departments', function ($q) use ($userDepartments) {
+            $q->whereIn('departments.id', $userDepartments);
+        });
+    }
+
 }
