@@ -720,7 +720,7 @@ class PermissionsTableSeeder extends Seeder
             ],
         ]);
 
-        \DB::table('permissions')::insert([
+        \DB::table('permissions')->insert([
             [
                 'id' => 87,
                 'name' => 'create-department',
