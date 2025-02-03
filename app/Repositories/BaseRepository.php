@@ -156,7 +156,11 @@ class BaseRepository implements BaseRepositoryInterface
     public function checkApproval($event = 'create', $id): array
     {
         $className = get_class($this->model);
-        $approval = $this->modelApproval->where('class_name', $className)->where('event', $event)->first();
+        $approval = $this->modelApproval
+            ->where('class_name', $className)
+            ->where('is_active', 1)
+            ->where('event', $event)
+            ->first();
         if ($approval) {
             $approvalLevelLatest = $this->modelApprovalRequest->where('approval_id', $approval->id)->where('reference_id', $id)->latest()->first();
             if (is_null($approvalLevelLatest)) {
