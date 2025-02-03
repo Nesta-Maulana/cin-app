@@ -215,7 +215,19 @@ class MenusTableSeeder extends Seeder
                 'sort' => 10,
                 'created_at' => '2025-01-14 01:42:45',
                 'updated_at' => '2025-01-14 01:42:45',
-            )
+            ),
+            array(
+                'id' => 19,
+                'name' => 'Department',
+                'url' => 'department',
+                'permission_id' => 88,
+                'icon' => 'fa-building-o',
+                'main_menu' => 9,
+                'sort' => 10,
+                'created_at' => '2025-02-03 00:08:58',
+                'updated_at' => '2025-02-03 00:08:58',
+            ),
+
         ));
 
 

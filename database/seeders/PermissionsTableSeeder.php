@@ -720,5 +720,47 @@ class PermissionsTableSeeder extends Seeder
             ],
         ]);
 
+        \DB::table('permissions')::insert([
+            [
+                'id' => 87,
+                'name' => 'create-department',
+                'guard_name' => 'web',
+                'created_at' => '2025-02-02 23:50:50',
+                'updated_at' => '2025-02-02 23:50:50',
+                'group' => 'Department',
+            ],
+            [
+                'id' => 88,
+                'name' => 'read-department',
+                'guard_name' => 'web',
+                'created_at' => '2025-02-02 23:50:54',
+                'updated_at' => '2025-02-02 23:50:54',
+                'group' => 'Department',
+            ],
+            [
+                'id' => 89,
+                'name' => 'update-department',
+                'guard_name' => 'web',
+                'created_at' => '2025-02-02 23:50:54',
+                'updated_at' => '2025-02-02 23:50:54',
+                'group' => 'Department',
+            ],
+            [
+                'id' => 90,
+                'name' => 'delete-department',
+                'guard_name' => 'web',
+                'created_at' => '2025-02-02 23:50:54',
+                'updated_at' => '2025-02-02 23:50:54',
+                'group' => 'Department',
+            ],
+            [
+                'id' => 91,
+                'name' => 'approve-delete-customer-order',
+                'guard_name' => 'web',
+                'created_at' => '2025-02-03 13:24:02',
+                'updated_at' => '2025-02-03 13:24:02',
+                'group' => 'CustomerOrder',
+            ],
+        ]);
     }
 }
