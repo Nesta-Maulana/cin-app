@@ -98,24 +98,34 @@
                                                 $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->id ==
                                                 $detail->itemPriceHistory->itemUom->unitOfMeasurement->id
                                             ) {
-                                                if ($stock >= $detail->quantity) {
-                                                    $bgColor = 'bg-success';
-                                                    $countReadyDO++;
-                                                } else {
+                                                if ($stock == 0) {
                                                     $bgColor = 'bg-danger';
                                                     $countNeedPO++;
+                                                } else {
+                                                    if ($stock >= $detail->quantity) {
+                                                        $bgColor = 'bg-success';
+                                                        $countReadyDO++;
+                                                    } else {
+                                                        $bgColor = 'bg-danger';
+                                                        $countNeedPO++;
+                                                    }
                                                 }
                                             } else {
                                                 $requestQuantity =
                                                     $detail->quantity *
                                                     $detail->itemPriceHistory->itemUom->item->unitOfMeasurement
                                                         ->conversion;
-                                                if ($stock >= $requestQuantity) {
-                                                    $bgColor = 'bg-success';
-                                                    $countReadyDO++;
-                                                } else {
+                                                if ($stock == 0) {
                                                     $bgColor = 'bg-danger';
                                                     $countNeedPO++;
+                                                } else {
+                                                    if ($stock >= $requestQuantity) {
+                                                        $bgColor = 'bg-success';
+                                                        $countReadyDO++;
+                                                    } else {
+                                                        $bgColor = 'bg-danger';
+                                                        $countNeedPO++;
+                                                    }
                                                 }
                                             }
                                         @endphp
@@ -145,7 +155,8 @@
                     <!-- Buttons Section for Delivery Order and Purchase Order Creation -->
                     <div class="d-flex justify-content-end mt-3">
                         @if ($countReadyDO > 0)
-                            <a href="{{ route('delivery-order.create', ['order_id' => $customerOrder->id]) }}" class="btn btn-success me-2">
+                            <a href="{{ route('delivery-order.create', ['order_id' => $customerOrder->id]) }}"
+                                class="btn btn-success me-2">
                                 Create Delivery Order / 创建送货单 ({{ $countReadyDO }})
                             </a>
                         @endif
