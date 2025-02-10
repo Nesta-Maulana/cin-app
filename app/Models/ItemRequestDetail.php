@@ -44,5 +44,12 @@ class ItemRequestDetail extends Model
     {
         return $this->belongsTo(ItemPriceHistory::class, 'item_price_history_id');
     }
+    /**
+     * Relationship: Delivery Order Details / 关系：送货单明细
+     */
+    public function deliveryOrderDetails()
+    {
+        return $this->hasMany(DeliveryOrderDetail::class, 'item_request_detail_id');
+    }
 
 }

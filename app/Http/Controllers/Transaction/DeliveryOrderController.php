@@ -1,0 +1,321 @@
+<?php
+
+namespace App\Http\Controllers\Transaction;
+
+use App\Http\Controllers\Controller;
+use App\Models\CustomerOrder;
+use App\Models\DeliveryOrder;
+use App\Models\Warehouse;
+use App\Models\WarehouseSectionStock;
+use App\Repositories\Master\Item\ItemRepositoryInterface;
+use App\Repositories\Master\ItemUom\ItemUomRepositoryInterface;
+use App\Repositories\Master\Warehouse\WarehouseRepositoryInterface;
+use App\Repositories\Master\WarehouseSection\WarehouseSectionRepositoryInterface;
+use App\Repositories\Transaction\CustomerOrder\CustomerOrderRepositoryInterface;
+use App\Repositories\Transaction\DeliveryOrder\DeliveryOrderRepositoryInterface;
+use App\Repositories\Transaction\ItemRequestDetail\ItemRequestDetailRepository;
+use App\Repositories\Transaction\ItemRequestDetail\ItemRequestDetailRepositoryInterface;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Exception;
+
+class DeliveryOrderController extends Controller
+{
+    public $view, $route;
+    protected $repository, $warehouseRepository, $warehouseSectionRepository, $itemRepository, $itemUomRepository, $customerOrderRepository, $itemRequestDetailRepository;
+    public function __construct(
+        DeliveryOrderRepositoryInterface $repository,
+        WarehouseRepositoryInterface $warehouseRepository,
+        WarehouseSectionRepositoryInterface $warehouseSectionRepository,
+        ItemRepositoryInterface $itemRepository,
+        ItemUomRepositoryInterface $itemUomRepository,
+        CustomerOrderRepositoryInterface $customerOrderRepository,
+        ItemRequestDetailRepositoryInterface $itemRequestDetailRepository
+    ) {
+        $this->repository = $repository;
+        $this->view = 'transaction.delivery-order';
+        $this->route = 'delivery-order';
+        $this->warehouseRepository = $warehouseRepository;
+        $this->warehouseSectionRepository = $warehouseSectionRepository;
+        $this->itemRepository = $itemRepository;
+        $this->itemUomRepository = $itemUomRepository;
+        $this->customerOrderRepository = $customerOrderRepository;
+        $this->itemRequestDetailRepository = $itemRequestDetailRepository;
+        $this->middleware("can:create-{$this->route}")->only('create', 'store');
+        $this->middleware("can:read-{$this->route}")->only('index');
+        $this->middleware("can:update-{$this->route}")->only('edit', 'update');
+        $this->middleware("can:delete-{$this->route}")->only('destroy');
+    }
+
+    public function index()
+    {
+        return view("{$this->view}.index");
+    }
+    public function getItemRequestsByCustomerOrder(Request $request)
+    {
+        $customerOrder = $this->customerOrderRepository->find($request->order_id);
+
+
+        if (!$customerOrder) {
+            return response()->json(['data' => []]);
+        }
+
+        $allDetails = collect();
+        foreach ($customerOrder->itemRequests as $itemRequest) {
+            foreach ($itemRequest->details as $detail) {
+
+                // Add a custom property for the request number.
+                $stock = $detail->itemPriceHistory->itemUom->item->warehouseStocks->sum('current_stock');
+                $detail->request_number = $itemRequest->request_number;
+                $detail->item_uom_id = $detail->itemPriceHistory->itemUom->id;
+                $detail->item_uom = $detail->itemPriceHistory->itemUom->unitOfMeasurement->name;
+                $detail->item_name = $detail->itemPriceHistory->itemUom->item->name;
+                $detail->item_id = $detail->itemPriceHistory->itemUom->item->id;
+                $detail->stock = $stock;
+                $detail->warehouse_id = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->warehouse_id;
+                $detail->section_id = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->section_id;
+                $detail->warehouse_name = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->warehouse->name;
+                $detail->section_name = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->warehouseSection->name;
+                $detail->stock_uom = $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->name;
+                $detail->stock_uom_id = $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->id;
+                if (
+                    $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->id ==
+                    $detail->itemPriceHistory->itemUom->unitOfMeasurement->id
+                ) {
+                    if ($stock >= $detail->quantity) {
+                        $allDetails->push($detail);
+                    }
+                } else {
+                    $requestQuantity =
+                        $detail->quantity *
+                        $detail->itemPriceHistory->itemUom->item->unitOfMeasurement
+                            ->conversion;
+                    if ($stock >= $requestQuantity) {
+                        $allDetails->push($detail);
+                    }
+                }
+
+            }
+        }
+        return response()->json(['data' => $allDetails]);
+    }
+
+    public function create()
+    {
+        // Get the customer order ID from the query string, if present.
+        $orderId = request()->query('order_id');
+        $customerOrders = $this->customerOrderRepository->getData([], [], [], null, [], 'all');
+        // Retrieve the necessary data for the form dropdowns.
+        $warehouses = $this->warehouseRepository->getData([], [], [], null, [['is_active', '=', 1]], 'all');
+        $sections = $this->warehouseSectionRepository->getData([], [], [], null, [['is_active', '=', 1]], 'all');
+        $items = $this->itemRepository->getData([], [], [], null, [['is_active', '=', 1]], 'all');
+        $itemUoms = $this->itemUomRepository->getData(
+            [],
+            [
+                'unitOfMeasurement'
+            ],
+            [],
+            null,
+            [['is_active', '=', 1]],
+            'all'
+        );
+
+        $year = date('y'); // Two-digit year
+        $month = date('m'); // Two-digit month
+        $prefix = "DO{$year}{$month}";
+        // Count existing orders for the current month
+        $count = DeliveryOrder::whereYear('created_at', date('Y'))
+            ->whereMonth('created_at', date('m'))
+            ->count();
+
+        // Increment and format the count as 3 digits (e.g., 001, 002)
+        $increment = str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+
+        $orderNumber = "{$prefix}{$increment}";
+
+        return view("{$this->view}.create", compact('orderId', 'warehouses', 'sections', 'items', 'itemUoms', 'customerOrders', 'orderNumber'));
+    }
+    public function store(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            // Custom validation messages (English & Mandarin)
+            $messages = [
+                'process_number.required' => 'Process Number is required. / 处理编号是必填项。',
+                'process_number.unique' => 'Process Number must be unique. / 处理编号必须唯一。',
+                'customer_order_id.required' => 'Customer Order is required. / 客户订单是必填项。',
+                'customer_order_id.exists' => 'Selected Customer Order does not exist. / 选择的客户订单不存在。',
+                'process_date.required' => 'Process Date is required. / 处理日期是必填项。',
+                'process_date.date' => 'Invalid date format. / 无效的日期格式。',
+                'remarks.max' => 'Remarks must not exceed 255 characters. / 备注不能超过255个字符。',
+                'details.required' => 'At least one item is required. / 至少需要一个物品。',
+                'details.*.item_request_detail_id.required' => 'Item Request ID is required. / 物品请求ID是必填项。',
+                'details.*.item_request_detail_id.exists' => 'Item Request ID does not exist. / 物品请求ID不存在。',
+                'details.*.item_id.required' => 'Item is required. / 物品是必填项。',
+                'details.*.item_id.exists' => 'Selected item does not exist. / 选择的物品不存在。',
+                'details.*.quantity.required' => 'Request Quantity is required. / 请求数量是必填项。',
+                'details.*.quantity.numeric' => 'Request Quantity must be a valid number. / 请求数量必须是有效数字。',
+                'details.*.quantity.min' => 'Request Quantity must be at least 0.001. / 请求数量必须至少为0.001。',
+                'details.*.item_uom_id.required' => 'Unit of Measurement is required. / 计量单位是必填项。',
+                'details.*.item_uom_id.exists' => 'Selected Unit of Measurement does not exist. / 选择的计量单位不存在。',
+                'details.*.stock.required' => 'Stock is required. / 库存是必填项。',
+                'details.*.stock.numeric' => 'Stock must be a valid number. / 库存必须是有效数字。',
+                'details.*.warehouse_id.required' => 'Warehouse is required. / 仓库是必填项。',
+                'details.*.warehouse_id.exists' => 'Selected Warehouse does not exist. / 选择的仓库不存在。',
+                'details.*.section_id.required' => 'Warehouse Section is required. / 仓库区域是必填项。',
+                'details.*.section_id.exists' => 'Selected Warehouse Section does not exist. / 选择的仓库区域不存在。',
+                'details.*.fullfill_quantity.required' => 'Fullfill Quantity is required. / 完成数量是必填项。',
+                'details.*.fullfill_quantity.numeric' => 'Fullfill Quantity must be a valid number. / 完成数量必须是有效数字。',
+                'details.*.fullfill_quantity.min' => 'Fullfill Quantity must be at least 0.001. / 完成数量必须至少为0.001。',
+                'details.*.item_uom_fullfill_id.required' => 'Fullfill Unit of Measurement is required. / 完成单位是必填项。',
+                'details.*.item_uom_fullfill_id.exists' => 'Selected Fullfill Unit of Measurement does not exist. / 选择的完成单位不存在。',
+                'details.*.remarks.max' => 'Remarks must not exceed 255 characters. / 备注不能超过255个字符。',
+            ];
+
+            // Validasi request data
+            $data = $request->validate([
+                'process_number' => 'required|string|max:20|unique:delivery_orders,process_number',
+                'customer_order_id' => 'required|exists:customer_orders,id',
+                'process_date' => 'required|date',
+                'remarks' => 'nullable|string|max:255',
+                'details' => 'required|array|min:1',
+                'details.*.item_request_detail_id' => 'required|exists:item_request_details,id',
+                'details.*.item_id' => 'required|exists:items,id',
+                'details.*.quantity' => 'required|numeric|min:0.001',
+                'details.*.item_uom_id' => 'required|exists:item_uoms,id',
+                'details.*.stock' => 'required|numeric|min:0',
+                'details.*.warehouse_id' => 'required|exists:warehouses,id',
+                'details.*.section_id' => 'required|exists:warehouse_sections,id',
+                'details.*.fullfill_quantity' => [
+                    'required',
+                    'numeric',
+                    'min:0.001',
+                    function ($attribute, $value, $fail) use ($request) {
+                        preg_match('/\d+/', $attribute, $matches);
+                        $index = $matches[0] ?? null;
+
+                        if ($index !== null && isset($request->details[$index])) {
+                            $requestQuantity = $request->details[$index]['quantity'];
+
+                            if ($value > $requestQuantity) {
+                                $fail("The fullfill quantity ({$value}) cannot exceed the request quantity ({$requestQuantity}). / 完成数量 ({$value}) 不能超过请求数量 ({$requestQuantity})。");
+                            }
+                        }
+                    }
+                ],
+                'details.*.item_uom_fullfill_id' => 'required|exists:item_uoms,id',
+                'details.*.remarks' => 'nullable|string|max:255',
+            ], $messages);
+
+            // Buat header Delivery Order
+            $deliveryOrder = $this->repository->create([
+                'process_number' => $data['process_number'],
+                'customer_order_id' => $data['customer_order_id'],
+                'process_date' => $data['process_date'],
+                'process_status' => 'Waiting Approval Manager', // Default status
+                'remarks' => $data['remarks'],
+                'created_by' => auth()->id(),
+            ]);
+            $checkApproval = $this->repository->checkApproval('create', $deliveryOrder->id);
+
+            // Simpan detail Delivery Order
+            foreach ($data['details'] as $detail) {
+                $DeliveryOrderDetail = $deliveryOrder->details()->create([
+                    'header_id' => $deliveryOrder->id,
+                    'item_request_id' => $detail['item_request_detail_id'],
+                    'item_id' => $detail['item_id'],
+                    'quantity' => $detail['fullfill_quantity'], // Gunakan fullfill quantity
+                    'item_uom_id' => $detail['item_uom_fullfill_id'],
+                    'warehouse_id' => $detail['warehouse_id'],
+                    'section_id' => $detail['section_id'],
+                    'remarks' => $detail['remarks'],
+                ]);
+                $itemRequestDetail = $this->itemRequestDetailRepository->find($detail['item_request_detail_id']);
+                $itemRequest = $itemRequestDetail->itemRequest;
+                $itemDetailNeedFullfill = 0;
+                foreach ($itemRequest->details as $itemRequestDetail) {
+                    $fullfill = $detail['fullfill_quantity'];
+                    if ($fullfill < $itemRequestDetail->quantity) {
+                        $itemDetailNeedFullfill += $itemRequestDetail->quantity - $fullfill;
+                    }
+                }
+                if ($itemDetailNeedFullfill == 0) {
+                    $itemRequest->update([
+                        'request_status' => 'On Proccess Delivery by Warehouse'
+                    ]);
+                } else {
+                    $itemRequest->update([
+                        'request_status' => 'Partial Delivery by Warehouse'
+                    ]);
+                }
+                // Update stock pada warehouse (pengurangan stok)
+                $stockEntry = WarehouseSectionStock::where('item_id', $detail['item_id'])
+                    ->where('warehouse_id', $detail['warehouse_id'])
+                    ->where('section_id', $detail['section_id'])
+                    ->latest()
+                    ->first();
+
+                if ($stockEntry) {
+                    $stockEntry->update([
+                        'quantity' => $stockEntry->quantity - $detail['fullfill_quantity']
+                    ]);
+                } else {
+                    throw new \Exception("Stock entry not found for item ID {$detail['item_id']} in warehouse ID {$detail['warehouse_id']}. / 找不到物品ID {$detail['item_id']} 在仓库ID {$detail['warehouse_id']} 的库存记录。");
+                }
+            }
+
+            DB::commit();
+            return redirect()->route('delivery-order.index')->with('success', 'Delivery Order created successfully! / 送货单创建成功！');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Delivery Order Store Error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error occurred while creating Delivery Order! / 创建送货单时发生错误！');
+        }
+    }
+
+
+    public function edit($id)
+    {
+        try {
+            $data = $this->repository->find($id);
+            return view("{$this->view}.edit", compact('data'));
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            alertNotif('error', $e->getMessage());
+            return redirect()->route("{$this->route}.index");
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        $data = $request->validate([
+            //
+        ]);
+        $data['updated_by'] = auth()->user()->id;
+        try {
+            DB::transaction(function () use ($request, $id, $data) {
+                $this->repository->update($id, $data);
+            });
+            alertNotif('update');
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            alertNotif('error', $e->getMessage());
+        }
+        return redirect()->route("{$this->route}.index");
+    }
+
+    public function destroy($id)
+    {
+        try {
+            $repository = $this->repository->find($id);
+            $repository->delete();
+            alertNotif('delete');
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            alertNotif('error', $e->getMessage());
+        }
+        return redirect()->route("{$this->route}.index");
+    }
+}

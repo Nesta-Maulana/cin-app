@@ -34,6 +34,10 @@ class CustomerOrder extends Model
             return '<span class="badge rounded-pill badge-light-success">Active</span>';
         }
     }
+    public function getTotalItemRequestAttribute()
+    {
+        return $this->hasMany(ItemRequest::class)->count();
+    }
     public function files()
     {
         return $this->morphMany(File::class, 'reference', 'class_name', 'reference_id');
@@ -57,5 +61,9 @@ class CustomerOrder extends Model
             ->whereHas('approval', function ($query) use ($event) {
                 $query->where('event', $event);
             })->where('status', 'pending');
+    }
+    public function itemRequests()
+    {
+        return $this->hasMany(ItemRequest::class);
     }
 }

@@ -31,7 +31,7 @@ class BaseRepository implements BaseRepositoryInterface
         }
     }
 
-    public function getData(array $scope = [], array $with = [], array $orderBy = [], $paginate = null, array $conditions = [], $typeSelect = 'all')
+    public function getData(array $scope = [], array $with = [], array $orderBy = [], $paginate = null, array $conditions = [], $typeSelect = 'all', $filter = null)
     {
         try {
             $query = $this->model->newQuery();
@@ -78,15 +78,30 @@ class BaseRepository implements BaseRepositoryInterface
             }
             // Apply pagination if needed
             if ($paginate) {
-                return $query->paginate($paginate);
+                // Apply filter
+                $result     = $query->paginate($paginate);
+
+                if ($filter) {
+                    $filteredCollection = $result->getCollection()->filter(function ($item) use ($filter) {
+                        return call_user_func($filter, $item);
+                    });
+                    // Replace the collection in the paginator with the filtered one.
+                    $result->setCollection($filteredCollection);
+                }
+                return $result;
             }
-            Log::info($query->toSql());
             if ($typeSelect === 'first') {
                 return $query->first();
             } elseif ($typeSelect === 'last') {
                 return $query->latest()->first(); // Use latest for the last record
             } else {
-                return $query->get();
+                $result = $query->get();
+                if ($filter) {
+                    $result = $result->filter(function ($item) use ($filter) {
+                        return call_user_func($filter, $item);
+                    });
+                }
+                return $result;
             }
         } catch (Exception $e) {
             Log::error($e->getMessage());

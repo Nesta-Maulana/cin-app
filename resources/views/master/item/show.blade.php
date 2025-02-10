@@ -5,6 +5,7 @@
     <div class="row">
         <div class="col-md-12">
             <div class="card mb-4">
+                <!-- Header -->
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Item Details / 项目详情</h5>
                     <a href="{{ route('item.index') }}" class="btn btn-secondary btn-sm">
@@ -30,7 +31,7 @@
                             </tr>
                             <tr>
                                 <th>Primary UOM / 主单位</th>
-                                <td>{{ $item->primaryUom->name ?? '-' }}</td>
+                                <td>{{ $item->unitOfMeasurement->name ?? '-' }}</td>
                             </tr>
                             <tr>
                                 <th>Status / 状态</th>
@@ -62,7 +63,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse ($item->itemUoms as $uom)
+                            @forelse ($item->itemUoms->sortBy('conversion') as $uom)
                                 <tr>
                                     <td>{{ $loop->iteration }}</td>
                                     <td>{{ $uom->unitOfMeasurement->name ?? '-' }}</td>
@@ -75,6 +76,49 @@
                             @empty
                                 <tr>
                                     <td colspan="7" class="text-center">No UOM data available / 无单位数据</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+
+                    <!-- Stock Details -->
+                    <h6 class="text-primary mt-4 mb-3">Stock Details / 库存详情</h6>
+                    <div class="mb-3">
+                        <strong>Total Stock / 总库存:</strong>
+                        @foreach ($item->itemUoms as $uom)
+                            {{ number_format($item->warehouseStocks->sum('current_stock') / $uom->conversion, 2, ',', '.') }}
+                            {{ $uom->unitOfMeasurement->name }}
+                            @if (!$loop->last)
+                                |
+                            @endif
+                        @endforeach
+                    </div>
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Warehouse / 仓库</th>
+                                <th>Warehouse Section / 仓库区域</th>
+                                <th>Stock Amount / 库存数量</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($item->warehouseStocks as $warehouseStock)
+                                <tr>
+                                    <td>{{ $warehouseStock->warehouse->name ?? '-' }}</td>
+                                    <td>{{ $warehouseStock->warehouseSection->name ?? '-' }}</td>
+                                    <td>
+                                        @foreach ($item->itemUoms as $uom)
+                                            {{ number_format($item->warehouseStocks->sum('current_stock') / $uom->conversion, 2, ',', '.') }}
+                                            {{ $uom->unitOfMeasurement->name }}
+                                            @if (!$loop->last)
+                                                |
+                                            @endif
+                                        @endforeach
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="2" class="text-center">No stock data available / 无库存数据</td>
                                 </tr>
                             @endforelse
                         </tbody>

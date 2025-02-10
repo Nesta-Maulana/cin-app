@@ -523,3 +523,11 @@ function getModels()
 
     return $models;
 }
+
+function getCurrency()
+{
+    $currenciesResponse = Http::get('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies.json');
+    $currencies = $currenciesResponse->json();
+    return $currencies;
+}
+

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Warehouse;
 use App\Repositories\BaseRepository;
 use App\Repositories\BaseRepositoryInterface;
 use App\Repositories\Master\Approval\ApprovalRepository;
@@ -30,20 +31,33 @@ use App\Repositories\Master\Permission\PermissionRepository;
 use App\Repositories\Master\Permission\PermissionRepositoryInterface;
 use App\Repositories\Master\Role\RoleRepository;
 use App\Repositories\Master\Role\RoleRepositoryInterface;
+use App\Repositories\Master\Supplier\SupplierRepository;
+use App\Repositories\Master\Supplier\SupplierRepositoryInterface;
 use App\Repositories\Master\UnitOfMeasurement\UnitOfMeasurementRepository;
 use App\Repositories\Master\UnitOfMeasurement\UnitOfMeasurementRepositoryInterface;
 use App\Repositories\Master\User\UserRepository;
 use App\Repositories\Master\User\UserRepositoryInterface;
+use App\Repositories\Master\Warehouse\WarehouseRepository;
+use App\Repositories\Master\Warehouse\WarehouseRepositoryInterface;
+use App\Repositories\Master\WarehouseSection\WarehouseSectionRepository;
+use App\Repositories\Master\WarehouseSection\WarehouseSectionRepositoryInterface;
 use App\Repositories\Services\File\FileRepository;
 use App\Repositories\Services\File\FileRepositoryInterface;
 use App\Repositories\Transaction\ApprovalRequest\ApprovalRequestRepository;
 use App\Repositories\Transaction\ApprovalRequest\ApprovalRequestRepositoryInterface;
 use App\Repositories\Transaction\CustomerOrder\CustomerOrderRepository;
 use App\Repositories\Transaction\CustomerOrder\CustomerOrderRepositoryInterface;
+use App\Repositories\Transaction\DeliveryOrder\DeliveryOrderRepository;
+use App\Repositories\Transaction\DeliveryOrder\DeliveryOrderRepositoryInterface;
+use App\Repositories\Transaction\DeliveryOrderDetail\DeliveryOrderDetailRepositoryInterface;
 use App\Repositories\Transaction\ItemRequest\ItemRequestRepository;
 use App\Repositories\Transaction\ItemRequest\ItemRequestRepositoryInterface;
 use App\Repositories\Transaction\ItemRequestDetail\ItemRequestDetailRepository;
 use App\Repositories\Transaction\ItemRequestDetail\ItemRequestDetailRepositoryInterface;
+use App\Repositories\Transaction\ItemRequestProcess\ItemRequestProcessRepository;
+use App\Repositories\Transaction\ItemRequestProcess\ItemRequestProcessRepositoryInterface;
+use App\Repositories\Transaction\StockEntry\StockEntryRepository;
+use App\Repositories\Transaction\StockEntry\StockEntryRepositoryInterface;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -76,6 +90,13 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(ApprovalLevelRepositoryInterface::class, ApprovalLevelRepository::class);
         $this->app->bind(ApprovalRequestRepositoryInterface::class, ApprovalRequestRepository::class);
         $this->app->bind(DepartmentRepositoryInterface::class, DepartmentRepository::class);
+        $this->app->bind(WarehouseRepositoryInterface::class, WarehouseRepository::class);
+        $this->app->bind(WarehouseSectionRepositoryInterface::class, WarehouseSectionRepository::class);
+        $this->app->bind(StockEntryRepositoryInterface::class, StockEntryRepository::class);
+        $this->app->bind(SupplierRepositoryInterface::class, SupplierRepository::class);
+        $this->app->bind(ItemRequestProcessRepositoryInterface::class, ItemRequestProcessRepository::class);
+        $this->app->bind(DeliveryOrderRepositoryInterface::class, DeliveryOrderRepository::class);
+        $this->app->bind(DeliveryOrderDetailRepositoryInterface::class, DeliveryOrderDetailRepositoryInterface::class);
     }
 
     /**

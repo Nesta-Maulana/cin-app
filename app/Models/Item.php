@@ -57,4 +57,14 @@ class Item extends Model
     {
         return $this->hasMany(ItemUom::class, 'item_id', 'id')->where('is_active', 1);
     }
+    public function itemPriceHistories()
+    {
+        return $this->hasMany(ItemPriceHistory::class, 'item_id', 'id');
+    }
+    public function warehouseStocks()
+    {
+        return $this->hasMany(WarehouseSectionStock::class, 'item_id', 'id');
+    }
+
+
 }

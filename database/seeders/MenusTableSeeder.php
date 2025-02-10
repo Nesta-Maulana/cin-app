@@ -229,7 +229,52 @@ class MenusTableSeeder extends Seeder
             ),
 
         ));
-
+        \DB::table('menus')->insert(array(
+            array(
+                'id' => 20,
+                'name' => 'Supplier',
+                'url' => 'supplier',
+                'permission_id' => 93,
+                'icon' => 'fa-industry',
+                'main_menu' => 9,
+                'sort' => 10,
+                'created_at' => '2025-02-05 13:56:57',
+                'updated_at' => '2025-02-05 13:56:57',
+            ),
+            array(
+                'id' => 21,
+                'name' => 'Warehouse',
+                'url' => 'warehouse',
+                'permission_id' => 101,
+                'icon' => 'fa-warehouse',
+                'main_menu' => 9,
+                'sort' => 10,
+                'created_at' => '2025-02-05 14:44:41',
+                'updated_at' => '2025-02-05 14:44:41',
+            ),
+            array(
+                'id' => 22,
+                'name' => 'Stock Entry',
+                'url' => 'stock-entry',
+                'permission_id' => 109,
+                'icon' => 'fa-inventory',
+                'main_menu' => 8,
+                'sort' => 3,
+                'created_at' => '2025-02-10 03:06:17',
+                'updated_at' => '2025-02-10 03:13:07',
+            ),
+            array(
+                'id' => 23,
+                'name' => 'Item Request Process',
+                'url' => 'item-request-process',
+                'permission_id' => 97,
+                'icon' => 'fa-tasks',
+                'main_menu' => 8,
+                'sort' => 4,
+                'created_at' => '2025-02-10 06:30:05',
+                'updated_at' => '2025-02-10 06:30:05',
+            ),
+        ));
 
     }
 }

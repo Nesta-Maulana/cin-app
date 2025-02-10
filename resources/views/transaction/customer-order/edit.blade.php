@@ -134,11 +134,14 @@
                                         @foreach ($order->files as $file)
                                             <tr>
                                                 <td>
-                                                    <input type="text" name="file_names[{{ $file->id }}]"
+                                                    <input type="hidden" class="form-control"
+                                                        name="ids[{{ $file->file_name }}]" value="{{ $file->id }}"
+                                                        readonly />
+                                                    <input type="text" name="file_names[{{ $file->file_name }}]"
                                                         class="form-control" value="{{ $file->file_name }}" readonly />
                                                 </td>
                                                 <td>
-                                                    <input type="file" name="files[{{ $file->id }}]"
+                                                    <input type="file" name="files[{{ $file->file_name }}]"
                                                         class="form-control" />
                                                     @if ($file->file_path)
                                                         <a href="{{ asset('storage/' . $file->file_path) }}"
@@ -147,7 +150,7 @@
                                                     @endif
                                                 </td>
                                                 <td>
-                                                    <textarea name="descriptions[{{ $file->id }}]" class="form-control" rows="1">{{ $file->description }}</textarea>
+                                                    <textarea name="descriptions[{{ $file->file_name }}]" class="form-control" rows="1">{{ $file->description }}</textarea>
                                                 </td>
                                                 <td>
                                                     @if ($file->file_name != 'Customer Order File')
@@ -176,13 +179,15 @@
                                     value="Active">Submit / 提交</button>
                                 <button type="submit" class="btn btn-secondary px-5 me-2" name="order_status"
                                     value="Draft">Save as Draft / 保存草稿</button>
-                                <a href="{{ route('customer-order.index') }}" class="btn btn-label-secondary">Cancel / 取消</a>
+                                <a href="{{ route('customer-order.index') }}" class="btn btn-label-secondary">Cancel /
+                                    取消</a>
                             </div>
                         @else
                             <div class="my-2">
                                 <button type="submit" class="btn btn-primary px-5 me-2" name="order_status"
-                                value="Active">Update / 更新</button>
-                                <a href="{{ route('customer-order.index') }}" class="btn btn-label-secondary">Cancel / 取消</a>
+                                    value="Active">Update / 更新</button>
+                                <a href="{{ route('customer-order.index') }}" class="btn btn-label-secondary">Cancel /
+                                    取消</a>
                             </div>
                         @endif
                     </form>

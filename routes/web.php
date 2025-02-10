@@ -9,9 +9,15 @@ use App\Http\Controllers\Master\ItemController;
 use App\Http\Controllers\Master\ItemTypeController;
 use App\Http\Controllers\Master\ItemUomController;
 use App\Http\Controllers\Master\JobCategoryController;
+use App\Http\Controllers\Master\SupplierController;
 use App\Http\Controllers\Master\UnitOfMeasurementController;
+use App\Http\Controllers\Master\WarehouseController;
+use App\Http\Controllers\Master\WarehouseSectionController;
 use App\Http\Controllers\Transaction\CustomerOrderController;
+use App\Http\Controllers\Transaction\DeliveryOrderController;
 use App\Http\Controllers\Transaction\ItemRequestController;
+use App\Http\Controllers\Transaction\ItemRequestProcessController;
+use App\Http\Controllers\Transaction\StockEntryController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Master\MenuController;
@@ -77,4 +83,19 @@ Route::middleware(['auth', 'auth.status'])->group(function () {
     Route::resource('item-request', ItemRequestController::class);
 
     Route::resource('department', DepartmentController::class);
+    Route::resource('supplier', SupplierController::class);
+    Route::get('/get-section-by-warehouse-id', [WarehouseController::class, 'getSectionByWarehouseId'])
+        ->name('get-section-by-warehouse-id');
+    Route::get('/get-warehouse', [WarehouseController::class, 'getWarehouses'])
+        ->name('get-warehouses');
+    Route::resource('warehouse', WarehouseController::class);
+    Route::resource('stock-entry', StockEntryController::class);
+
+    Route::get('view-detail-item-request/{order}', [ItemRequestProcessController::class, 'viewDetailItemRequest'])->name('view-detail-item-request');
+
+    Route::resource('item-request-process', ItemRequestProcessController::class);
+
+    Route::get('/get-item-requests-by-customer-order', [DeliveryOrderController::class, 'getItemRequestsByCustomerOrder'])
+        ->name('get-item-requests-by-customer-order');
+    Route::resource('delivery-order', DeliveryOrderController::class);
 });
