@@ -82,12 +82,14 @@
                                         </thead>
                                         <tbody>
                                             @forelse ($order->itemRequests as $request)
-                                                <tr>
-                                                    <td>{{ $request->request_number }}</td>
-                                                    <td>{{ \Carbon\Carbon::parse($request->request_date)->format('Y-m-d') }}
-                                                    </td>
-                                                    <td>{{ $request->request_status }}</td>
-                                                </tr>
+                                                @if ($request->request_status == 'Waiting On Process Warehouse')
+                                                    <tr>
+                                                        <td>{{ $request->request_number }}</td>
+                                                        <td>{{ \Carbon\Carbon::parse($request->request_date)->format('Y-m-d') }}
+                                                        </td>
+                                                        <td>{{ $request->request_status }}</td>
+                                                    </tr>
+                                                @endif
                                             @empty
                                                 <tr>
                                                     <td colspan="4" class="text-center">No item requests found /
