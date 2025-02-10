@@ -52,9 +52,11 @@
                         $allDetails = collect();
                         foreach ($customerOrder->itemRequests as $itemRequest) {
                             foreach ($itemRequest->details as $detail) {
-                                // Add a custom property for the request number.
-                                $detail->request_number = $itemRequest->request_number;
-                                $allDetails->push($detail);
+                                if ($itemRequest->request_status == 'Waiting On Process Warehouse') {
+                                    // Add a custom property for the request number.
+                                    $detail->request_number = $itemRequest->request_number;
+                                    $allDetails->push($detail);
+                                }
                             }
                         }
                         // Initialize counters for Delivery Order (DO) and Purchase Order (PO)

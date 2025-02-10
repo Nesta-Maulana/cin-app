@@ -64,38 +64,38 @@ class DeliveryOrderController extends Controller
         $allDetails = collect();
         foreach ($customerOrder->itemRequests as $itemRequest) {
             foreach ($itemRequest->details as $detail) {
-
-                // Add a custom property for the request number.
-                $stock = $detail->itemPriceHistory->itemUom->item->warehouseStocks->sum('current_stock');
-                $detail->request_number = $itemRequest->request_number;
-                $detail->item_uom_id = $detail->itemPriceHistory->itemUom->id;
-                $detail->item_uom = $detail->itemPriceHistory->itemUom->unitOfMeasurement->name;
-                $detail->item_name = $detail->itemPriceHistory->itemUom->item->name;
-                $detail->item_id = $detail->itemPriceHistory->itemUom->item->id;
-                $detail->stock = $stock;
-                $detail->warehouse_id = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->warehouse_id;
-                $detail->section_id = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->section_id;
-                $detail->warehouse_name = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->warehouse->name;
-                $detail->section_name = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->warehouseSection->name;
-                $detail->stock_uom = $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->name;
-                $detail->stock_uom_id = $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->id;
-                if (
-                    $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->id ==
-                    $detail->itemPriceHistory->itemUom->unitOfMeasurement->id
-                ) {
-                    if ($stock >= $detail->quantity) {
-                        $allDetails->push($detail);
-                    }
-                } else {
-                    $requestQuantity =
-                        $detail->quantity *
-                        $detail->itemPriceHistory->itemUom->item->unitOfMeasurement
-                            ->conversion;
-                    if ($stock >= $requestQuantity) {
-                        $allDetails->push($detail);
+                if ($itemRequest->request_status == 'Waiting On Process Warehouse') {
+                    // Add a custom property for the request number.
+                    $stock = $detail->itemPriceHistory->itemUom->item->warehouseStocks->sum('current_stock');
+                    $detail->request_number = $itemRequest->request_number;
+                    $detail->item_uom_id = $detail->itemPriceHistory->itemUom->id;
+                    $detail->item_uom = $detail->itemPriceHistory->itemUom->unitOfMeasurement->name;
+                    $detail->item_name = $detail->itemPriceHistory->itemUom->item->name;
+                    $detail->item_id = $detail->itemPriceHistory->itemUom->item->id;
+                    $detail->stock = $stock;
+                    $detail->warehouse_id = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->warehouse_id;
+                    $detail->section_id = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->section_id;
+                    $detail->warehouse_name = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->warehouse->name;
+                    $detail->section_name = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->warehouseSection->name;
+                    $detail->stock_uom = $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->name;
+                    $detail->stock_uom_id = $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->id;
+                    if (
+                        $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->id ==
+                        $detail->itemPriceHistory->itemUom->unitOfMeasurement->id
+                    ) {
+                        if ($stock >= $detail->quantity) {
+                            $allDetails->push($detail);
+                        }
+                    } else {
+                        $requestQuantity =
+                            $detail->quantity *
+                            $detail->itemPriceHistory->itemUom->item->unitOfMeasurement
+                                ->conversion;
+                        if ($stock >= $requestQuantity) {
+                            $allDetails->push($detail);
+                        }
                     }
                 }
-
             }
         }
         return response()->json(['data' => $allDetails]);
