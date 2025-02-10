@@ -65,34 +65,36 @@ class DeliveryOrderController extends Controller
         foreach ($customerOrder->itemRequests as $itemRequest) {
             foreach ($itemRequest->details as $detail) {
                 if ($itemRequest->request_status == 'Waiting On Process Warehouse') {
-                    // Add a custom property for the request number.
-                    $stock = $detail->itemPriceHistory->itemUom->item->warehouseStocks->sum('current_stock');
-                    $detail->request_number = $itemRequest->request_number;
-                    $detail->item_uom_id = $detail->itemPriceHistory->itemUom->id;
-                    $detail->item_uom = $detail->itemPriceHistory->itemUom->unitOfMeasurement->name;
-                    $detail->item_name = $detail->itemPriceHistory->itemUom->item->name;
-                    $detail->item_id = $detail->itemPriceHistory->itemUom->item->id;
-                    $detail->stock = $stock;
-                    $detail->warehouse_id = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->warehouse_id;
-                    $detail->section_id = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->section_id;
-                    $detail->warehouse_name = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->warehouse->name;
-                    $detail->section_name = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->warehouseSection->name;
-                    $detail->stock_uom = $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->name;
-                    $detail->stock_uom_id = $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->id;
-                    if (
-                        $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->id ==
-                        $detail->itemPriceHistory->itemUom->unitOfMeasurement->id
-                    ) {
-                        if ($stock >= $detail->quantity) {
-                            $allDetails->push($detail);
-                        }
-                    } else {
-                        $requestQuantity =
-                            $detail->quantity *
-                            $detail->itemPriceHistory->itemUom->item->unitOfMeasurement
-                                ->conversion;
-                        if ($stock >= $requestQuantity) {
-                            $allDetails->push($detail);
+                    if (!is_null($detail->itemPriceHistory->itemUom->item->warehouseStocks)) {
+                        // Add a custom property for the request number.
+                        $stock = $detail->itemPriceHistory->itemUom->item->warehouseStocks->sum('current_stock');
+                        $detail->request_number = $itemRequest->request_number;
+                        $detail->item_uom_id = $detail->itemPriceHistory->itemUom->id;
+                        $detail->item_uom = $detail->itemPriceHistory->itemUom->unitOfMeasurement->name;
+                        $detail->item_name = $detail->itemPriceHistory->itemUom->item->name;
+                        $detail->item_id = $detail->itemPriceHistory->itemUom->item->id;
+                        $detail->stock = $stock;
+                        $detail->warehouse_id = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->warehouse_id;
+                        $detail->section_id = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->section_id;
+                        $detail->warehouse_name = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->warehouse->name;
+                        $detail->section_name = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->warehouseSection->name;
+                        $detail->stock_uom = $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->name;
+                        $detail->stock_uom_id = $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->id;
+                        if (
+                            $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->id ==
+                            $detail->itemPriceHistory->itemUom->unitOfMeasurement->id
+                        ) {
+                            if ($stock >= $detail->quantity) {
+                                $allDetails->push($detail);
+                            }
+                        } else {
+                            $requestQuantity =
+                                $detail->quantity *
+                                $detail->itemPriceHistory->itemUom->item->unitOfMeasurement
+                                    ->conversion;
+                            if ($stock >= $requestQuantity) {
+                                $allDetails->push($detail);
+                            }
                         }
                     }
                 }
@@ -188,22 +190,22 @@ class DeliveryOrderController extends Controller
                 'details.*.warehouse_id' => 'required|exists:warehouses,id',
                 'details.*.section_id' => 'required|exists:warehouse_sections,id',
                 'details.*.fullfill_quantity' => [
-                    'required',
-                    'numeric',
-                    'min:0.001',
-                    function ($attribute, $value, $fail) use ($request) {
-                        preg_match('/\d+/', $attribute, $matches);
-                        $index = $matches[0] ?? null;
+                        'required',
+                        'numeric',
+                        'min:0.001',
+                        function ($attribute, $value, $fail) use ($request) {
+                            preg_match('/\d+/', $attribute, $matches);
+                            $index = $matches[0] ?? null;
 
-                        if ($index !== null && isset($request->details[$index])) {
-                            $requestQuantity = $request->details[$index]['quantity'];
+                            if ($index !== null && isset($request->details[$index])) {
+                                $requestQuantity = $request->details[$index]['quantity'];
 
-                            if ($value > $requestQuantity) {
-                                $fail("The fullfill quantity ({$value}) cannot exceed the request quantity ({$requestQuantity}). / 完成数量 ({$value}) 不能超过请求数量 ({$requestQuantity})。");
+                                if ($value > $requestQuantity) {
+                                    $fail("The fullfill quantity ({$value}) cannot exceed the request quantity ({$requestQuantity}). / 完成数量 ({$value}) 不能超过请求数量 ({$requestQuantity})。");
+                                }
                             }
                         }
-                    }
-                ],
+                    ],
                 'details.*.item_uom_fullfill_id' => 'required|exists:item_uoms,id',
                 'details.*.remarks' => 'nullable|string|max:255',
             ], $messages);
