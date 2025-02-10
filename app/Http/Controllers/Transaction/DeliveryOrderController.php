@@ -65,7 +65,7 @@ class DeliveryOrderController extends Controller
         foreach ($customerOrder->itemRequests as $itemRequest) {
             foreach ($itemRequest->details as $detail) {
                 if ($itemRequest->request_status == 'Waiting On Process Warehouse') {
-                    if (!is_null($detail->itemPriceHistory->itemUom->item->warehouseStocks)) {
+                    if (!empty($detail->itemPriceHistory->itemUom->item->warehouseStocks)) {
                         // Add a custom property for the request number.
                         $stock = $detail->itemPriceHistory->itemUom->item->warehouseStocks->sum('current_stock');
                         $detail->request_number = $itemRequest->request_number;
