@@ -48,8 +48,8 @@
                             <td>{{ $no++ }}</td>
                             <td>{{ $order->order_number }}</td>
                             <td>{{ $order->order_date->format('Y-m-d') }}</td>
-                            <td>{{ $order->customer->name ?? '-' }}</td>
-                            <td>{{ $order->totalItemRequest }}</td>
+                            <td>{{ $order->customer->customer_name ?? '-' }}</td>
+                            <td>{{ $order->totalItemNeedToProcess }}</td>
                             <td>
                                 <div class="d-flex align-items-center">
                                     <!-- Button to toggle collapse -->

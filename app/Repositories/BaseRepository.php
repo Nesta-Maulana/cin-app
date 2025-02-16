@@ -79,7 +79,7 @@ class BaseRepository implements BaseRepositoryInterface
             // Apply pagination if needed
             if ($paginate) {
                 // Apply filter
-                $result     = $query->paginate($paginate);
+                $result = $query->paginate($paginate);
 
                 if ($filter) {
                     $filteredCollection = $result->getCollection()->filter(function ($item) use ($filter) {
@@ -91,18 +91,21 @@ class BaseRepository implements BaseRepositoryInterface
                 return $result;
             }
             if ($typeSelect === 'first') {
-                return $query->first();
+                $result = $query->first();
+
+                return $result;
             } elseif ($typeSelect === 'last') {
-                return $query->latest()->first(); // Use latest for the last record
+                $result = $query->latest()->first(); // Use latest for the last record
             } else {
                 $result = $query->get();
-                if ($filter) {
-                    $result = $result->filter(function ($item) use ($filter) {
-                        return call_user_func($filter, $item);
-                    });
-                }
-                return $result;
             }
+
+            if ($filter) {
+                $result = $result->filter(function ($item) use ($filter) {
+                    return call_user_func($filter, $item);
+                });
+            }
+            return $result;
         } catch (Exception $e) {
             Log::error($e->getMessage());
             throw new Exception("Error fetching records: " . $e->getMessage());

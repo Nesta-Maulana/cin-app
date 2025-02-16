@@ -15,6 +15,7 @@ use App\Http\Controllers\Master\WarehouseController;
 use App\Http\Controllers\Master\WarehouseSectionController;
 use App\Http\Controllers\Transaction\CustomerOrderController;
 use App\Http\Controllers\Transaction\DeliveryOrderController;
+use App\Http\Controllers\Transaction\ItemNeedToPurchaseController;
 use App\Http\Controllers\Transaction\ItemRequestController;
 use App\Http\Controllers\Transaction\ItemRequestProcessController;
 use App\Http\Controllers\Transaction\StockEntryController;
@@ -97,5 +98,8 @@ Route::middleware(['auth', 'auth.status'])->group(function () {
 
     Route::get('/get-item-requests-by-customer-order', [DeliveryOrderController::class, 'getItemRequestsByCustomerOrder'])
         ->name('get-item-requests-by-customer-order');
+    Route::get('delivery-order/notify-purchasing', [DeliveryOrderController::class, 'notifyPurchasing'])
+        ->name('delivery-order.notify-purchasing');
     Route::resource('delivery-order', DeliveryOrderController::class);
+    Route::resource('item-need-to-purchase', ItemNeedToPurchaseController::class);
 });

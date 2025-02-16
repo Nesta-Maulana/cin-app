@@ -35,9 +35,9 @@ class DeliveryOrderDetail extends Model
     /**
      * Get the item request that is associated with this detail (if any).
      */
-    public function itemRequest()
+    public function itemRequestDetail()
     {
-        return $this->belongsTo(ItemRequest::class, 'item_request_id');
+        return $this->belongsTo(ItemRequestDetail::class, 'item_request_detail_id');
     }
 
     /**

@@ -38,9 +38,10 @@ class ItemRequestNeedProcess extends Component
     public function render()
     {
         try {
-            $scope = [];
             $orderBy = ['id' => 'asc'];
             $with = [];
+            $scope = ['requestStatus' => ['Waiting On Process Warehouse']];
+
             // Apply search filter
             if (!empty($this->search)) {
                 $scope['filter'] = [$this->search];
@@ -53,7 +54,7 @@ class ItemRequestNeedProcess extends Component
                 [],
                 'all',
                 function ($order) {
-                    return $order->totalItemRequest > 0;
+                    return $order->totalItemNeedToProcess > 0;
                 }
             );
             return view('livewire.transaction.item-request-need-process', [

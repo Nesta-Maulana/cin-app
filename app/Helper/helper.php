@@ -531,3 +531,20 @@ function getCurrency()
     return $currencies;
 }
 
+function getQuantity($detail)
+{
+    $quantity = $detail->quantity;
+    if($detail->itemPriceHistory->itemUom->unitOfMeasurement->id !== $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->id)
+    {
+        $quantity = $detail->quantity * $detail->itemPriceHistory->itemUom->conversion;
+    }
+    $quantities = $quantity.' '.$detail->itemPriceHistory->itemUom->item->unitOfMeasurement->name.' | ';
+    foreach ($detail->itemPriceHistory->itemUom->item->itemUoms->sortBy('conversion') as $key => $uom)
+    {
+        if ($uom->unitOfMeasurement->id !== $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->id) {
+            $quantities .= number_format($quantity / $uom->conversion, 2, ',', '.') . ' ' . $uom->unitOfMeasurement->name.' | ';
+        }
+    }
+    return rtrim($quantities, ' | ');
+}
+

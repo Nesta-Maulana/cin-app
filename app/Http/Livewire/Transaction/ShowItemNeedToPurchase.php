@@ -2,14 +2,14 @@
 
 namespace App\Http\Livewire\Transaction;
 
-use App\Repositories\Transaction\CustomerOrder\CustomerOrderRepositoryInterface;
+use Auth;
 use Livewire\Component;
-use App\Models\ItemRequestProcess as Model;
+use App\Models\ItemNeedToPurchase as Model;
 use Livewire\WithPagination;
 use Jantinnerezo\LivewireAlert\LivewireAlert;
-use App\Repositories\Transaction\ItemRequestProcess\ItemRequestProcessRepositoryInterface;
+use App\Repositories\Transaction\ItemNeedToPurchase\ItemNeedToPurchaseRepositoryInterface;
 
-class ShowItemRequestProcess extends Component
+class ShowItemNeedToPurchase extends Component
 {
     use LivewireAlert;
     use WithPagination;
@@ -23,44 +23,37 @@ class ShowItemRequestProcess extends Component
 
     public $title, $model, $modelId;
 
-    protected $repository, $customerOrderRepository;
+    protected $repository;
 
-    public function mount(ItemRequestProcessRepositoryInterface $repository, CustomerOrderRepositoryInterface $customerOrderRepository)
+    public function mount(ItemNeedToPurchaseRepositoryInterface $repository)
     {
         $this->repository = $repository;
-        $this->customerOrderRepository = $customerOrderRepository;
     }
     public function hydrate()
     {
-        $this->repository = app(ItemRequestProcessRepositoryInterface::class);
+        $this->repository = app(ItemNeedToPurchaseRepositoryInterface::class);
     }
 
     public function render()
     {
         try {
+            $scope = [];
+            if (Auth::user()->departments->contains('name', 'Purchasing')) {
+                $scope = ['purchasingRole' => []];
+            }
             $orderBy = ['id' => 'asc'];
             $with = [];
             // Apply search filter
             if (!empty($this->search)) {
                 $scope['filter'] = [$this->search];
             }
-            $table = $this->customerOrderRepository->getData(
-                $scope,
-                $with,
-                $orderBy,
-                $this->paginate,
-                [],
-                'all',
-                function ($order) {
-                    return $order->totalItemRequest > 0;
-                }
-            );
-            return view('livewire.transaction.show-item-request-process', [
+            $table = $this->repository->getData($scope, $with, $orderBy, $this->paginate);
+            return view('livewire.transaction.show-item-need-to-purchase', [
                 'table' => $table,
             ]);
         } catch (\Exception $e) {
             $this->alert('error', 'Error fetching permissions: ' . $e->getMessage());
-            return view('livewire.transaction.show-item-request-process', [
+            return view('livewire.transaction.show-item-need-to-purchase', [
                 'table' => collect([]),
             ]);
         }

@@ -32,14 +32,6 @@ class ItemRequestDetail extends Model
     {
         return $this->belongsTo(ItemRequest::class, 'item_request_id');
     }
-
-
-    /**
-     * Relationship: Item / 关系：项目
-     */
-    /**
-     * Relationship: Item Price History / 关系：项目价格历史
-     */
     public function itemPriceHistory()
     {
         return $this->belongsTo(ItemPriceHistory::class, 'item_price_history_id');
@@ -51,5 +43,10 @@ class ItemRequestDetail extends Model
     {
         return $this->hasMany(DeliveryOrderDetail::class, 'item_request_detail_id');
     }
+    public function itemNeedToPurchaseDetail()
+    {
+        return $this->hasOne(ItemNeedToPurchaseDetail::class, 'item_request_detail_id');
+    }
+
 
 }

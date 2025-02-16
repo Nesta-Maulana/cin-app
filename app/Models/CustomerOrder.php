@@ -25,6 +25,12 @@ class CustomerOrder extends Model
             return $query->where('name', 'like', "%$search%");
         });
     }
+    public function scopeRequestStatus($query, $request_status)
+    {
+        return $query->whereHas('itemRequests', function ($q) use ($request_status) {
+            $q->where('request_status', $request_status);
+        });
+    }
 
     public function getStatusAttribute()
     {
@@ -34,9 +40,11 @@ class CustomerOrder extends Model
             return '<span class="badge rounded-pill badge-light-success">Active</span>';
         }
     }
-    public function getTotalItemRequestAttribute()
+    public function getTotalItemNeedToProcessAttribute()
     {
-        return $this->hasMany(ItemRequest::class)->count();
+        return $this->itemRequests()
+            ->whereIn('request_status', ['Waiting On Process Warehouse'])
+            ->count();
     }
     public function files()
     {
@@ -66,4 +74,9 @@ class CustomerOrder extends Model
     {
         return $this->hasMany(ItemRequest::class);
     }
+    public function itemNeedToPurchases()
+    {
+        return $this->hasMany(ItemNeedToPurchase::class);
+    }
+
 }

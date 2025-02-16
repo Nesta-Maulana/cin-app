@@ -49,7 +49,12 @@ use App\Repositories\Transaction\CustomerOrder\CustomerOrderRepository;
 use App\Repositories\Transaction\CustomerOrder\CustomerOrderRepositoryInterface;
 use App\Repositories\Transaction\DeliveryOrder\DeliveryOrderRepository;
 use App\Repositories\Transaction\DeliveryOrder\DeliveryOrderRepositoryInterface;
+use App\Repositories\Transaction\DeliveryOrderDetail\DeliveryOrderDetailRepository;
 use App\Repositories\Transaction\DeliveryOrderDetail\DeliveryOrderDetailRepositoryInterface;
+use App\Repositories\Transaction\ItemNeedToPurchase\ItemNeedToPurchaseRepository;
+use App\Repositories\Transaction\ItemNeedToPurchase\ItemNeedToPurchaseRepositoryInterface;
+use App\Repositories\Transaction\ItemNeedToPurchaseDetail\ItemNeedToPurchaseDetailRepository;
+use App\Repositories\Transaction\ItemNeedToPurchaseDetail\ItemNeedToPurchaseDetailRepositoryInterface;
 use App\Repositories\Transaction\ItemRequest\ItemRequestRepository;
 use App\Repositories\Transaction\ItemRequest\ItemRequestRepositoryInterface;
 use App\Repositories\Transaction\ItemRequestDetail\ItemRequestDetailRepository;
@@ -96,7 +101,10 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(SupplierRepositoryInterface::class, SupplierRepository::class);
         $this->app->bind(ItemRequestProcessRepositoryInterface::class, ItemRequestProcessRepository::class);
         $this->app->bind(DeliveryOrderRepositoryInterface::class, DeliveryOrderRepository::class);
-        $this->app->bind(DeliveryOrderDetailRepositoryInterface::class, DeliveryOrderDetailRepositoryInterface::class);
+        $this->app->bind(DeliveryOrderDetailRepositoryInterface::class, DeliveryOrderDetailRepository::class);
+        $this->app->bind(ItemNeedToPurchaseRepositoryInterface::class, ItemNeedToPurchaseRepository::class);
+        $this->app->bind(ItemNeedToPurchaseDetailRepositoryInterface::class, ItemNeedToPurchaseDetailRepository::class);
+
     }
 
     /**

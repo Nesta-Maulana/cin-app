@@ -13,8 +13,11 @@ use App\Repositories\Master\Warehouse\WarehouseRepositoryInterface;
 use App\Repositories\Master\WarehouseSection\WarehouseSectionRepositoryInterface;
 use App\Repositories\Transaction\CustomerOrder\CustomerOrderRepositoryInterface;
 use App\Repositories\Transaction\DeliveryOrder\DeliveryOrderRepositoryInterface;
+use App\Repositories\Transaction\ItemNeedToPurchase\ItemNeedToPurchaseRepositoryInterface;
+use App\Repositories\Transaction\ItemNeedToPurchaseDetail\ItemNeedToPurchaseDetailRepositoryInterface;
 use App\Repositories\Transaction\ItemRequestDetail\ItemRequestDetailRepository;
 use App\Repositories\Transaction\ItemRequestDetail\ItemRequestDetailRepositoryInterface;
+use Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +26,15 @@ use Exception;
 class DeliveryOrderController extends Controller
 {
     public $view, $route;
-    protected $repository, $warehouseRepository, $warehouseSectionRepository, $itemRepository, $itemUomRepository, $customerOrderRepository, $itemRequestDetailRepository;
+    protected $repository,
+    $warehouseRepository,
+    $warehouseSectionRepository,
+    $itemRepository,
+    $itemUomRepository,
+    $customerOrderRepository,
+    $itemRequestDetailRepository,
+    $itemNeedToPurchaseRepository,
+    $itemNeedToPurchaseDetailRepository;
     public function __construct(
         DeliveryOrderRepositoryInterface $repository,
         WarehouseRepositoryInterface $warehouseRepository,
@@ -31,7 +42,9 @@ class DeliveryOrderController extends Controller
         ItemRepositoryInterface $itemRepository,
         ItemUomRepositoryInterface $itemUomRepository,
         CustomerOrderRepositoryInterface $customerOrderRepository,
-        ItemRequestDetailRepositoryInterface $itemRequestDetailRepository
+        ItemRequestDetailRepositoryInterface $itemRequestDetailRepository,
+        ItemNeedToPurchaseRepositoryInterface $itemNeedToPurchaseRepository,
+        ItemNeedToPurchaseDetailRepositoryInterface $itemNeedToPurchaseDetailRepository
     ) {
         $this->repository = $repository;
         $this->view = 'transaction.delivery-order';
@@ -42,6 +55,8 @@ class DeliveryOrderController extends Controller
         $this->itemUomRepository = $itemUomRepository;
         $this->customerOrderRepository = $customerOrderRepository;
         $this->itemRequestDetailRepository = $itemRequestDetailRepository;
+        $this->itemNeedToPurchaseRepository = $itemNeedToPurchaseRepository;
+        $this->itemNeedToPurchaseDetailRepository = $itemNeedToPurchaseDetailRepository;
         $this->middleware("can:create-{$this->route}")->only('create', 'store');
         $this->middleware("can:read-{$this->route}")->only('index');
         $this->middleware("can:update-{$this->route}")->only('edit', 'update');
@@ -52,6 +67,13 @@ class DeliveryOrderController extends Controller
     {
         return view("{$this->view}.index");
     }
+    public function show($id)
+    {
+        $deliveryOrder = $this->repository->find($id);
+        return view($this->view . '.show', compact('deliveryOrder'));
+    }
+
+
     public function getItemRequestsByCustomerOrder(Request $request)
     {
         $customerOrder = $this->customerOrderRepository->find($request->order_id);
@@ -102,11 +124,60 @@ class DeliveryOrderController extends Controller
         }
         return response()->json(['data' => $allDetails]);
     }
+    public function notifyPurchasing()
+    {
 
+        try {
+            DB::beginTransaction();
+            $customer_order_id = request()->input('customer_order_id');
+            $orderBy = ['id' => 'asc'];
+            $with = [];
+            $scope = ['requestStatus' => ['Waiting On Process Warehouse']];
+
+            $customerData = $this->customerOrderRepository->getData(
+                $scope,
+                $with,
+                $orderBy,
+                null,
+                [
+                    ['id', '=', $customer_order_id]
+                ],
+                'first',
+                function ($order) {
+                    return $order->totalItemNeedToProcess > 0;
+                }
+            );
+            $itemNeedToPurchase = $this->itemNeedToPurchaseRepository->create([
+                'customer_order_id' => $customer_order_id,
+                'request_date' => now(),
+                'created_by' => Auth()->user()->id
+            ]);
+            $checkApproval = $this->itemNeedToPurchaseRepository->checkApproval('create', $itemNeedToPurchase->id);
+            if ($checkApproval['status'] == 200) {
+                $itemNeedToPurchase->process_status = $checkApproval['message'];
+                $itemNeedToPurchase->save();
+            }
+            foreach ($customerData->itemRequests->whereIn('request_status', ['Waiting On Process Warehouse']) as $key => $itemRequest) {
+                foreach ($itemRequest->details as $k => $data) {
+                    $itemNeedToPurchaseDetail = $this->itemNeedToPurchaseDetailRepository->create([
+                        'header_id' => $itemNeedToPurchase->id,
+                        'item_request_detail_id' => $data->id,
+                    ]);
+                }
+            }
+            DB::commit();
+            alertNotif('success', 'Request for purchase has been created');
+
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            alertNotif('error', $e->getMessage());
+        }
+        return redirect()->back()->withInput();
+    }
     public function create()
     {
         // Get the customer order ID from the query string, if present.
-        $orderId = request()->query('order_id');
+        $orderId = request()->query('customer_order_id');
         $customerOrders = $this->customerOrderRepository->getData([], [], [], null, [], 'all');
         // Retrieve the necessary data for the form dropdowns.
         $warehouses = $this->warehouseRepository->getData([], [], [], null, [['is_active', '=', 1]], 'all');
@@ -225,7 +296,7 @@ class DeliveryOrderController extends Controller
             foreach ($data['details'] as $detail) {
                 $DeliveryOrderDetail = $deliveryOrder->details()->create([
                     'header_id' => $deliveryOrder->id,
-                    'item_request_id' => $detail['item_request_detail_id'],
+                    'item_request_detail_id' => $detail['item_request_detail_id'],
                     'item_id' => $detail['item_id'],
                     'quantity' => $detail['fullfill_quantity'], // Gunakan fullfill quantity
                     'item_uom_id' => $detail['item_uom_fullfill_id'],
@@ -257,10 +328,9 @@ class DeliveryOrderController extends Controller
                     ->where('section_id', $detail['section_id'])
                     ->latest()
                     ->first();
-
                 if ($stockEntry) {
                     $stockEntry->update([
-                        'quantity' => $stockEntry->quantity - $detail['fullfill_quantity']
+                        'currernt_stock' => $stockEntry->currernt_stock - $detail['fullfill_quantity']
                     ]);
                 } else {
                     throw new \Exception("Stock entry not found for item ID {$detail['item_id']} in warehouse ID {$detail['warehouse_id']}. / 找不到物品ID {$detail['item_id']} 在仓库ID {$detail['warehouse_id']} 的库存记录。");

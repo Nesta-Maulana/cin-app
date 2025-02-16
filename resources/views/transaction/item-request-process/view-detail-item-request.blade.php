@@ -14,9 +14,9 @@
                         </h5>
                         <small class="text-light">Order details for reference / 订单详细信息</small>
                     </div>
-                    <a href="{{ route('customer-order.index') }}" class="btn btn-light btn-sm" title="Back / 返回">
+                   {{--  <a href="{{ route('customer-order.index') }}" class="btn btn-light btn-sm" title="Back / 返回">
                         <i class="fa fa-arrow-left"></i> Back / 返回
-                    </a>
+                    </a> --}}
                 </div>
 
                 <!-- Card Body -->
@@ -48,20 +48,18 @@
                     <!-- Combined Item Request Details Section -->
                     <h6 class="text-primary mb-3">All Item Request Details / 所有物品请求详情</h6>
                     @php
-                        // Merge all item request details from the customer order into one collection.
                         $allDetails = collect();
                         foreach ($customerOrder->itemRequests as $itemRequest) {
                             foreach ($itemRequest->details as $detail) {
                                 if ($itemRequest->request_status == 'Waiting On Process Warehouse') {
-                                    // Add a custom property for the request number.
                                     $detail->request_number = $itemRequest->request_number;
                                     $allDetails->push($detail);
                                 }
                             }
                         }
-                        // Initialize counters for Delivery Order (DO) and Purchase Order (PO)
                         $countReadyDO = 0;
                         $countNeedPO = 0;
+
                     @endphp
 
                     <div class="table-responsive">
@@ -72,65 +70,70 @@
                                     <th>Request Number / 请求编号</th>
                                     <th>Item / 物品</th>
                                     <th>Specification / 规格</th>
-                                    <th>UOM / 单位</th>
                                     <th>Quantity / 数量</th>
+                                    <th>UOM / 单位</th>
                                     <th>Remarks / 备注</th>
                                     <th class="bg-secondary text-white">Stock on Warehouse</th>
+                                    <th class="bg-secondary text-white">Status for Request Purchase Item</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse ($allDetails as $index => $detail)
+                                    @php
+                                        $stock = $detail->itemPriceHistory->itemUom->item->warehouseStocks->sum(
+                                            'current_stock',
+                                        );
+
+                                        if (
+                                            $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->id ==
+                                            $detail->itemPriceHistory->itemUom->unitOfMeasurement->id
+                                        ) {
+                                            if ($stock == 0) {
+                                                $bgColor = 'bg-danger';
+                                                if (!$detail->itemNeedToPurchaseDetail) {
+                                                    $countNeedPO++;
+                                                }
+                                            } else {
+                                                $countReadyDO++;
+                                                if ($stock >= $detail->quantity) {
+                                                    $bgColor = 'bg-success';
+                                                } else {
+                                                    $bgColor = 'bg-danger';
+                                                    if (!$detail->itemNeedToPurchaseDetail) {
+                                                        $countNeedPO++;
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            $requestQuantity =
+                                                $detail->quantity * $detail->itemPriceHistory->itemUom->conversion;
+                                            if ($stock == 0) {
+                                                $bgColor = 'bg-danger';
+                                                if (!$detail->itemNeedToPurchaseDetail) {
+                                                    $countNeedPO++;
+                                                }
+                                            } else {
+                                                $countReadyDO++;
+                                                if ($stock >= $requestQuantity) {
+                                                    $bgColor = 'bg-success';
+                                                } else {
+                                                    $bgColor = 'bg-danger';
+                                                    if (!$detail->itemNeedToPurchaseDetail) {
+                                                        $countNeedPO++;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    @endphp
                                     <tr>
                                         <td>{{ $index + 1 }}</td>
                                         <td>{{ $detail->request_number }}</td>
                                         <td>{{ $detail->itemPriceHistory->itemUom->item->name ?? '-' }}</td>
                                         <td>{{ $detail->itemPriceHistory->itemUom->item->spesification ?? '-' }}</td>
-                                        <td>{{ $detail->itemPriceHistory->itemUom->unitOfMeasurement->name ?? '-' }}</td>
                                         <td>{{ $detail->quantity }}</td>
+                                        <td>{{ $detail->itemPriceHistory->itemUom->unitOfMeasurement->name ?? '-' }}</td>
                                         <td>{{ $detail->remarks ?? '-' }}</td>
-                                        @php
-                                            // Calculate the available stock from the warehouse (assumed in the primary unit)
-                                            $stock = $detail->itemPriceHistory->itemUom->item->warehouseStocks->sum(
-                                                'current_stock',
-                                            );
 
-                                            // Compare stock with the requested quantity. If the UOM for request is the same as the primary UOM,
-                                            // use the request quantity; otherwise, convert the quantity based on the conversion factor.
-                                            if (
-                                                $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->id ==
-                                                $detail->itemPriceHistory->itemUom->unitOfMeasurement->id
-                                            ) {
-                                                if ($stock == 0) {
-                                                    $bgColor = 'bg-danger';
-                                                    $countNeedPO++;
-                                                } else {
-                                                    if ($stock >= $detail->quantity) {
-                                                        $bgColor = 'bg-success';
-                                                        $countReadyDO++;
-                                                    } else {
-                                                        $bgColor = 'bg-danger';
-                                                        $countNeedPO++;
-                                                    }
-                                                }
-                                            } else {
-                                                $requestQuantity =
-                                                    $detail->quantity *
-                                                    $detail->itemPriceHistory->itemUom->item->unitOfMeasurement
-                                                        ->conversion;
-                                                if ($stock == 0) {
-                                                    $bgColor = 'bg-danger';
-                                                    $countNeedPO++;
-                                                } else {
-                                                    if ($stock >= $requestQuantity) {
-                                                        $bgColor = 'bg-success';
-                                                        $countReadyDO++;
-                                                    } else {
-                                                        $bgColor = 'bg-danger';
-                                                        $countNeedPO++;
-                                                    }
-                                                }
-                                            }
-                                        @endphp
                                         <td class="{{ $bgColor }}">
                                             <p class="text-white">
                                                 @foreach ($detail->itemPriceHistory->itemUom->item->itemUoms as $uom)
@@ -140,6 +143,11 @@
                                                         |
                                                     @endif
                                                 @endforeach
+                                            </p>
+                                        </td>
+                                        <td class="{{ $bgColor }}">
+                                            <p class="text-white">
+                                                {{ !$detail->itemNeedToPurchaseDetail ? 'Need To Purchase' : $detail->itemNeedToPurchaseDetail->itemNeedToPurchaseHeader->process_status }}
                                             </p>
                                         </td>
                                     </tr>
@@ -157,15 +165,17 @@
                     <!-- Buttons Section for Delivery Order and Purchase Order Creation -->
                     <div class="d-flex justify-content-end mt-3">
                         @if ($countReadyDO > 0)
-                            <a href="{{ route('delivery-order.create', ['order_id' => $customerOrder->id]) }}"
+                            <a href="{{ route('delivery-order.create', ['customer_order_id' => $customerOrder->id]) }}"
                                 class="btn btn-success me-2">
                                 Create Delivery Order / 创建送货单 ({{ $countReadyDO }})
                             </a>
                         @endif
 
                         @if ($countNeedPO > 0)
-                            <a href="{{-- {{ route('purchase-order.create', ['order_id' => $customerOrder->id]) }} --}}" class="btn btn-warning">
-                                Create Purchase Order / 创建采购单 ({{ $countNeedPO }})
+                            <a href="{{ route('delivery-order.notify-purchasing', ['customer_order_id' => $customerOrder->id]) }}"
+                                class="btn btn-warning">
+                                Notify Purchasing / 通知采购 ({{ $countNeedPO }} Item Need To Buy / 需要采购 {{ $countNeedPO }}
+                                物品)
                             </a>
                         @endif
                     </div>

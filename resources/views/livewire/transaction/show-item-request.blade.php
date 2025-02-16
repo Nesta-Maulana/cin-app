@@ -91,7 +91,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     @can('update-item-request')
-                                        @if (in_array($item->request_status, ['Draft', 'Waiting Approval Manager']))
+                                        @if (in_array($item->request_status, ['Draft', 'Waiting Approval Manager','Rejected']))
                                             @if ($item->created_by == auth()->user()->id)
                                                 <a href="{{ route('item-request.edit', $item->id) }}" class="action-btn"
                                                     title="Edit / 编辑">
