@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
-class PurchaseOrderDetail extends Model
+class PurchaseOrderSupplierOffer extends Model
 {
     use HasFactory, LogsActivity;
 
@@ -24,29 +24,29 @@ class PurchaseOrderDetail extends Model
         return $this->belongsTo(PurchaseOrder::class, 'purchase_order_id');
     }
 
-    // Relasi ke Item
-    public function itemRequestDetail()
+    // Relasi ke Purchase Order Detail (barang yang ditawarkan)
+    public function purchaseOrderDetail()
     {
-        return $this->belongsTo(ItemRequest::class, 'item_request_detail_id');
+        return $this->belongsTo(PurchaseOrderDetail::class, 'purchase_order_detail_id');
     }
 
-    // Relasi ke Satuan Unit of Measurement (UOM)
-    public function uom()
+    // Relasi ke Supplier
+    public function supplier()
     {
-        return $this->belongsTo(ItemUom::class, 'item_uom_id');
+        return $this->belongsTo(Supplier::class, 'supplier_id');
     }
 
-    // Relasi ke supplier offers
-    public function supplierOffers()
+    // Relasi ke detail offer supplier
+    public function offerDetails()
     {
-        return $this->hasMany(PurchaseOrderSupplierOffer::class, 'purchase_order_detail_id');
+        return $this->hasMany(PurchaseOrderSupplierOfferDetail::class, 'offer_id');
     }
 
-    // Scope untuk filter berdasarkan item
+    // Scope untuk filter supplier
     public function scopeFilter($query, $search)
     {
         return $query->when($search ?? false, function ($query, $search) {
-            return $query->whereHas('item', function ($q) use ($search) {
+            return $query->whereHas('supplier', function ($q) use ($search) {
                 $q->where('name', 'like', "%$search%");
             });
         });

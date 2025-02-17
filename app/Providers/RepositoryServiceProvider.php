@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\PurchaseOrderSupplierOfferDetail;
 use App\Models\Warehouse;
 use App\Repositories\BaseRepository;
 use App\Repositories\BaseRepositoryInterface;
@@ -61,6 +62,14 @@ use App\Repositories\Transaction\ItemRequestDetail\ItemRequestDetailRepository;
 use App\Repositories\Transaction\ItemRequestDetail\ItemRequestDetailRepositoryInterface;
 use App\Repositories\Transaction\ItemRequestProcess\ItemRequestProcessRepository;
 use App\Repositories\Transaction\ItemRequestProcess\ItemRequestProcessRepositoryInterface;
+use App\Repositories\Transaction\PurchaseOrder\PurchaseOrderRepository;
+use App\Repositories\Transaction\PurchaseOrder\PurchaseOrderRepositoryInterface;
+use App\Repositories\Transaction\PurchaseOrderDetail\PurchaseOrderDetailRepository;
+use App\Repositories\Transaction\PurchaseOrderDetail\PurchaseOrderDetailRepositoryInterface;
+use App\Repositories\Transaction\PurchaseOrderSupplierOffer\PurchaseOrderSupplierOfferRepository;
+use App\Repositories\Transaction\PurchaseOrderSupplierOffer\PurchaseOrderSupplierOfferRepositoryInterface;
+use App\Repositories\Transaction\PurchaseOrderSupplierOfferDetail\PurchaseOrderSupplierOfferDetailRepository;
+use App\Repositories\Transaction\PurchaseOrderSupplierOfferDetail\PurchaseOrderSupplierOfferDetailRepositoryInterface;
 use App\Repositories\Transaction\StockEntry\StockEntryRepository;
 use App\Repositories\Transaction\StockEntry\StockEntryRepositoryInterface;
 use Illuminate\Support\ServiceProvider;
@@ -104,6 +113,10 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(DeliveryOrderDetailRepositoryInterface::class, DeliveryOrderDetailRepository::class);
         $this->app->bind(ItemNeedToPurchaseRepositoryInterface::class, ItemNeedToPurchaseRepository::class);
         $this->app->bind(ItemNeedToPurchaseDetailRepositoryInterface::class, ItemNeedToPurchaseDetailRepository::class);
+        $this->app->bind(PurchaseOrderRepositoryInterface::class, PurchaseOrderRepository::class);
+        $this->app->bind(PurchaseOrderDetailRepositoryInterface::class, PurchaseOrderDetailRepository::class);
+        $this->app->bind(PurchaseOrderSupplierOfferRepositoryInterface::class, PurchaseOrderSupplierOfferRepository::class);
+        $this->app->bind(PurchaseOrderSupplierOfferDetailRepositoryInterface::class, PurchaseOrderSupplierOfferDetailRepository::class);
 
     }
 

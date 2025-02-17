@@ -43,6 +43,10 @@ class ItemRequestDetail extends Model
     {
         return $this->hasMany(DeliveryOrderDetail::class, 'item_request_detail_id');
     }
+    public function purchaseOrderDetails()
+    {
+        return $this->hasMany(PurchaseOrderDetail::class, 'item_request_detail_id');
+    }
     public function itemNeedToPurchaseDetail()
     {
         return $this->hasOne(ItemNeedToPurchaseDetail::class, 'item_request_detail_id');

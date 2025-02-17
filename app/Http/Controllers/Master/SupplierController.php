@@ -40,7 +40,11 @@ class SupplierController extends Controller
     {
         return view("{$this->view}.create");
     }
-
+    public function getSUppliers()
+    {
+        $suppliers = $this->repository->getData([], [], [], null, [['is_active', '=', 1]], 'all');
+        return response()->json(['success' => true, 'data' => $suppliers]);
+    }
     public function store(Request $request)
     {
         // ✅ Validasi Input

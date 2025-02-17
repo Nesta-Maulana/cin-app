@@ -547,4 +547,15 @@ function getQuantity($detail)
     }
     return rtrim($quantities, ' | ');
 }
+function getQuantityByItem($item, $quantity,$defaultUom)
+{
+    $quantities = $quantity.' '.$defaultUom.' | ';
+    foreach ($item->itemUoms->sortBy('conversion') as $key => $uom)
+    {
+        if ($uom->unitOfMeasurement->id !== $defaultUom) {
+            $quantities .= number_format($quantity / $uom->conversion, 2, ',', '.') . ' ' . $uom->unitOfMeasurement->name.' | ';
+        }
+    }
+    return rtrim($quantities, ' | ');
+}
 

@@ -3,32 +3,25 @@
 namespace App\Http\Controllers\Transaction;
 
 use App\Http\Controllers\Controller;
-use App\Models\PurchaseOrder;
-use App\Repositories\Transaction\CustomerOrder\CustomerOrderRepositoryInterface;
-use App\Repositories\Transaction\PurchaseOrder\PurchaseOrderRepositoryInterface;
-use Carbon\Carbon;
+use App\Repositories\Transaction\PurchaseOrderSupplierOffer\PurchaseOrderSupplierOfferRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
-class PurchaseOrderController extends Controller
+class PurchaseOrderSupplierOfferController extends Controller
 {
     public $view, $route;
-    protected $repository, $customerOrderRepository;
-    public function __construct(
-        PurchaseOrderRepositoryInterface $repository,
-        CustomerOrderRepositoryInterface $customerOrderRepository
-        )
+    protected $repository;
+    public function __construct(PurchaseOrderSupplierOfferRepositoryInterface $repository)
     {
         $this->repository = $repository;
-        $this->customerOrderRepository = $customerOrderRepository;
-        $this->view = 'transaction.purchase-order';
-        $this->route = 'purchase-order';
+        $this->view = 'transaction.purchaseordersupplieroffer';
+        $this->route = '';
 
-        $this->middleware("can:create-{$this->route}")->only('create', 'store');
+        $this->middleware("can:create-{$this->route}")->only('create','store');
         $this->middleware("can:read-{$this->route}")->only('index');
-        $this->middleware("can:update-{$this->route}")->only('edit', 'update');
+        $this->middleware("can:update-{$this->route}")->only('edit','update');
         $this->middleware("can:delete-{$this->route}")->only('destroy');
     }
 
@@ -39,30 +32,7 @@ class PurchaseOrderController extends Controller
 
     public function create()
     {
-        $orderNumber = $this->generatePONumber();
-        $customerOrders = $this->customerOrderRepository->all();
-
-        return view("{$this->view}.create", compact('orderNumber', 'customerOrders'));
-    }
-    private function generatePONumber()
-    {
-        // Ambil tanggal, bulan, dan tahun (2 digit)
-        $datePart = Carbon::now()->format('dmy'); // Contoh: "100224" (10 Feb 2024)
-
-        // Hitung jumlah PO yang sudah ada dalam tahun ini
-        $year = Carbon::now()->year; // Contoh: 2024
-        $lastPO = PurchaseOrder::whereYear('created_at', $year)
-            ->orderBy('id', 'desc')
-            ->first();
-
-        // Ambil nomor urut terakhir, jika ada, increment +1, jika tidak mulai dari 001
-        $incrementalNumber = $lastPO ? intval(substr($lastPO->po_number, -3)) + 1 : 1;
-
-        // Formatkan nomor incremental menjadi 3 digit (001, 002, 003, ...)
-        $formattedIncrement = str_pad($incrementalNumber, 3, '0', STR_PAD_LEFT);
-
-        // Hasil format akhir: PO{DD}{MM}{YY}-{XXX}
-        return "PO{$datePart}-{$formattedIncrement}";
+        return view("{$this->view}.create");
     }
 
     public function store(Request $request)

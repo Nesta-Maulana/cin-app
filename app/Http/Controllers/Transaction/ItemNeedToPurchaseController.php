@@ -40,6 +40,64 @@ class ItemNeedToPurchaseController extends Controller
     }
 
 
+    public function getItemByCustomerOrder()
+    {
+        $itemNeedToPurchases = $this->repository->getData(
+            [],
+            [
+                'customerOrder',
+                'itemNeedToPurchaseDetail',
+                'itemNeedToPurchaseDetail.itemRequestDetail',
+                'itemNeedToPurchaseDetail.itemRequestDetail',
+                'itemNeedToPurchaseDetail.itemRequestDetail.itemPriceHistory',
+                'itemNeedToPurchaseDetail.itemRequestDetail.itemRequest',
+                'itemNeedToPurchaseDetail.itemRequestDetail.itemPriceHistory.itemUom',
+                'itemNeedToPurchaseDetail.itemRequestDetail.itemPriceHistory.itemUom.item',
+                'itemNeedToPurchaseDetail.itemRequestDetail.itemPriceHistory.itemUom.unitOfMeasurement',
+            ],
+            [],
+            null,
+            [['process_status', '=', 'Waiting Process Purchasing']],
+            'all'
+        );
+        $items = [];
+        foreach ($itemNeedToPurchases as $key => $customerOrder) {
+            foreach ($customerOrder->itemNeedToPurchaseDetail as $key => $itemNeedToPurchaseDetail) {
+                $item['item_id'] = $itemNeedToPurchaseDetail->itemRequestDetail->itemPriceHistory->itemUom->item->id;
+                $item['item_name'] = $itemNeedToPurchaseDetail->itemRequestDetail->itemPriceHistory->itemUom->item->name;
+                $requestedQuantity = $itemNeedToPurchaseDetail->itemRequestDetail->quantity;
+                $receivedQuantity = $itemNeedToPurchaseDetail->itemRequestDetail->deliveryOrderDetails->sum('quantity');
+                $pendingQuantity = $requestedQuantity - $receivedQuantity;
+                $purchaseQuantity = $itemNeedToPurchaseDetail->itemRequestDetail->purchaseOrderDetails->sum('quantity');
+
+                $requestedUOM = $itemNeedToPurchaseDetail->itemRequestDetail->itemPriceHistory->itemUom->unitOfMeasurement->id;
+                $baseUOM = $itemNeedToPurchaseDetail->itemRequestDetail->itemPriceHistory->itemUom->item->unitOfMeasurement->id;
+                if ($requestedUOM != $baseUOM) {
+                    $pendingQuantity *= $itemNeedToPurchaseDetail->itemRequestDetail->itemPriceHistory->itemUom->conversion;
+                    $receivedQuantity *= $itemNeedToPurchaseDetail->itemRequestDetail->itemPriceHistory->itemUom->conversion;
+                }
+                $needToBuyQuantity = $pendingQuantity - $purchaseQuantity;
+                $item['need_to_buy_quantity'] = $needToBuyQuantity;
+                $item['uom_id'] = $itemNeedToPurchaseDetail->itemRequestDetail->itemPriceHistory->itemUom->item->unitOfMeasurement->id;
+                $item['uom_name'] = $itemNeedToPurchaseDetail->itemRequestDetail->itemPriceHistory->itemUom->item->unitOfMeasurement->name;
+                $existingItem = array_filter($items, function ($item) use ($itemNeedToPurchaseDetail) {
+                    return $item['item_id'] == $itemNeedToPurchaseDetail->itemRequestDetail->itemPriceHistory->itemUom->item->id;
+                });
+
+                if (count($existingItem) > 0) {
+                    $items = array_map(function ($item) use ($existingItem, $needToBuyQuantity) {
+                        if ($item['item_id'] == $existingItem[0]['item_id']) {
+                            $item['need_to_buy_quantity'] += $needToBuyQuantity;
+                        }
+                        return $item;
+                    }, $items);
+                } else {
+                    $items[] = $item;
+                }
+            }
+        }
+        return response()->json(['success' => true, 'data' => ['items' => $items, 'itemNeedToPurchases' => $itemNeedToPurchases]]);
+    }
     public function create()
     {
         return view("{$this->view}.create");

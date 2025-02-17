@@ -12,45 +12,30 @@
 
             <!-- Action Buttons -->
             <div class="text-md-end text-start d-flex align-items-center justify-content-end flex-md-row flex-column">
-                @if (!$selected)
-                    <!-- Pagination Dropdown -->
-                    <div class="my-1 me-md-2">
-                        <label>
-                            <select wire:model="paginate" class="form-select">
-                                <option value="10">10</option>
-                                <option value="25">25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
-                        </label>
-                    </div>
+                <!-- Pagination Dropdown -->
+                <div class="my-1 me-md-2">
+                    <label>
+                        <select wire:model="paginate" class="form-select">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </label>
+                </div>
 
-                    @can('create-customer-order')
-                        <!-- Add New Button -->
-                        <div class="flex-wrap my-1">
-                            <a href="{{ route('customer-order.create') }}"
-                                class="btn btn-secondary text-white add-new btn-primary">
-                                <span>
-                                    <i class="fa fa-plus me-0 me-sm-1 fa-xs"></i>
-                                    <span>Create Order / 创建订单</span>
-                                </span>
-                            </a>
-                        </div>
-                    @endcan
-                @else
-                    <!-- Bulk Actions -->
-                    <div class="my-1 me-md-2">
-                        <span class="px-1">
-                            {{ count($selected) }} data selected / 数据已选中
-                        </span>
-                    </div>
+                @can('create-customer-order')
+                    <!-- Add New Button -->
                     <div class="flex-wrap my-1">
-                        <a href="#" class="btn btn-secondary add-new btn-label-primary" data-bs-toggle="modal"
-                            data-bs-target="#modalSelectedStatus">
-                            Update Status / 更新状态
+                        <a href="{{ route('customer-order.create') }}"
+                            class="btn btn-secondary text-white add-new btn-primary">
+                            <span>
+                                <i class="fa fa-plus me-0 me-sm-1 fa-xs"></i>
+                                <span>Create Order / 创建订单</span>
+                            </span>
                         </a>
                     </div>
-                @endif
+                @endcan
             </div>
         </div>
 
@@ -59,12 +44,6 @@
             <table class="table border-top">
                 <thead>
                     <tr>
-                        @can('update-customer-order')
-                            <th>
-                                <input style="width: 17px; height: 17px;" wire:model="selectAll" type="checkbox"
-                                    class="form-check-input">
-                            </th>
-                        @endcan
                         <th>Order Number / 订单编号</th>
                         <th>Customer Name / 客户名称</th>
                         <th>Project Name / 项目名称</th>
@@ -82,12 +61,6 @@
                         @endphp
 
                         <tr wire:key="row{{ $item->id }}">
-                            @can('update-customer-order')
-                                <td>
-                                    <input style="width: 17px; height: 17px;" wire:model="selected"
-                                        value="{{ $item->id }}" type="checkbox" class="dt-checkboxes form-check-input">
-                                </td>
-                            @endcan
                             <td>{{ $item->order_number }}</td>
                             <td>{{ $item->customer->customer_name }}</td>
                             <td>{{ $item->project_name ?? '-' }}</td>
