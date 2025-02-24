@@ -86,7 +86,7 @@ class DeliveryOrderController extends Controller
         $allDetails = collect();
         foreach ($customerOrder->itemRequests as $itemRequest) {
             foreach ($itemRequest->details as $detail) {
-                if ($itemRequest->request_status == 'Waiting On Process Warehouse') {
+                if (in_array($itemRequest->request_status, ['Waiting On Process Warehouse', 'Partial Delivery by Warehouse'])) {
                     if (!empty($detail->itemPriceHistory->itemUom->item->warehouseStocks)) {
                         // Add a custom property for the request number.
                         $stock = $detail->itemPriceHistory->itemUom->item->warehouseStocks->sum('current_stock');
@@ -96,24 +96,26 @@ class DeliveryOrderController extends Controller
                         $detail->item_name = $detail->itemPriceHistory->itemUom->item->name;
                         $detail->item_id = $detail->itemPriceHistory->itemUom->item->id;
                         $detail->stock = $stock;
+                        $detail->stock_textual = getQuantityByItem($detail->itemPriceHistory->itemUom->item, $stock, $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->name);
                         $detail->warehouse_id = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->warehouse_id;
                         $detail->section_id = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->section_id;
                         $detail->warehouse_name = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->warehouse->name;
                         $detail->section_name = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->warehouseSection->name;
                         $detail->stock_uom = $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->name;
                         $detail->stock_uom_id = $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->id;
+                        $detail->quantity -= $detail->deliveryOrderDetails->sum('quantity');
                         if (
                             $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->id ==
                             $detail->itemPriceHistory->itemUom->unitOfMeasurement->id
                         ) {
+
                             if ($stock >= $detail->quantity) {
                                 $allDetails->push($detail);
                             }
                         } else {
                             $requestQuantity =
                                 $detail->quantity *
-                                $detail->itemPriceHistory->itemUom->item->unitOfMeasurement
-                                    ->conversion;
+                                $detail->itemPriceHistory->itemUom->conversion;
                             if ($stock >= $requestQuantity) {
                                 $allDetails->push($detail);
                             }
@@ -123,6 +125,36 @@ class DeliveryOrderController extends Controller
             }
         }
         return response()->json(['data' => $allDetails]);
+    }
+
+    public function checkStock(Request $request)
+    {
+        $itemId = $request->item_id;
+        $item = $this->itemRepository->find($itemId);
+        $uomId = $request->item_uom_fullfill_id;
+        $fullfillQuantity = (float) $request->fullfill_quantity;
+        $itemUomId = $request->item_uom_fullfill_id;
+        $itemUom = $this->itemUomRepository->find($itemUomId);
+        $stock = (float) $request->stock_actual;
+        if ($uomId !== $item->unitOfMeasurement->id) {
+            $fullfillQuantity *= $itemUom->conversion;
+        }
+        // Ambil stok dari database berdasarkan item_id dan unit of measurement (UOM)
+        //$stock = getQuantityByItem($itemId); // Fungsi ini harus tersedia di helper atau model
+
+        if ($fullfillQuantity > $stock) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Fullfill quantity exceeds available stock / 数量超过可用库存',
+                'available_stock' => $stock
+            ], 400);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Stock is sufficient / 库存充足',
+            'available_stock' => $stock
+        ]);
     }
     public function notifyPurchasing()
     {
@@ -212,85 +244,87 @@ class DeliveryOrderController extends Controller
     public function store(Request $request)
     {
         DB::beginTransaction();
+        $messages = [
+            'process_number.required' => 'Process Number is required. / 处理编号是必填项。',
+            'process_number.unique' => 'Process Number must be unique. / 处理编号必须唯一。',
+            'customer_order_id.required' => 'Customer Order is required. / 客户订单是必填项。',
+            'customer_order_id.exists' => 'Selected Customer Order does not exist. / 选择的客户订单不存在。',
+            'process_date.required' => 'Process Date is required. / 处理日期是必填项。',
+            'process_date.date' => 'Invalid date format. / 无效的日期格式。',
+            'remarks.max' => 'Remarks must not exceed 255 characters. / 备注不能超过255个字符。',
+            'details.required' => 'At least one item is required. / 至少需要一个物品。',
+            'details.*.item_request_detail_id.required' => 'Item Request ID is required. / 物品请求ID是必填项。',
+            'details.*.item_request_detail_id.exists' => 'Item Request ID does not exist. / 物品请求ID不存在。',
+            'details.*.item_id.required' => 'Item is required. / 物品是必填项。',
+            'details.*.item_id.exists' => 'Selected item does not exist. / 选择的物品不存在。',
+            'details.*.quantity.required' => 'Request Quantity is required. / 请求数量是必填项。',
+            'details.*.quantity.numeric' => 'Request Quantity must be a valid number. / 请求数量必须是有效数字。',
+            'details.*.quantity.min' => 'Request Quantity must be at least 0.001. / 请求数量必须至少为0.001。',
+            'details.*.item_uom_id.required' => 'Unit of Measurement is required. / 计量单位是必填项。',
+            'details.*.item_uom_id.exists' => 'Selected Unit of Measurement does not exist. / 选择的计量单位不存在。',
+            'details.*.stock.required' => 'Stock is required. / 库存是必填项。',
+            'details.*.stock.numeric' => 'Stock must be a valid number. / 库存必须是有效数字。',
+            'details.*.warehouse_id.required' => 'Warehouse is required. / 仓库是必填项。',
+            'details.*.warehouse_id.exists' => 'Selected Warehouse does not exist. / 选择的仓库不存在。',
+            'details.*.section_id.required' => 'Warehouse Section is required. / 仓库区域是必填项。',
+            'details.*.section_id.exists' => 'Selected Warehouse Section does not exist. / 选择的仓库区域不存在。',
+            'details.*.fullfill_quantity.required' => 'Fullfill Quantity is required. / 完成数量是必填项。',
+            'details.*.fullfill_quantity.numeric' => 'Fullfill Quantity must be a valid number. / 完成数量必须是有效数字。',
+            'details.*.fullfill_quantity.min' => 'Fullfill Quantity must be at least 0.001. / 完成数量必须至少为0.001。',
+            'details.*.item_uom_fullfill_id.required' => 'Fullfill Unit of Measurement is required. / 完成单位是必填项。',
+            'details.*.item_uom_fullfill_id.exists' => 'Selected Fullfill Unit of Measurement does not exist. / 选择的完成单位不存在。',
+            'details.*.remarks.max' => 'Remarks must not exceed 255 characters. / 备注不能超过255个字符。',
+        ];
+        $data = $request->validate([
+            'process_number' => 'required|string|max:20|unique:delivery_orders,process_number',
+            'customer_order_id' => 'required|exists:customer_orders,id',
+            'process_date' => 'required|date',
+            'remarks' => 'nullable|string|max:255',
+            'details' => 'required|array|min:1',
+            'details.*.item_request_detail_id' => 'required|exists:item_request_details,id',
+            'details.*.item_id' => 'required|exists:items,id',
+            'details.*.quantity' => 'required|numeric|min:0.001',
+            'details.*.item_uom_id' => 'required|exists:item_uoms,id',
+            'details.*.stock' => 'required|numeric|min:0',
+            'details.*.warehouse_id' => 'required|exists:warehouses,id',
+            'details.*.section_id' => 'required|exists:warehouse_sections,id',
+            'details.*.fullfill_quantity' => [
+                'required',
+                'numeric',
+                'min:0.001',
+                function ($attribute, $value, $fail) use ($request) {
+                    preg_match('/\d+/', $attribute, $matches);
+                    $index = $matches[0] ?? null;
+
+                    if ($index !== null && isset($request->details[$index])) {
+                        $requestQuantity = $request->details[$index]['quantity'];
+
+                        if ($value > $requestQuantity) {
+                            $fail("The fullfill quantity ({$value}) cannot exceed the request quantity ({$requestQuantity}). / 完成数量 ({$value}) 不能超过请求数量 ({$requestQuantity})。");
+                        }
+                    }
+                }
+            ],
+            'details.*.item_uom_fullfill_id' => 'required|exists:item_uoms,id',
+            'details.*.remarks' => 'nullable|string|max:255',
+        ], $messages);
         try {
             // Custom validation messages (English & Mandarin)
-            $messages = [
-                'process_number.required' => 'Process Number is required. / 处理编号是必填项。',
-                'process_number.unique' => 'Process Number must be unique. / 处理编号必须唯一。',
-                'customer_order_id.required' => 'Customer Order is required. / 客户订单是必填项。',
-                'customer_order_id.exists' => 'Selected Customer Order does not exist. / 选择的客户订单不存在。',
-                'process_date.required' => 'Process Date is required. / 处理日期是必填项。',
-                'process_date.date' => 'Invalid date format. / 无效的日期格式。',
-                'remarks.max' => 'Remarks must not exceed 255 characters. / 备注不能超过255个字符。',
-                'details.required' => 'At least one item is required. / 至少需要一个物品。',
-                'details.*.item_request_detail_id.required' => 'Item Request ID is required. / 物品请求ID是必填项。',
-                'details.*.item_request_detail_id.exists' => 'Item Request ID does not exist. / 物品请求ID不存在。',
-                'details.*.item_id.required' => 'Item is required. / 物品是必填项。',
-                'details.*.item_id.exists' => 'Selected item does not exist. / 选择的物品不存在。',
-                'details.*.quantity.required' => 'Request Quantity is required. / 请求数量是必填项。',
-                'details.*.quantity.numeric' => 'Request Quantity must be a valid number. / 请求数量必须是有效数字。',
-                'details.*.quantity.min' => 'Request Quantity must be at least 0.001. / 请求数量必须至少为0.001。',
-                'details.*.item_uom_id.required' => 'Unit of Measurement is required. / 计量单位是必填项。',
-                'details.*.item_uom_id.exists' => 'Selected Unit of Measurement does not exist. / 选择的计量单位不存在。',
-                'details.*.stock.required' => 'Stock is required. / 库存是必填项。',
-                'details.*.stock.numeric' => 'Stock must be a valid number. / 库存必须是有效数字。',
-                'details.*.warehouse_id.required' => 'Warehouse is required. / 仓库是必填项。',
-                'details.*.warehouse_id.exists' => 'Selected Warehouse does not exist. / 选择的仓库不存在。',
-                'details.*.section_id.required' => 'Warehouse Section is required. / 仓库区域是必填项。',
-                'details.*.section_id.exists' => 'Selected Warehouse Section does not exist. / 选择的仓库区域不存在。',
-                'details.*.fullfill_quantity.required' => 'Fullfill Quantity is required. / 完成数量是必填项。',
-                'details.*.fullfill_quantity.numeric' => 'Fullfill Quantity must be a valid number. / 完成数量必须是有效数字。',
-                'details.*.fullfill_quantity.min' => 'Fullfill Quantity must be at least 0.001. / 完成数量必须至少为0.001。',
-                'details.*.item_uom_fullfill_id.required' => 'Fullfill Unit of Measurement is required. / 完成单位是必填项。',
-                'details.*.item_uom_fullfill_id.exists' => 'Selected Fullfill Unit of Measurement does not exist. / 选择的完成单位不存在。',
-                'details.*.remarks.max' => 'Remarks must not exceed 255 characters. / 备注不能超过255个字符。',
-            ];
-
+            $status = $request->input('submit_type') === 'Draft' ? 'Draft' : 'Waiting Approval Manager';
             // Validasi request data
-            $data = $request->validate([
-                'process_number' => 'required|string|max:20|unique:delivery_orders,process_number',
-                'customer_order_id' => 'required|exists:customer_orders,id',
-                'process_date' => 'required|date',
-                'remarks' => 'nullable|string|max:255',
-                'details' => 'required|array|min:1',
-                'details.*.item_request_detail_id' => 'required|exists:item_request_details,id',
-                'details.*.item_id' => 'required|exists:items,id',
-                'details.*.quantity' => 'required|numeric|min:0.001',
-                'details.*.item_uom_id' => 'required|exists:item_uoms,id',
-                'details.*.stock' => 'required|numeric|min:0',
-                'details.*.warehouse_id' => 'required|exists:warehouses,id',
-                'details.*.section_id' => 'required|exists:warehouse_sections,id',
-                'details.*.fullfill_quantity' => [
-                        'required',
-                        'numeric',
-                        'min:0.001',
-                        function ($attribute, $value, $fail) use ($request) {
-                            preg_match('/\d+/', $attribute, $matches);
-                            $index = $matches[0] ?? null;
-
-                            if ($index !== null && isset($request->details[$index])) {
-                                $requestQuantity = $request->details[$index]['quantity'];
-
-                                if ($value > $requestQuantity) {
-                                    $fail("The fullfill quantity ({$value}) cannot exceed the request quantity ({$requestQuantity}). / 完成数量 ({$value}) 不能超过请求数量 ({$requestQuantity})。");
-                                }
-                            }
-                        }
-                    ],
-                'details.*.item_uom_fullfill_id' => 'required|exists:item_uoms,id',
-                'details.*.remarks' => 'nullable|string|max:255',
-            ], $messages);
 
             // Buat header Delivery Order
             $deliveryOrder = $this->repository->create([
                 'process_number' => $data['process_number'],
                 'customer_order_id' => $data['customer_order_id'],
                 'process_date' => $data['process_date'],
-                'process_status' => 'Waiting Approval Manager', // Default status
+                'process_status' => $status, // Use dynamic status
                 'remarks' => $data['remarks'],
                 'created_by' => auth()->id(),
             ]);
-            $checkApproval = $this->repository->checkApproval('create', $deliveryOrder->id);
+            if ($status === 'Waiting Approval Manager') {
+                $checkApproval = $this->repository->checkApproval('create', $deliveryOrder->id);
+            }
 
             // Simpan detail Delivery Order
             foreach ($data['details'] as $detail) {
@@ -322,28 +356,41 @@ class DeliveryOrderController extends Controller
                         'request_status' => 'Partial Delivery by Warehouse'
                     ]);
                 }
-                // Update stock pada warehouse (pengurangan stok)
-                $stockEntry = WarehouseSectionStock::where('item_id', $detail['item_id'])
-                    ->where('warehouse_id', $detail['warehouse_id'])
-                    ->where('section_id', $detail['section_id'])
-                    ->latest()
-                    ->first();
-                if ($stockEntry) {
-                    $stockEntry->update([
-                        'currernt_stock' => $stockEntry->currernt_stock - $detail['fullfill_quantity']
-                    ]);
-                } else {
-                    throw new \Exception("Stock entry not found for item ID {$detail['item_id']} in warehouse ID {$detail['warehouse_id']}. / 找不到物品ID {$detail['item_id']} 在仓库ID {$detail['warehouse_id']} 的库存记录。");
+                if ($status === 'Waiting Approval Manager') {
+                    $stockEntry = WarehouseSectionStock::where('item_id', $detail['item_id'])
+                        ->where('warehouse_id', $detail['warehouse_id'])
+                        ->where('section_id', $detail['section_id'])
+                        ->latest()
+                        ->first();
+
+                    if ($stockEntry) {
+                        $fullFillUOM = $this->itemUomRepository->find($detail['item_uom_fullfill_id']);
+                        $fullFillQuantity = $detail['fullfill_quantity'];
+
+                        $item = $this->itemRepository->find($detail['item_id']);
+                        if ($fullFillUOM->id !== $item->unitOfMeasurement->id) {
+                            $fullFillQuantity *= $fullFillUOM->conversion;
+                        }
+                        $stockEntry->update([
+                            'current_stock' => $stockEntry->current_stock - $fullFillQuantity
+                        ]);
+                    } else {
+                        throw new Exception("Stock entry not found for item ID {$detail['item_id']} in warehouse ID {$detail['warehouse_id']}. / 找不到物品ID {$detail['item_id']} 在仓库ID {$detail['warehouse_id']} 的库存记录。");
+                    }
                 }
             }
 
-            DB::commit();
-            return redirect()->route('delivery-order.index')->with('success', 'Delivery Order created successfully! / 送货单创建成功！');
+            $message = $status === 'Draft' ? 'Delivery Order saved as draft! / 送货单已保存为草稿！' : 'Delivery Order created successfully! / 送货单创建成功！';
 
-        } catch (\Exception $e) {
+            DB::commit();
+            alertNotif('success', $message);
+            return redirect()->route('delivery-order.index');
+
+        } catch (Exception $e) {
             DB::rollBack();
             Log::error('Delivery Order Store Error: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Error occurred while creating Delivery Order! / 创建送货单时发生错误！');
+            dd($e->getMessage());
+            return redirect()->back();
         }
     }
 
@@ -351,33 +398,233 @@ class DeliveryOrderController extends Controller
     public function edit($id)
     {
         try {
-            $data = $this->repository->find($id);
-            return view("{$this->view}.edit", compact('data'));
+            $deliveryOrder = $this->repository->find($id);
+
+            // Check if the delivery order can be edited
+            $allowedStatuses = ['Draft', 'Waiting Approval Manager', 'Rejected'];
+            if (!in_array($deliveryOrder->process_status, $allowedStatuses)) {
+                alertNotif('warning', 'Cannot edit this delivery order. Only Draft, Waiting Approval, or Rejected status can be edited. / 无法编辑此送货单。只能编辑草稿、等待审批或被拒绝的状态。');
+                return redirect()->route("{$this->route}.index");
+            }
+
+            $customerOrders = $this->customerOrderRepository->getData([], [], [], null, [], 'all');
+            $warehouses = $this->warehouseRepository->getData([], [], [], null, [['is_active', '=', 1]], 'all');
+            $sections = $this->warehouseSectionRepository->getData([], [], [], null, [['is_active', '=', 1]], 'all');
+            $items = $this->itemRepository->getData([], [], [], null, [['is_active', '=', 1]], 'all');
+            $itemUoms = $this->itemUomRepository->getData(
+                [],
+                ['unitOfMeasurement'],
+                [],
+                null,
+                [['is_active', '=', 1]],
+                'all'
+            );
+
+            return view("{$this->view}.edit", compact(
+                'deliveryOrder',
+                'customerOrders',
+                'warehouses',
+                'sections',
+                'items',
+                'itemUoms'
+            ));
         } catch (Exception $e) {
             Log::error($e->getMessage());
             alertNotif('error', $e->getMessage());
             return redirect()->route("{$this->route}.index");
         }
     }
-
     public function update(Request $request, $id)
     {
-        $data = $request->validate([
-            //
-        ]);
-        $data['updated_by'] = auth()->user()->id;
-        try {
-            DB::transaction(function () use ($request, $id, $data) {
-                $this->repository->update($id, $data);
-            });
-            alertNotif('update');
-        } catch (Exception $e) {
-            Log::error($e->getMessage());
-            alertNotif('error', $e->getMessage());
-        }
-        return redirect()->route("{$this->route}.index");
-    }
+        DB::beginTransaction();
+        $messages = [
+            'process_number.required' => 'Process Number is required. / 处理编号是必填项。',
+            'process_number.unique' => 'Process Number must be unique. / 处理编号必须唯一。',
+            'customer_order_id.required' => 'Customer Order is required. / 客户订单是必填项。',
+            'customer_order_id.exists' => 'Selected Customer Order does not exist. / 选择的客户订单不存在。',
+            'process_date.required' => 'Process Date is required. / 处理日期是必填项。',
+            'process_date.date' => 'Invalid date format. / 无效的日期格式。',
+            'remarks.max' => 'Remarks must not exceed 255 characters. / 备注不能超过255个字符。',
+            'details.required' => 'At least one item is required. / 至少需要一个物品。',
+            'details.*.item_request_detail_id.required' => 'Item Request ID is required. / 物品请求ID是必填项。',
+            'details.*.item_request_detail_id.exists' => 'Item Request ID does not exist. / 物品请求ID不存在。',
+            'details.*.item_id.required' => 'Item is required. / 物品是必填项。',
+            'details.*.item_id.exists' => 'Selected item does not exist. / 选择的物品不存在。',
+            'details.*.quantity.required' => 'Request Quantity is required. / 请求数量是必填项。',
+            'details.*.quantity.numeric' => 'Request Quantity must be a valid number. / 请求数量必须是有效数字。',
+            'details.*.quantity.min' => 'Request Quantity must be at least 0.001. / 请求数量必须至少为0.001。',
+            'details.*.item_uom_id.required' => 'Unit of Measurement is required. / 计量单位是必填项。',
+            'details.*.item_uom_id.exists' => 'Selected Unit of Measurement does not exist. / 选择的计量单位不存在。',
+            'details.*.stock.required' => 'Stock is required. / 库存是必填项。',
+            'details.*.stock.numeric' => 'Stock must be a valid number. / 库存必须是有效数字。',
+            'details.*.warehouse_id.required' => 'Warehouse is required. / 仓库是必填项。',
+            'details.*.warehouse_id.exists' => 'Selected Warehouse does not exist. / 选择的仓库不存在。',
+            'details.*.section_id.required' => 'Warehouse Section is required. / 仓库区域是必填项。',
+            'details.*.section_id.exists' => 'Selected Warehouse Section does not exist. / 选择的仓库区域不存在。',
+            'details.*.fullfill_quantity.required' => 'Fullfill Quantity is required. / 完成数量是必填项。',
+            'details.*.fullfill_quantity.numeric' => 'Fullfill Quantity must be a valid number. / 完成数量必须是有效数字。',
+            'details.*.fullfill_quantity.min' => 'Fullfill Quantity must be at least 0.001. / 完成数量必须至少为0.001。',
+            'details.*.item_uom_fullfill_id.required' => 'Fullfill Unit of Measurement is required. / 完成单位是必填项。',
+            'details.*.item_uom_fullfill_id.exists' => 'Selected Fullfill Unit of Measurement does not exist. / 选择的完成单位不存在。',
+            'details.*.remarks.max' => 'Remarks must not exceed 255 characters. / 备注不能超过255个字符。',
+        ];
 
+        try {
+            $deliveryOrder = $this->repository->find($id);
+
+            // Validate the request
+            $data = $request->validate([
+                'process_number' => 'required|string|max:20|unique:delivery_orders,process_number,' . $id,
+                'customer_order_id' => 'required|exists:customer_orders,id',
+                'process_date' => 'required|date',
+                'remarks' => 'nullable|string|max:255',
+                'details' => 'required|array|min:1',
+                'details.*.item_request_detail_id' => 'required|exists:item_request_details,id',
+                'details.*.item_id' => 'required|exists:items,id',
+                'details.*.quantity' => 'required|numeric|min:0.001',
+                'details.*.item_uom_id' => 'required|exists:item_uoms,id',
+                'details.*.stock' => 'required|numeric|min:0',
+                'details.*.warehouse_id' => 'required|exists:warehouses,id',
+                'details.*.section_id' => 'required|exists:warehouse_sections,id',
+                'details.*.fullfill_quantity' => [
+                    'required',
+                    'numeric',
+                    'min:0.001',
+                    function ($attribute, $value, $fail) use ($request) {
+                        preg_match('/\d+/', $attribute, $matches);
+                        $index = $matches[0] ?? null;
+
+                        if ($index !== null && isset($request->details[$index])) {
+                            $requestQuantity = $request->details[$index]['quantity'];
+
+                            if ($value > $requestQuantity) {
+                                $fail("The fullfill quantity ({$value}) cannot exceed the request quantity ({$requestQuantity}). / 完成数量 ({$value}) 不能超过请求数量 ({$requestQuantity})。");
+                            }
+                        }
+                    }
+                ],
+                'details.*.item_uom_fullfill_id' => 'required|exists:item_uoms,id',
+                'details.*.remarks' => 'nullable|string|max:255',
+            ], $messages);
+
+            // Determine the status based on submit type
+            $status = $request->input('submit_type') === 'draft' ? 'Draft' : 'Waiting Approval Manager';
+            // Update delivery order header
+            $deliveryOrder->update([
+                'customer_order_id' => $data['customer_order_id'],
+                'process_date' => $data['process_date'],
+                'process_status' => $status,
+                'remarks' => $data['remarks'],
+                'updated_by' => auth()->id(),
+            ]);
+
+            // If not draft, handle stock updates and item request status updates
+            if ($status !== 'Draft') {
+                // Check for approval requirements
+                $checkApproval = $this->repository->checkApproval('update', $deliveryOrder->id);
+
+                // Get existing details for stock reversal
+                $existingDetails = $deliveryOrder->details()->with('itemUom')->get();
+
+                // Reverse previous stock changes
+                foreach ($existingDetails as $detail) {
+                    $stockEntry = WarehouseSectionStock::where('item_id', $detail->item_id)
+                        ->where('warehouse_id', $detail->warehouse_id)
+                        ->where('section_id', $detail->section_id)
+                        ->latest()
+                        ->first();
+
+                    if ($stockEntry) {
+                        // Convert quantity back to base unit if necessary
+                        $returnQuantity = $detail->quantity;
+                        if ($detail->itemUom->id !== $detail->item->unit_of_measurement_id) {
+                            $returnQuantity *= $detail->itemUom->conversion;
+                        }
+
+                        $stockEntry->update([
+                            'current_stock' => $stockEntry->current_stock + $returnQuantity
+                        ]);
+                    }
+                }
+            }
+
+            // Delete existing details
+            $deliveryOrder->details()->delete();
+
+            // Create new details
+            foreach ($data['details'] as $detail) {
+                $DeliveryOrderDetail = $deliveryOrder->details()->create([
+                    'header_id' => $deliveryOrder->id,
+                    'item_request_detail_id' => $detail['item_request_detail_id'],
+                    'item_id' => $detail['item_id'],
+                    'quantity' => $detail['fullfill_quantity'],
+                    'item_uom_id' => $detail['item_uom_fullfill_id'],
+                    'warehouse_id' => $detail['warehouse_id'],
+                    'section_id' => $detail['section_id'],
+                    'remarks' => $detail['remarks'] ?? null,
+                ]);
+
+                // Only process stock updates if not draft
+                if ($status !== 'Draft') {
+                    // Update stock in warehouse
+                    $stockEntry = WarehouseSectionStock::where('item_id', $detail['item_id'])
+                        ->where('warehouse_id', $detail['warehouse_id'])
+                        ->where('section_id', $detail['section_id'])
+                        ->latest()
+                        ->first();
+
+                    if ($stockEntry) {
+                        $fullFillUOM = $this->itemUomRepository->find($detail['item_uom_fullfill_id']);
+                        $fullFillQuantity = $detail['fullfill_quantity'];
+
+                        $item = $this->itemRepository->find($detail['item_id']);
+                        if ($fullFillUOM->id !== $item->unitOfMeasurement->id) {
+                            $fullFillQuantity *= $fullFillUOM->conversion;
+                        }
+
+                        $stockEntry->update([
+                            'current_stock' => $stockEntry->current_stock - $fullFillQuantity
+                        ]);
+                    } else {
+                        throw new \Exception("Stock entry not found for item ID {$detail['item_id']} in warehouse ID {$detail['warehouse_id']}. / 找不到物品ID {$detail['item_id']} 在仓库ID {$detail['warehouse_id']} 的库存记录。");
+                    }
+
+                    // Update item request status
+                    $itemRequestDetail = $this->itemRequestDetailRepository->find($detail['item_request_detail_id']);
+                    $itemRequest = $itemRequestDetail->itemRequest;
+                    $itemDetailNeedFullfill = 0;
+
+                    foreach ($itemRequest->details as $itemRequestDetail) {
+                        $fullfill = $detail['fullfill_quantity'];
+                        if ($fullfill < $itemRequestDetail->quantity) {
+                            $itemDetailNeedFullfill += $itemRequestDetail->quantity - $fullfill;
+                        }
+                    }
+
+                    $itemRequest->update([
+                        'request_status' => $itemDetailNeedFullfill == 0
+                            ? 'On Proccess Delivery by Warehouse'
+                            : 'Partial Delivery by Warehouse'
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            $message = $status === 'Draft'
+                ? 'Delivery Order saved as draft! / 送货单已保存为草稿！'
+                : 'Delivery Order updated successfully! / 送货单更新成功！';
+
+            alertNotif('success', $message);
+            return redirect()->route("{$this->route}.index");
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('Delivery Order Update Error: ' . $e->getMessage());
+            alertNotif('error', $e->getMessage());
+            return redirect()->back()->withInput();
+        }
+    }
     public function destroy($id)
     {
         try {

@@ -43,7 +43,7 @@
                         </div>
                         @php
                             // Retrieve order_id from query string, if present.
-                            $orderId = request()->query('order_id');
+                            $orderId = request()->query('customer_order_id');
                         @endphp
                         <div class="mb-3">
                             <label for="customer_order_id" class="form-label">Customer Order ID / 客户订单编号</label>
@@ -101,11 +101,17 @@
                         {{-- <div class="mb-3">
                             <button type="button" class="btn btn-secondary" id="addRow">Add Detail Row / 添加详细行</button>
                         </div> --}}
-
-                        <div class="my-2">
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary px-5 me-2" name="submit_type"
+                                value="Waiting Approval Manager">Submit / 提交</button>
+                            <button type="submit" class="btn btn-secondary px-5 me-2" name="submit_type"
+                                value="Draft">Save as Draft / 保存草稿</button>
+                            <a href="{{ route('item-request.index') }}" class="btn btn-label-secondary">Cancel / 取消</a>
+                        </div>
+                        {{-- <div class="my-2">
                             <button type="submit" class="btn btn-primary px-5 me-2">Submit / 提交</button>
                             <a href="{{ route('delivery-order.index') }}" class="btn btn-label-secondary">Cancel / 取消</a>
-                        </div>
+                        </div> --}}
                     </form>
                 </div>
             </div>
@@ -154,22 +160,23 @@
                                 <tr>
                                     <td>${index + 1}</td>
                                     <td>
-                                        <input type="hidden" name="details[${index}][item_request_detail_id]" class="form-control" value="${item.id}" readonly>
+                                        <input type="hidden" name="details[${index}][item_request_detail_id]" class="form-control " value="${item.id}" readonly>
                                         <input type="text" name="details[${index}][item_request_number]" class="form-control" value="${item.request_number}" readonly>
                                     </td>
                                     <td>
-                                        <input type="hidden" name="details[${index}][item_id]" class="form-control" value="${item.item_id}" readonly>
+                                        <input type="hidden" name="details[${index}][item_id]" class="form-control item_id" value="${item.item_id}" readonly>
                                         <input type="text" name="details[${index}][item_name]" class="form-control" value="${item.item_name}" readonly>
                                     </td>
                                     <td>
-                                        <input type="number" name="details[${index}][quantity]" class="form-control quantity" value="${item.quantity}" step="0.001" min="0" required>
+                                        <input type="number" name="details[${index}][quantity]" class="form-control quantity" value="${item.quantity}" step="0.001" min="0" readonly required>
                                     </td>
                                     <td>
                                         <input type="hidden" name="details[${index}][item_uom_id]" class="form-control" value="${item.item_uom_id}" readonly>
                                         <input type="text" name="details[${index}][item_uom]" class="form-control" value="${item.item_uom}" readonly>
                                     </td>
                                     <td>
-                                        <input type="text" name="details[${index}][stock]" class="form-control" value="${item.stock}" readonly>
+                                        <input type="hidden" name="details[${index}][stock]" class="form-control item_stock_${item.item_id}" value="${item.stock}" readonly>
+                                        <p class="item_textual_${item.id}">${item.stock_textual}</p>
                                     </td>
                                     <td>
                                         <input type="hidden" name="details[${index}][warehouse_id]" class="form-control" value="${item.warehouse_id}" readonly>
@@ -184,7 +191,7 @@
                                         <small class="text-danger validation-error d-none">Fullfill quantity cannot exceed request quantity / 数量不能超过请求数量</small>
                                     </td>
                                     <td>
-                                        <input type="hidden" name="details[${index}][item_uom_fullfill_id]" class="form-control" value="${item.item_uom_id}" readonly>
+                                        <input type="hidden" name="details[${index}][item_uom_fullfill_id]" class="form-control item_fullfill_uom_id" value="${item.item_uom_id}" readonly>
                                         <input type="text" name="details[${index}][item_uom_fullfill]" class="form-control" value="${item.item_uom}" readonly>
                                     </td>
                                     <td><input type="text" name="details[${index}][remarks]" class="form-control" placeholder="Remarks / 备注"></td>
@@ -198,19 +205,27 @@
                         );
                     }
                 });
+                let debounce;
                 $(document).on('keyup', '.fullfill-quantity', function() {
-                    console.log(this);
-                    validateFullfillQuantity($(this));
+                    clearTimeout(debounce);
+                    let inputElement = $(this);
+                    debounce = setTimeout(function() {
+                        validateFullfillQuantity(inputElement);
+                    }, 2000);
                 });
             });
         });
-
         function validateFullfillQuantity(inputElement) {
             let rowIndex = inputElement.data('index');
             let requestQuantity = parseFloat(inputElement.closest('tr').find('.quantity').val());
+
+            let itemId = parseFloat(inputElement.closest('tr').find('.item_id').val());
+
             let fullfillQuantity = parseFloat(inputElement.val());
-            console.log(fullfillQuantity);
-            console.log(requestQuantity);
+            let itemFullFillUomId = parseFloat(inputElement.closest('tr').find('.item_fullfill_uom_id').val());
+
+            let stock_actual = parseFloat(inputElement.closest('tr').find('.item_stock_' + itemId).val());
+
             let errorElement = inputElement.siblings('.validation-error');
 
             if (fullfillQuantity < 0) {
@@ -220,6 +235,25 @@
                 errorElement.text('Fullfill quantity cannot exceed request quantity / 不能超过请求数量').removeClass('d-none');
                 inputElement.addClass('is-invalid');
             } else {
+                $.ajax({
+                    url: '{{ route('check-stock-availability') }}',
+                    type: 'GET',
+                    data: {
+                        item_id: itemId,
+                        item_uom_fullfill_id: itemFullFillUomId,
+                        fullfill_quantity: fullfillQuantity,
+                        stock_actual: stock_actual,
+                    },
+                    success: function(response) {
+                        errorElement.addClass('d-none');
+                        inputElement.removeClass('is-invalid');
+                    },
+                    error: function(xhr) {
+                        let response = xhr.responseJSON;
+                        errorElement.text(response.message).removeClass('d-none');
+                        inputElement.addClass('is-invalid');
+                    }
+                });
                 errorElement.addClass('d-none');
                 inputElement.removeClass('is-invalid');
             }

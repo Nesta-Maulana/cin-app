@@ -170,7 +170,7 @@
                         </a>
                         @if (Auth::user()->departments->contains('name', 'Purchasing'))
                             @if ($needToPurchase->count() > 0)
-                                <a href="{{-- {{ route('purchase-order.create', ['customer_order_id' => $customerOrder->id]) }} --}}" class="btn btn-primary">
+                                <a href="{{ route('purchase-order.create', ['customer_order_id' => $customerOrder->id]) }}" class="btn btn-primary">
                                     <i class="fa fa-plus"></i> Create Purchase Order / 创建采购订单
                                 </a>
                             @endif

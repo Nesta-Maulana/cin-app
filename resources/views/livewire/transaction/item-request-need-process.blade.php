@@ -82,7 +82,7 @@
                                         </thead>
                                         <tbody>
                                             @forelse ($order->itemRequests as $request)
-                                                @if ($request->request_status == 'Waiting On Process Warehouse')
+                                                @if (in_array($request->request_status, ['Waiting On Process Warehouse', 'Partial Delivery by Warehouse']))
                                                     <tr>
                                                         <td>{{ $request->request_number }}</td>
                                                         <td>{{ \Carbon\Carbon::parse($request->request_date)->format('Y-m-d') }}

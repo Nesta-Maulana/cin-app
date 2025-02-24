@@ -64,7 +64,6 @@
                                     <th>Item Name / 物品</th>
                                     <th>Request Quantity / 请求数量</th>
                                     <th>UOM / 单位</th>
-                                    <th>Stock Warehouse / 仓库库存</th>
                                     <th>Warehouse / 仓库</th>
                                     <th>Section / 区域</th>
                                     <th>Delivered Quantity / 送货数量</th>
@@ -78,14 +77,12 @@
                                         <td>{{ $index + 1 }}</td>
                                         <td>{{ $detail->itemRequestDetail->itemRequest->request_number ?? '-' }}</td>
                                         <td>{{ $detail->item->name ?? '-' }}</td>
-                                        <td>{{ number_format($detail->itemRequestDetail->quantity, 3) }}</td>
+                                        <td>{{ number_format($detail->itemRequestDetail->quantity, 2,',','.') }}</td>
                                         <td>{{ $detail->itemRequestDetail->itemPriceHistory->itemUom->unitOfMeasurement->name ?? '-' }}</td>
-                                        <td>{{ number_format($detail->item->warehouseStocks->sum('current_stock'), 2) }}
-                                        </td>
                                         <td>{{ $detail->warehouse->name ?? '-' }}</td>
                                         <td>{{ $detail->section->name ?? '-' }}</td>
-                                        <td>{{ number_format($detail->quantity, 3) }}</td>
-                                        <td>{{ $detail->itemUomFullfill->unitOfMeasurement->name ?? '-' }}</td>
+                                        <td>{{ number_format($detail->quantity, 2,',','.') }}</td>
+                                        <td>{{ $detail->itemUom->unitOfMeasurement->name ?? '-' }}</td>
                                         <td>{{ $detail->remarks ?? '-' }}</td>
                                     </tr>
                                 @endforeach

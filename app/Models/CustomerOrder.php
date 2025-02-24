@@ -25,10 +25,10 @@ class CustomerOrder extends Model
             return $query->where('name', 'like', "%$search%");
         });
     }
-    public function scopeRequestStatus($query, $request_status)
+    public function scopeRequestStatus($query, $request_status = [])
     {
         return $query->whereHas('itemRequests', function ($q) use ($request_status) {
-            $q->where('request_status', $request_status);
+            $q->whereIn('request_status', $request_status);
         });
     }
 
@@ -43,7 +43,7 @@ class CustomerOrder extends Model
     public function getTotalItemNeedToProcessAttribute()
     {
         return $this->itemRequests()
-            ->whereIn('request_status', ['Waiting On Process Warehouse'])
+            ->whereIn('request_status', ['Waiting On Process Warehouse','Partial Delivery by Warehouse'])
             ->count();
     }
     public function files()

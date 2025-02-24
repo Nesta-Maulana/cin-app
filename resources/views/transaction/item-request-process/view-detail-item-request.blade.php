@@ -14,7 +14,7 @@
                         </h5>
                         <small class="text-light">Order details for reference / 订单详细信息</small>
                     </div>
-                   {{--  <a href="{{ route('customer-order.index') }}" class="btn btn-light btn-sm" title="Back / 返回">
+                    {{--  <a href="{{ route('customer-order.index') }}" class="btn btn-light btn-sm" title="Back / 返回">
                         <i class="fa fa-arrow-left"></i> Back / 返回
                     </a> --}}
                 </div>
@@ -51,7 +51,12 @@
                         $allDetails = collect();
                         foreach ($customerOrder->itemRequests as $itemRequest) {
                             foreach ($itemRequest->details as $detail) {
-                                if ($itemRequest->request_status == 'Waiting On Process Warehouse') {
+                                if (
+                                    in_array($itemRequest->request_status, [
+                                        'Waiting On Process Warehouse',
+                                        'Partial Delivery by Warehouse',
+                                    ])
+                                ) {
                                     $detail->request_number = $itemRequest->request_number;
                                     $allDetails->push($detail);
                                 }
@@ -94,8 +99,8 @@
                                                     $countNeedPO++;
                                                 }
                                             } else {
-                                                $countReadyDO++;
                                                 if ($stock >= $detail->quantity) {
+                                                    $countReadyDO++;
                                                     $bgColor = 'bg-success';
                                                 } else {
                                                     $bgColor = 'bg-danger';
@@ -113,8 +118,9 @@
                                                     $countNeedPO++;
                                                 }
                                             } else {
-                                                $countReadyDO++;
                                                 if ($stock >= $requestQuantity) {
+                                                    $countReadyDO++;
+
                                                     $bgColor = 'bg-success';
                                                 } else {
                                                     $bgColor = 'bg-danger';
@@ -124,13 +130,18 @@
                                                 }
                                             }
                                         }
+                                        $quantity   = $detail->quantity;
+                                        $fullFillQuantiy    = $detail->deliveryOrderDetails->sum('quantity');
+                                        $quantity   -= $fullFillQuantiy;
                                     @endphp
                                     <tr>
                                         <td>{{ $index + 1 }}</td>
                                         <td>{{ $detail->request_number }}</td>
                                         <td>{{ $detail->itemPriceHistory->itemUom->item->name ?? '-' }}</td>
                                         <td>{{ $detail->itemPriceHistory->itemUom->item->spesification ?? '-' }}</td>
-                                        <td>{{ $detail->quantity }}</td>
+                                        <td>
+                                            {{ $quantity }}
+                                        </td>
                                         <td>{{ $detail->itemPriceHistory->itemUom->unitOfMeasurement->name ?? '-' }}</td>
                                         <td>{{ $detail->remarks ?? '-' }}</td>
 

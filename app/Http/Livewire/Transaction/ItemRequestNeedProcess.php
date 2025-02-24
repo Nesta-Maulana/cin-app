@@ -40,7 +40,7 @@ class ItemRequestNeedProcess extends Component
         try {
             $orderBy = ['id' => 'asc'];
             $with = [];
-            $scope = ['requestStatus' => ['Waiting On Process Warehouse']];
+            $scope = ['requestStatus' => [['Waiting On Process Warehouse','Partial Delivery by Warehouse']]];
 
             // Apply search filter
             if (!empty($this->search)) {

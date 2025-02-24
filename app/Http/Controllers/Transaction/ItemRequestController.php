@@ -88,14 +88,14 @@ class ItemRequestController extends Controller
             'request_number' => 'required|string|unique:item_requests,request_number',
             'request_date' => 'required|date',
             'customer_order_id' => 'required|exists:customer_orders,id',
-            'remark' => 'nullable|string|max:255',
+            'remark' => 'nullable',
             'items' => 'required|array',
             'items.*' => 'required|exists:items,id',
             'uoms' => 'required|array',
             'uoms.*' => 'required|exists:item_uoms,id',
             'quantities' => 'required|array',
             'quantities.*' => 'required|integer|min:1',
-            'remarks' => 'nullable|array',
+            'remarks' => 'nullable',
             'remarks.*' => 'nullable|string|max:255',
             'request_status' => 'required|in:Need Approval Manager,Draft',
         ], [
@@ -110,11 +110,13 @@ class ItemRequestController extends Controller
                     'request_number' => $data['request_number'],
                     'request_date' => $data['request_date'],
                     'customer_order_id' => $data['customer_order_id'],
-                    'remark' => $data['remark'] ?? null,
+                    'remarks' => $data['remark'] ?? null,
                     'request_status' => $data['request_status'],
                     'created_by' => auth()->user()->id
                 ]);
-                $checkApproval  = $this->repository->checkApproval('create', $itemRequest->id);
+                if ($data['request_status'] == 'Need Approval Manager') {
+                    $checkApproval = $this->repository->checkApproval('create', $itemRequest->id);
+                }
                 // Save Item Request Details
                 foreach ($data['items'] as $index => $itemId) {
                     $itemUom = $this->itemUomRepository->find($data['uoms'][$index]);
@@ -140,8 +142,40 @@ class ItemRequestController extends Controller
     public function edit($id)
     {
         try {
-            $data = $this->repository->find($id);
-            return view("{$this->view}.edit", compact('data'));
+            $itemRequest = $this->repository->find($id);
+
+            // Check if the request status allows editing
+            $allowedStatuses = ['Draft', 'Need Approval Manager', 'Rejected'];
+            if (!in_array($itemRequest->request_status, $allowedStatuses)) {
+                alertNotif('warning', 'Cannot edit this request. Only Draft, Waiting Approval, or Rejected status can be edited. / 无法编辑此请求。只能编辑草稿、等待审批或被拒绝的状态。');
+                return redirect()->route("{$this->route}.index");
+            }
+
+            $customerOrders = $this->customerOrderRepository->getData(
+                [],
+                [],
+                [],
+                null,
+                [['is_active', '=', 1]],
+                'all'
+            )->mapWithKeys(function ($category) {
+                $name = $category->order_number . " - " . $category->project_name;
+                return [$category->id => $name];
+            });
+
+            $items = $this->itemRepository->getData(
+                [],
+                [],
+                [],
+                null,
+                [['is_active', '=', 1]],
+                'all'
+            )->mapWithKeys(function ($item) {
+                $name = $item->name;
+                return [$item->id => $name];
+            });
+
+            return view("{$this->view}.edit", compact('itemRequest', 'customerOrders', 'items'));
         } catch (Exception $e) {
             Log::error($e->getMessage());
             alertNotif('error', $e->getMessage());
@@ -151,19 +185,60 @@ class ItemRequestController extends Controller
 
     public function update(Request $request, $id)
     {
+        $itemRequest = $this->repository->find($id);
+
         $data = $request->validate([
-            //
+            'request_date' => 'required|date',
+            'customer_order_id' => 'required|exists:customer_orders,id',
+            'remark' => 'nullable',
+            'items' => 'required|array',
+            'items.*' => 'required|exists:items,id',
+            'uoms' => 'required|array',
+            'uoms.*' => 'required|exists:item_uoms,id',
+            'quantities' => 'required|array',
+            'quantities.*' => 'required|integer|min:1',
+            'remarks' => 'nullable',
+            'remarks.*' => 'nullable|string|max:255',
+            'request_status' => 'required|in:Need Approval Manager,Draft',
+        ], [
+            'items.required' => 'At least one item is required. / 至少需要一个物品。',
+            'quantities.*.required' => 'Quantity is required for all items. / 所有物品的数量是必填的。',
         ]);
-        $data['updated_by'] = auth()->user()->id;
+
         try {
-            DB::transaction(function () use ($request, $id, $data) {
-                $this->repository->update($id, $data);
+            DB::transaction(function () use ($request, $data, $itemRequest) {
+                // Update the main Item Request record
+                $itemRequest->update([
+                    'request_date' => $data['request_date'],
+                    'customer_order_id' => $data['customer_order_id'],
+                    'remarks' => $data['remark'] ?? null,
+                    'request_status' => $data['request_status'],
+                    'updated_by' => auth()->user()->id
+                ]);
+                if ($data['request_status'] == 'Need Approval Manager') {
+                    $checkApproval = $this->repository->checkApproval('create', $itemRequest->id);
+                }
+                // Delete existing details
+                $itemRequest->details()->delete();
+                // Create new Item Request Details
+                foreach ($data['items'] as $index => $itemId) {
+                    $itemUom = $this->itemUomRepository->find($data['uoms'][$index]);
+                    $itemRequest->details()->create([
+                        'item_request_id' => $itemRequest->id,
+                        'item_price_history_id' => $itemUom->latestPrice->id,
+                        'quantity' => $data['quantities'][$index],
+                        'remarks' => $data['remarks'][$index] ?? null,
+                    ]);
+                }
             });
-            alertNotif('update');
+
+            alertNotif('update'); // Success notification
+
         } catch (Exception $e) {
-            Log::error($e->getMessage());
-            alertNotif('error', $e->getMessage());
+            Log::error($e->getMessage()); // Log the error
+            alertNotif('error', $e->getMessage()); // Error notification
         }
+
         return redirect()->route("{$this->route}.index");
     }
 

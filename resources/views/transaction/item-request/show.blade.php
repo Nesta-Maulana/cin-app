@@ -37,7 +37,7 @@
                         </div>
                         <div class="mb-3 col-md-6">
                             <label class="form-label">Remark / 备注</label>
-                            <input type="text" class="form-control" value="{{ $itemRequest->remark ?? '-' }}" readonly>
+                            <input type="text" class="form-control" value="{{ $itemRequest->remarks ?? '-' }}" readonly>
                         </div>
                     </div>
 

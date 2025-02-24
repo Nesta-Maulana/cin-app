@@ -9,41 +9,28 @@
                 </label>
             </div>
             <div class="text-md-end text-start d-flex align-items-center justify-content-end flex-md-row flex-column">
-                @if (!$selected)
-                    <div class="my-1 me-md-2">
-                        <label>
-                            <select wire:model="paginate" class="form-select">
-                                <option value="10">10</option>
-                                <option value="25">25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
-                        </label>
-                    </div>
-                    @can('create-delivery-order')
-                        <div class="flex-wrap my-1">
-                            <a href="{{ route('delivery-order.create') }}"
-                                class="btn btn-secondary text-white add-new btn-primary">
-                                <span>
-                                    <i class="fa fa-plus me-0 me-sm-1 fa-xs"></i>
-                                    <span>Create Delivery Order / 创建送货单</span>
-                                </span>
-                            </a>
-                        </div>
-                    @endcan
-                @else
-                    <div class="my-1 me-md-2">
-                        <span class="px-1">
-                            {{ count($selected) }} data selected / 已选择的数据
-                        </span>
-                    </div>
+                <div class="my-1 me-md-2">
+                    <label>
+                        <select wire:model="paginate" class="form-select">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </label>
+                </div>
+                @can('create-delivery-order')
                     <div class="flex-wrap my-1">
-                        <a href="#" class="btn btn-secondary add-new btn-label-primary" data-bs-toggle="modal"
-                            data-bs-target="#modalSelectedStatus">
-                            Update Status / 更新状态
+                        <a href="{{ route('delivery-order.create') }}"
+                            class="btn btn-secondary text-white add-new btn-primary">
+                            <span>
+                                <i class="fa fa-plus me-0 me-sm-1 fa-xs"></i>
+                                <span>Create Delivery Order / 创建送货单</span>
+                            </span>
                         </a>
                     </div>
-                @endif
+                @endcan
+
             </div>
         </div>
 
@@ -52,12 +39,6 @@
             <table class="table border-top">
                 <thead>
                     <tr>
-                        @can('update-delivery-order')
-                            <th>
-                                <input style="width: 17px; height: 17px;" wire:model="selectAll" type="checkbox"
-                                    class="form-check-input">
-                            </th>
-                        @endcan
                         <th>Process Number / 处理编号</th>
                         <th>Process Date / 处理日期</th>
                         <th>Customer Order / 客户订单</th>
@@ -71,12 +52,7 @@
                             $approvalRequest = $item->approvalRequest('create')->first();
                         @endphp
                         <tr wire:key="row{{ $item->id }}">
-                            @can('update-delivery-order')
-                                <td>
-                                    <input style="width: 17px; height: 17px;" wire:model="selected"
-                                        value="{{ $item->id }}" type="checkbox" class="dt-checkboxes form-check-input">
-                                </td>
-                            @endcan
+
                             <td>{{ $item->process_number }}</td>
                             <td>{{ \Carbon\Carbon::parse($item->process_date)->format('Y-m-d') }}</td>
                             <td>{{ $item->customerOrder->order_number ?? '-' }}</td>
@@ -93,7 +69,7 @@
                                     @endcan
 
                                     @can('update-delivery-order')
-                                        @if ($item->process_status == 'Waiting Approval Manager')
+                                        @if (in_array($item->process_status, ['Waiting Approval Manager', 'Draft', 'Rejected']))
                                             <a href="{{ route('delivery-order.edit', $item->id) }}" class="action-btn"
                                                 title="Edit / 编辑">
                                                 <i class="fa fa-edit fa-sm me-2 fs-5"></i>

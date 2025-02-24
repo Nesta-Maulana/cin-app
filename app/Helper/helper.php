@@ -87,6 +87,7 @@ if (!function_exists('alertNotif')) {
             'delete' => toast('Data Deleted! / 数据已删除！', 'success'),
             'success' => toast(!is_null($message) ? $message : 'Process Successful / 处理成功', 'success'),
             'error' => toast(!is_null($message) ? $message : 'Oops! There was an error / 哎呀！发生错误', type: 'error'),
+            'warning' => toast(!is_null($message) ? $message : 'Oops! There was an error / 哎呀！发生错误', type: 'warning'),
         };
     }
 }
@@ -552,7 +553,7 @@ function getQuantityByItem($item, $quantity,$defaultUom)
     $quantities = $quantity.' '.$defaultUom.' | ';
     foreach ($item->itemUoms->sortBy('conversion') as $key => $uom)
     {
-        if ($uom->unitOfMeasurement->id !== $defaultUom) {
+        if ($uom->unitOfMeasurement->name !== $defaultUom) {
             $quantities .= number_format($quantity / $uom->conversion, 2, ',', '.') . ' ' . $uom->unitOfMeasurement->name.' | ';
         }
     }

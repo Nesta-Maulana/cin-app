@@ -91,7 +91,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     @can('update-item-request')
-                                        @if (in_array($item->request_status, ['Draft', 'Waiting Approval Manager','Rejected']))
+                                        @if (in_array($item->request_status, ['Draft', 'Need Approval Manager','Rejected']))
                                             @if ($item->created_by == auth()->user()->id)
                                                 <a href="{{ route('item-request.edit', $item->id) }}" class="action-btn"
                                                     title="Edit / 编辑">
@@ -159,7 +159,7 @@
                                         @endif
                                     @endcan
                                     {{-- @can('approve-item-request')
-                                        @if ($item->request_status == 'Waiting Approval Manager')
+                                        @if ($item->request_status == 'Need Approval Manager')
                                             <a href="javascript:;" class="action-btn" title="Approve / 审批"
                                                 data-bs-toggle="modal" data-bs-target="#modalApprove{{ $item->id }}">
                                                 <i class="fa fa-list-check fa-sm sm me-2 fs-5"></i>

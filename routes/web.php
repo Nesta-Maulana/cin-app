@@ -101,6 +101,8 @@ Route::middleware(['auth', 'auth.status'])->group(function () {
 
     Route::get('/get-item-requests-by-customer-order', [DeliveryOrderController::class, 'getItemRequestsByCustomerOrder'])
         ->name('get-item-requests-by-customer-order');
+    Route::get('/check-stock-availability', [DeliveryOrderController::class, 'checkStock'])->name('check-stock-availability');
+
     Route::get('delivery-order/notify-purchasing', [DeliveryOrderController::class, 'notifyPurchasing'])
         ->name('delivery-order.notify-purchasing');
     Route::resource('delivery-order', DeliveryOrderController::class);
