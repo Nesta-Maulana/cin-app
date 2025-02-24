@@ -275,17 +275,41 @@ class MenusTableSeeder extends Seeder
                 'updated_at' => '2025-02-10 06:30:05',
             ),
         ));
-        \DB::table('menus')->insert([
-            'id' => 26,
-            'name' => 'Delivery Order',
-            'url' => 'delivery-order',
-            'permission_id' => 113,
-            'icon' => 'fa-shipping-fast',
-            'main_menu' => 8,
-            'sort' => 7,
-            'created_at' => '2025-02-24 15:18:23',
-            'updated_at' => '2025-02-24 15:18:23',
-        ]);
+        \DB::table('menus')->insert(array(
+            array(
+                'id' => 24,
+                'name' => 'Item Need To Purchase',
+                'url' => 'item-need-to-purchase',
+                'permission_id' => 121,
+                'icon' => 'fa-cart-plus',
+                'main_menu' => 8,
+                'sort' => 5,
+                'created_at' => '2025-02-14 13:39:00',
+                'updated_at' => '2025-02-14 13:39:00',
+            ),
+            array(
+                'id' => 25,
+                'name' => 'Purchase Order',
+                'url' => 'purchase-order',
+                'permission_id' => 130,
+                'icon' => 'fa-invoice',
+                'main_menu' => 8,
+                'sort' => 7,
+                'created_at' => '2025-02-17 16:03:10',
+                'updated_at' => '2025-02-17 16:03:10',
+            ),
+            array(
+                'id' => 26,
+                'name' => 'Delivery Order',
+                'url' => 'delivery-order',
+                'permission_id' => 113,
+                'icon' => 'fa-shipping-fast',
+                'main_menu' => 8,
+                'sort' => 7,
+                'created_at' => '2025-02-24 15:18:23',
+                'updated_at' => '2025-02-24 15:18:23',
+            ),
+        ));
 
     }
 }

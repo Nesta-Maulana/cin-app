@@ -37,6 +37,24 @@ class UserSeeder extends Seeder
                 'email' => 'operator@kreasisawalanusantara.com',
                 'password' => $password,
             ],
+            [
+                'name' => 'Engineer Staff',
+                'username' => 'engineer.staff',
+                'email' => 'engineer.staff@gmail.com',
+                'password' => $password,
+            ],
+            [
+                'name' => 'Marketing Staff',
+                'username' => 'marketing.staff',
+                'email' => 'marketing.staff@gmail.com',
+                'password' => $password,
+            ],
+            [
+                'name' => 'Warehouse Staff',
+                'username' => 'warehouse.staff',
+                'email' => 'warehouse.staff@gmail.com',
+                'password' => $password,
+            ],
         ]);
 
         $superAdmin = User::find(1);

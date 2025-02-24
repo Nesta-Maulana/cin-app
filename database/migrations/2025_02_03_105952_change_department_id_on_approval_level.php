@@ -24,12 +24,46 @@ return new class extends Migration {
 
         });
         DB::table('departments')->insertOrIgnore([
-            'id' => 0,
-            'name' => 'All Departments',
-            'slug' => 'all-departments',
-            'is_active' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
+            [
+                'id' => 0,
+                'name' => 'All Departments',
+                'slug' => 'all-departments',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'id' => 2,
+                'name' => 'Engineer',
+                'slug' => 'eng',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'id' => 3,
+                'name' => 'Warehouse',
+                'slug' => 'wrh',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'id' => 4,
+                'name' => 'Purchasing',
+                'slug' => 'prc',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'id' => 5,
+                'name' => 'Marketing',
+                'slug' => 'mrk',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ]);
     }
 
