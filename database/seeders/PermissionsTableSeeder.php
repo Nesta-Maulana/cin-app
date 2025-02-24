@@ -999,7 +999,7 @@ class PermissionsTableSeeder extends Seeder
                 'group' => 'DeliveryOrder',
             ],
         ]);
-        DB::table('permissions')->insert([
+        \DB::table('permissions')->insert([
             [
                 'id' => 121,
                 'name' => 'read-item-need-to-purchase',
@@ -1089,7 +1089,7 @@ class PermissionsTableSeeder extends Seeder
                 'group' => 'PurchaseOrder',
             ],
         ]);
-        DB::table('permissions')->insert([
+        \DB::table('permissions')->insert([
             [
                 'id' => 132,
                 'name' => 'delete-purchase-order',
