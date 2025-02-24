@@ -917,6 +917,14 @@ class PermissionsTableSeeder extends Seeder
                 'updated_at' => '2025-02-10 08:35:19',
                 'group' => 'DeliveryOrderDetail',
             ],
+            [
+                'id' => 120,
+                'name' => 'approval-delivery-order',
+                'guard_name' => 'web',
+                'created_at' => '2025-02-10 08:34:19',
+                'updated_at' => '2025-02-10 08:34:19',
+                'group' => 'DeliveryOrder',
+            ],
         ]);
 
     }

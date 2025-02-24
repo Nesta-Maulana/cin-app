@@ -275,6 +275,17 @@ class MenusTableSeeder extends Seeder
                 'updated_at' => '2025-02-10 06:30:05',
             ),
         ));
+        \DB::table('menus')->insert([
+            'id' => 26,
+            'name' => 'Delivery Order',
+            'url' => 'delivery-order',
+            'permission_id' => 113,
+            'icon' => 'fa-shipping-fast',
+            'main_menu' => 8,
+            'sort' => 7,
+            'created_at' => '2025-02-24 15:18:23',
+            'updated_at' => '2025-02-24 15:18:23',
+        ]);
 
     }
 }

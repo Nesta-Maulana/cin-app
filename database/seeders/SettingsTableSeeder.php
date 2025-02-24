@@ -30,8 +30,8 @@ class SettingsTableSeeder extends Seeder
                         array(
                             'app_name' => env('APP_NAME').' Panel',
                             'app_version' => '1.0.0',
-                            'name' => 'Prana Vorge Technologies',
-                            'address' => "Jalan Lawang Gintung, Kota Bogor Selatan",
+                            'name' => 'Aiteknologi',
+                            'address' => "Citra Garden 8 Aeroworld RUKO AEROBLISS, Blok C3A No. 19 Jakarta Barat, DKI Jakarta - 11830",
                             'logo' => 'setting/tDpqYxYcbV0M538mnapxhktBb1hEXAMvr1LnXG46.png',
                             'updated_by' => 1,
                             'updated_at' => '2024-06-04 09:07:31',
