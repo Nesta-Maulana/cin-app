@@ -39,8 +39,15 @@ class PermissionController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name' => 'required|unique:permissions,name'
+            'name' => 'required|unique:permissions,name',
+            'guard_name' => 'required|string',
+            'group' => 'nullable|string'
         ]);
+
+        // Set default guard_name if not provided
+        if (!isset($data['guard_name'])) {
+            $data['guard_name'] = 'web';
+        }
 
         try {
             $this->permissionRepository->create($data);
@@ -63,10 +70,14 @@ class PermissionController extends Controller
         }
     }
 
+
+
     public function update(Request $request, $id)
     {
         $data = $request->validate([
             'name' => 'required|unique:permissions,name,' . $id,
+            'guard_name' => 'required|string',
+            'group' => 'nullable|string'
         ]);
 
         $data['updated_by'] = auth()->user()->id;

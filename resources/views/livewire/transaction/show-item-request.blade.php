@@ -12,45 +12,30 @@
 
             <!-- Action Buttons -->
             <div class="text-md-end text-start d-flex align-items-center justify-content-end flex-md-row flex-column">
-                @if (!$selected)
-                    <!-- Pagination Dropdown -->
-                    <div class="my-1 me-md-2">
-                        <label>
-                            <select wire:model="paginate" class="form-select">
-                                <option value="10">10</option>
-                                <option value="25">25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
-                        </label>
-                    </div>
+                <!-- Pagination Dropdown -->
+                <div class="my-1 me-md-2">
+                    <label>
+                        <select wire:model="paginate" class="form-select">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </label>
+                </div>
 
-                    @can('create-item-request')
-                        <!-- Add New Button -->
-                        <div class="flex-wrap my-1">
-                            <a href="{{ route('item-request.create') }}"
-                                class="btn btn-secondary text-white add-new btn-primary">
-                                <span>
-                                    <i class="fa fa-plus me-0 me-sm-1 fa-xs"></i>
-                                    <span>Create Item Request / 创建物品请求</span>
-                                </span>
-                            </a>
-                        </div>
-                    @endcan
-                @else
-                    <!-- Bulk Actions -->
-                    <div class="my-1 me-md-2">
-                        <span class="px-1">
-                            {{ count($selected) }} data selected / 数据已选中
-                        </span>
-                    </div>
+                @can('create-item-request')
+                    <!-- Add New Button -->
                     <div class="flex-wrap my-1">
-                        <a href="#" class="btn btn-secondary add-new btn-label-primary" data-bs-toggle="modal"
-                            data-bs-target="#modalSelectedStatus">
-                            Update Status / 更新状态
+                        <a href="{{ route('item-request.create') }}"
+                            class="btn btn-secondary text-white add-new btn-primary">
+                            <span>
+                                <i class="fa fa-plus me-0 me-sm-1 fa-xs"></i>
+                                <span>Create Item Request / 创建物品请求</span>
+                            </span>
                         </a>
                     </div>
-                @endif
+                @endcan
             </div>
         </div>
 
@@ -59,12 +44,7 @@
             <table class="table border-top">
                 <thead>
                     <tr>
-                        @can('update-item-request')
-                            <th>
-                                <input style="width: 17px; height: 17px;" wire:model="selectAll" type="checkbox"
-                                    class="form-check-input">
-                            </th>
-                        @endcan
+                        <th>No.</th>
                         <th>Request Number / 请求编号</th>
                         <th>Request Date / 请求日期</th>
                         <th>Customer Order / 客户订单</th>
@@ -73,17 +53,12 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($table as $item)
+                    @forelse($table as $key => $item)
                         @php
                             $approvalRequest = $item->approvalRequest('create')->first();
                         @endphp
                         <tr wire:key="row{{ $item->id }}">
-                            @can('update-item-request')
-                                <td>
-                                    <input style="width: 17px; height: 17px;" wire:model="selected"
-                                        value="{{ $item->id }}" type="checkbox" class="dt-checkboxes form-check-input">
-                                </td>
-                            @endcan
+                            <td>{{ $key + 1 }}</td>
                             <td>{{ $item->request_number }}</td>
                             <td>{{ $item->request_date->format('Y-m-d') }}</td>
                             <td>{{ $item->customerOrder->order_number ?? '-' }}</td>
@@ -91,7 +66,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     @can('update-item-request')
-                                        @if (in_array($item->request_status, ['Draft', 'Need Approval Manager','Rejected']))
+                                        @if (in_array($item->request_status, ['Draft', 'Need Approval Manager', 'Rejected']))
                                             @if ($item->created_by == auth()->user()->id)
                                                 <a href="{{ route('item-request.edit', $item->id) }}" class="action-btn"
                                                     title="Edit / 编辑">
@@ -112,8 +87,7 @@
                                         @if (in_array($item->request_status, ['Draft', 'Need Approval Manager']))
                                             @if ($item->created_by == auth()->user()->id)
                                                 <a href="javascript:;" class="action-btn" title="Delete / 删除"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#modalDelete{{ $item->id }}">
+                                                    data-bs-toggle="modal" data-bs-target="#modalDelete{{ $item->id }}">
                                                     <i class="fa fa-trash fa-sm sm me-2 fs-5"></i>
                                                 </a>
                                                 @include('admin.modal.delete', [
