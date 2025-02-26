@@ -315,7 +315,7 @@ class DeliveryOrderController extends Controller
         ], $messages);
         try {
             // Determine status based on submit type
-            $status = $request->input('submit_type') === 'draft' ? 'Draft' : 'Waiting Approval Manager';
+            $status = $request->input('submit_type') == 'draft' ? 'Draft' : 'Waiting Approval Manager';
 
             // Create the Delivery Order header
             $deliveryOrder = $this->repository->create([
@@ -412,7 +412,7 @@ class DeliveryOrderController extends Controller
                 throw new Exception("At least one item must have a fulfill quantity greater than 0. / 至少一个物品的完成数量必须大于0。");
             }
 
-            $message = $status === 'Draft'
+            $message = $status == 'Draft'
                 ? 'Delivery Order saved as draft! / 送货单已保存为草稿！'
                 : 'Delivery Order created successfully! / 送货单创建成功！';
 
@@ -542,7 +542,7 @@ class DeliveryOrderController extends Controller
             ], $messages);
 
             // Determine the status based on submit type
-            $status = $request->input('submit_type') === 'Draft' ? 'Draft' : 'Waiting Approval Manager';
+            $status = $request->input('submit_type') == 'Draft' ? 'Draft' : 'Waiting Approval Manager';
 
             // Update delivery order header
             $deliveryOrder->update([
