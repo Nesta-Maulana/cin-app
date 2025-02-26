@@ -14,9 +14,6 @@
                         </h5>
                         <small class="text-light">Order details for reference / 订单详细信息</small>
                     </div>
-                    {{--  <a href="{{ route('customer-order.index') }}" class="btn btn-light btn-sm" title="Back / 返回">
-                        <i class="fa fa-arrow-left"></i> Back / 返回
-                    </a> --}}
                 </div>
 
                 <!-- Card Body -->
@@ -62,9 +59,12 @@
                                 }
                             }
                         }
-                        $countReadyDO = 0;
-                        $countNeedPO = 0;
 
+                        // Initialize counters for each scenario
+                        $countReadyDO = 0;
+                        $countPartialDO = 0;
+                        $countNeedPO = 0;
+                        $hasPartialDelivery = false;
                     @endphp
 
                     <div class="table-responsive">
@@ -88,63 +88,50 @@
                                         $stock = $detail->itemPriceHistory->itemUom->item->warehouseStocks->sum(
                                             'current_stock',
                                         );
+                                        $quantity = $detail->quantity;
+                                        $fullFillQuantiy = $detail->deliveryOrderDetails->sum('quantity');
+                                        $quantity -= $fullFillQuantiy;
 
+                                        // Calculate actual needed quantity (considering UOM conversion if needed)
                                         if (
                                             $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->id ==
                                             $detail->itemPriceHistory->itemUom->unitOfMeasurement->id
                                         ) {
-                                            if ($stock == 0) {
-                                                $bgColor = 'bg-danger';
-                                                if (!$detail->itemNeedToPurchaseDetail) {
-                                                    $countNeedPO++;
-                                                }
-                                            } else {
-                                                if ($stock >= $detail->quantity) {
-                                                    $countReadyDO++;
-                                                    $bgColor = 'bg-success';
-                                                } else {
-                                                    $bgColor = 'bg-danger';
-                                                    if (!$detail->itemNeedToPurchaseDetail) {
-                                                        $countNeedPO++;
-                                                    }
-                                                }
-                                            }
+                                            $requestQuantity = $quantity;
                                         } else {
                                             $requestQuantity =
-                                                $detail->quantity * $detail->itemPriceHistory->itemUom->conversion;
-                                            if ($stock == 0) {
-                                                $bgColor = 'bg-danger';
-                                                if (!$detail->itemNeedToPurchaseDetail) {
-                                                    $countNeedPO++;
-                                                }
-                                            } else {
-                                                if ($stock >= $requestQuantity) {
-                                                    $countReadyDO++;
+                                                $quantity * $detail->itemPriceHistory->itemUom->conversion;
+                                        }
 
-                                                    $bgColor = 'bg-success';
-                                                } else {
-                                                    $bgColor = 'bg-danger';
-                                                    if (!$detail->itemNeedToPurchaseDetail) {
-                                                        $countNeedPO++;
-                                                    }
-                                                }
+                                        // Determine status based on stock vs request
+                                        if ($stock <= 0) {
+                                            // No stock available
+                                            $bgColor = 'bg-danger';
+                                            if (!$detail->itemNeedToPurchaseDetail) {
+                                                $countNeedPO++;
+                                            }
+                                        } elseif ($stock >= $requestQuantity) {
+                                            // Sufficient stock available
+                                            $bgColor = 'bg-success';
+                                            $countReadyDO++;
+                                        } else {
+                                            // Partial stock available
+                                            $bgColor = 'bg-warning';
+                                            $hasPartialDelivery = true;
+                                            $countPartialDO++;
+                                            if (!$detail->itemNeedToPurchaseDetail) {
+                                                $countNeedPO++;
                                             }
                                         }
-                                        $quantity   = $detail->quantity;
-                                        $fullFillQuantiy    = $detail->deliveryOrderDetails->sum('quantity');
-                                        $quantity   -= $fullFillQuantiy;
                                     @endphp
                                     <tr>
                                         <td>{{ $index + 1 }}</td>
                                         <td>{{ $detail->request_number }}</td>
                                         <td>{{ $detail->itemPriceHistory->itemUom->item->name ?? '-' }}</td>
                                         <td>{{ $detail->itemPriceHistory->itemUom->item->spesification ?? '-' }}</td>
-                                        <td>
-                                            {{ $quantity }}
-                                        </td>
+                                        <td>{{ $quantity }}</td>
                                         <td>{{ $detail->itemPriceHistory->itemUom->unitOfMeasurement->name ?? '-' }}</td>
                                         <td>{{ $detail->remarks ?? '-' }}</td>
-
                                         <td class="{{ $bgColor }}">
                                             <p class="text-white">
                                                 @foreach ($detail->itemPriceHistory->itemUom->item->itemUoms as $uom)
@@ -164,7 +151,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="text-center">
+                                        <td colspan="9" class="text-center">
                                             No item request details found / 未找到物品请求详情
                                         </td>
                                     </tr>
@@ -175,17 +162,19 @@
 
                     <!-- Buttons Section for Delivery Order and Purchase Order Creation -->
                     <div class="d-flex justify-content-end mt-3">
-                        @if ($countReadyDO > 0)
+                        @if ($countReadyDO > 0 || $countPartialDO > 0)
                             <a href="{{ route('delivery-order.create', ['customer_order_id' => $customerOrder->id]) }}"
                                 class="btn btn-success me-2">
-                                Create Delivery Order / 创建送货单 ({{ $countReadyDO }})
+                                {{ $hasPartialDelivery ? 'Create Partial Delivery Order / 创建部分送货单' : 'Create Delivery Order / 创建送货单' }}
+                                ({{ $countReadyDO + $countPartialDO }})
                             </a>
                         @endif
 
                         @if ($countNeedPO > 0)
                             <a href="{{ route('delivery-order.notify-purchasing', ['customer_order_id' => $customerOrder->id]) }}"
                                 class="btn btn-warning">
-                                Notify Purchasing / 通知采购 ({{ $countNeedPO }} Item Need To Buy / 需要采购 {{ $countNeedPO }}
+                                Notify Purchasing / 通知采购 ({{ $countNeedPO }} Item{{ $countNeedPO > 1 ? 's' : '' }} Need
+                                To Buy / 需要采购 {{ $countNeedPO }}
                                 物品)
                             </a>
                         @endif
