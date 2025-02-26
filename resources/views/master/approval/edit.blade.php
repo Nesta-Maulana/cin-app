@@ -1,5 +1,5 @@
 @extends('layouts.admin.app')
-@section('title', 'Approval')
+@section('title', 'Edit Approval / 编辑审批')
 
 @section('content')
     <div class="row">
@@ -7,22 +7,22 @@
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <div class="card-title mb-0">
-                        <h5 class="mb-0">Edit @yield('title')</h5>
-                        <small class="text-muted">Perbarui @yield('title')</small>
+                        <h5 class="mb-0">Edit @yield('title') / 编辑@yield('title')</h5>
+                        <small class="text-muted">Update approval process / 更新审批流程</small>
                     </div>
-                    <a href="{{ route('approval.index') }}" class="btn p-0" title="Kembali">
+                    <a href="{{ route('approval.index') }}" class="btn p-0" title="Back / 返回">
                         <i class="ti ti-x ti-sm text-muted"></i>
                     </a>
                 </div>
 
                 <div class="card-body">
-                    <form action="{{ route('approval.update', $data->id) }}" method="POST">
+                    <form action="{{ route('approval.update', $approval->id) }}" method="POST" id="approvalForm">
                         @csrf
                         @method('PUT')
 
                         @if ($errors->any())
                             <div class="alert alert-danger">
-                                <strong>Whoops!</strong> Terdapat beberapa masalah dengan inputan Anda.<br><br>
+                                <strong>Whoops!</strong> There are some problems with your input. / 输入存在一些问题。<br><br>
                                 <ul>
                                     @foreach ($errors->all() as $error)
                                         <li>{{ $error }}</li>
@@ -34,15 +34,18 @@
                         <!-- Approval Header -->
                         <div class="row">
                             <div class="mb-3 col-md-6">
-                                <label for="name" class="form-label">Nama Approval / 审批名称</label>
+                                <label for="name" class="form-label">Approval Name / 审批名称 <span
+                                        class="text-danger">*</span></label>
                                 <input class="form-control" type="text" id="name" name="name"
-                                    value="{{ $data->name }}" placeholder="Nama Approval / 审批名称" autofocus required />
+                                    value="{{ old('name', $approval->name) }}" placeholder="Enter approval name / 输入审批名称"
+                                    required />
                             </div>
                             <div class="mb-3 col-md-6">
                                 <label for="event" class="form-label">Event / 事件 <span
                                         class="text-danger">*</span></label>
                                 <input class="form-control" type="text" id="event" name="event"
-                                    value="{{ $data->event }}" placeholder="Event / 事件" required />
+                                    value="{{ old('event', $approval->event) }}" placeholder="Enter event name / 输入事件名称"
+                                    required />
                             </div>
                         </div>
 
@@ -50,24 +53,15 @@
                             <div class="mb-3 col-md-6">
                                 <label for="class_name" class="form-label">Model Class / 模型类 <span
                                         class="text-danger">*</span></label>
-                                <select class="form-select" id="class_name" name="class_name" required>
-                                    <option value="{{ $data->class_name }}">{{ $data->class_name }}</option>
-                                    <!-- Other model options fetched dynamically -->
+                                <select id="class_name" name="class_name" class="form-select" required>
+                                    <option value="" disabled>Select a model / 选择模型</option>
+                                    @foreach (getModels() as $model)
+                                        <option value="{{ $model }}"
+                                            {{ old('class_name', $approval->class_name) == $model ? 'selected' : '' }}>
+                                            {{ $model }}
+                                        </option>
+                                    @endforeach
                                 </select>
-                            </div>
-                            <div class="mb-3 col-md-6">
-                                <label for="column_update" class="form-label">Column to Update / 更新的列</label>
-                                <select class="form-select" id="column_update" name="column_update">
-                                    <option value="{{ $data->column_update }}">{{ $data->column_update }}</option>
-                                    <!-- Columns fetched dynamically -->
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="mb-3 col-md-12">
-                                <label for="description" class="form-label">Description / 描述</label>
-                                <textarea id="description" name="description" class="form-control" rows="3" placeholder="Add description / 添加描述">{{ $data->description }}</textarea>
                             </div>
                         </div>
 
@@ -75,76 +69,155 @@
                         <div class="row">
                             <div class="mb-3 col-md-12">
                                 <label for="levels" class="form-label">Approval Levels / 审批级别</label>
-                                <table class="table table-bordered" id="approval-levels-table">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Order / 顺序</th>
-                                            <th>Approver Type / 审批人类型</th>
-                                            <th>Reference ID / 参考ID</th>
-                                            <th>On Approve / 批准时更新</th>
-                                            <th>On Reject / 拒绝时更新</th>
-                                            <th>Required / 必需</th>
-                                            <th>Action / 操作</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach ($data->approvalLevels as $level)
+                                <div class="table-responsive">
+                                    <table class="table table-bordered" id="approval-levels-table">
+                                        <thead class="table-light">
                                             <tr>
-                                                <td>
-                                                    <input type="hidden" name="ids[]" class="form-control"
-                                                        value="{{ $level->id }}" readonly />
-                                                    <input type="number" name="orders[]" class="form-control"
-                                                        value="{{ $level->hierarchy_order }}" readonly />
-                                                </td>
-                                                <td>
-                                                    <select name="approver_types[]" class="form-select approver-type"
-                                                        required>
-                                                        <option value="App\Models\Role"
-                                                            {{ $level->class_name_approver_type == 'App\Models\Role' ? 'selected' : '' }}>
-                                                            Role</option>
-                                                        <option value="App\Models\User"
-                                                            {{ $level->class_name_approver_type == 'App\Models\User' ? 'selected' : '' }}>
-                                                            User</option>
-                                                    </select>
-                                                </td>
-                                                <td>
-                                                    <select name="reference_ids[]" class="form-select reference-id"
-                                                        required>
-                                                        <option value="{{ $level->approver_reference_id }}">
-                                                            {{ $level->approver_reference_id }}</option>
-                                                        <!-- Dynamic references -->
-                                                    </select>
-                                                </td>
-                                                <td>
-                                                    <input type="text" name="on_approves[]" class="form-control"
-                                                        value="{{ $level->updated_value_on_approve }}" />
-                                                </td>
-                                                <td>
-                                                    <input type="text" name="on_rejects[]" class="form-control"
-                                                        value="{{ $level->updated_value_on_reject }}" />
-                                                </td>
-                                                <td>
-                                                    <input type="checkbox" name="requireds[]" class="form-check-input" value="1" {{ $level->required ? 'checked' : '' }} />
-                                                </td>
-                                                <td>
-                                                    <button type="button" class="btn btn-danger btn-sm remove-level-row">
-                                                        Delete / 删除
-                                                    </button>
-                                                </td>
+                                                <th class="text-nowrap">Order / 顺序</th>
+                                                <th class="text-nowrap">Approver Type / 审批人类型</th>
+                                                <th class="text-nowrap">Reference ID / 参考ID</th>
+                                                <th style="min-width: 400px;" class="text-center">On Approve / 批准时更新</th>
+                                                <th style="min-width: 400px;" class="text-center">On Reject / 拒绝时更新</th>
+                                                <th class="text-nowrap">Department Specific / 具体部门</th>
+                                                <th class="text-nowrap">Required / 必需</th>
+                                                <th class="text-nowrap">Action / 操作</th>
                                             </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($approval->approvalLevels as $index => $level)
+                                                <tr>
+                                                    <td>
+                                                        <input type="number" name="orders[]" class="form-control"
+                                                            value="{{ $level->hierarchy_order }}" readonly />
+                                                        <input type="hidden" name="level_ids[]"
+                                                            value="{{ $level->id }}" />
+                                                    </td>
+                                                    <td>
+                                                        <select name="approver_types[]" class="form-select approver-type"
+                                                            required>
+                                                            <option value="" disabled>Select Type / 选择类型</option>
+                                                            <option value="App\Models\Role"
+                                                                {{ $level->class_name_approver_type == 'App\Models\Role' ? 'selected' : '' }}>
+                                                                Role</option>
+                                                            <option value="App\Models\User"
+                                                                {{ $level->class_name_approver_type == 'App\Models\User' ? 'selected' : '' }}>
+                                                                User</option>
+                                                        </select>
+                                                    </td>
+                                                    <td>
+                                                        <select name="reference_ids[]" class="form-select reference-id"
+                                                            required>
+                                                            <option value="" disabled>Select Reference / 选择参考</option>
+                                                            @if ($level->class_name_approver_type == 'App\Models\Role')
+                                                                @foreach ($roles as $role)
+                                                                    <option value="{{ $role->id }}"
+                                                                        {{ $level->approver_reference_id == $role->id ? 'selected' : '' }}>
+                                                                        {{ $role->name }}</option>
+                                                                @endforeach
+                                                            @elseif($level->class_name_approver_type == 'App\Models\User')
+                                                                @foreach ($users as $user)
+                                                                    <option value="{{ $user->id }}"
+                                                                        {{ $level->approver_reference_id == $user->id ? 'selected' : '' }}>
+                                                                        {{ $user->name }}</option>
+                                                                @endforeach
+                                                            @endif
+                                                        </select>
+                                                    </td>
+                                                    <td>
+                                                        <button type="button" class="btn btn-info btn-sm add-column"
+                                                            data-target="on_approve">
+                                                            + Add Column
+                                                        </button>
+                                                        <div class="on_approve-columns">
+                                                            @if ($level->updated_values_on_approve && is_array($level->updated_values_on_approve))
+                                                                @foreach ($level->updated_values_on_approve as $column => $value)
+                                                                    <div class="d-flex mt-2">
+                                                                        <select class="form-select me-2"
+                                                                            name="on_approve_columns[]">
+                                                                            @foreach (json_decode($columns) as $col)
+                                                                                <option value="{{ $col }}"
+                                                                                    {{ $column == $col ? 'selected' : '' }}>
+                                                                                    {{ $col }}</option>
+                                                                            @endforeach
+                                                                        </select>
+                                                                        <input type="text" class="form-control me-2"
+                                                                            name="on_approve_values[]"
+                                                                            value="{{ $value }}"
+                                                                            placeholder="Value">
+                                                                        <button type="button"
+                                                                            class="btn btn-danger btn-sm remove-column">X</button>
+                                                                    </div>
+                                                                @endforeach
+                                                            @endif
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <button type="button" class="btn btn-warning btn-sm add-column"
+                                                            data-target="on_reject">
+                                                            + Add Column
+                                                        </button>
+                                                        <div class="on_reject-columns">
+                                                            @if ($level->updated_values_on_reject && is_array($level->updated_values_on_reject))
+                                                                @foreach ($level->updated_values_on_reject as $column => $value)
+                                                                    <div class="d-flex mt-2">
+                                                                        <select class="form-select me-2"
+                                                                            name="on_reject_columns[]">
+                                                                            @foreach (json_decode($columns) as $col)
+                                                                                <option value="{{ $col }}"
+                                                                                    {{ $column == $col ? 'selected' : '' }}>
+                                                                                    {{ $col }}</option>
+                                                                            @endforeach
+                                                                        </select>
+                                                                        <input type="text" class="form-control me-2"
+                                                                            name="on_reject_values[]"
+                                                                            value="{{ $value }}"
+                                                                            placeholder="Value">
+                                                                        <button type="button"
+                                                                            class="btn btn-danger btn-sm remove-column">X</button>
+                                                                    </div>
+                                                                @endforeach
+                                                            @endif
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <select name="department_id[]" class="form-select">
+                                                            <option value="-"
+                                                                {{ $level->department_id == null ? 'selected' : '' }}>No
+                                                                Specific Department / 不指定部门</option>
+                                                            <option value="0"
+                                                                {{ $level->department_id == '0' ? 'selected' : '' }}>
+                                                                Spesific Requester Department / 指定申请人部门</option>
+                                                            @foreach ($departments as $department_id => $department)
+                                                                <option value="{{ $department_id }}"
+                                                                    {{ $level->department_id == $department_id ? 'selected' : '' }}>
+                                                                    {{ $department }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <input type="checkbox" name="requireds[]"
+                                                            class="form-check-input" value="1"
+                                                            {{ $level->required ? 'checked' : '' }} />
+                                                    </td>
+                                                    <td>
+                                                        <button type="button"
+                                                            class="btn btn-danger btn-sm remove-level-row">Delete /
+                                                            删除</button>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
                                 <button type="button" class="btn btn-success btn-sm mt-3" id="add-level-row">
                                     <i class="fa fa-plus-circle"></i> Add Level / 添加级别
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Submit Button -->
-                        <div class="my-2">
-                            <button type="submit" class="btn btn-primary px-5 me-2">Update</button>
-                            <a href="{{ route('approval.index') }}" class="btn btn-label-secondary">Cancel</a>
+                        <div class="my-2 d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary px-5 me-2">Update / 更新</button>
+                            <a href="{{ route('approval.index') }}" class="btn btn-label-secondary">Cancel / 取消</a>
                         </div>
                     </form>
                 </div>
@@ -158,46 +231,86 @@
         document.addEventListener('DOMContentLoaded', function() {
             const tableBody = document.querySelector('#approval-levels-table tbody');
             const addLevelButton = document.getElementById('add-level-row');
+            let columns = @json(json_decode($columns));
 
-            // Add a new approval level row
+            // Fetch columns based on selected model
+            document.getElementById('class_name').addEventListener('change', function() {
+                const selectedModel = this.value;
+                fetchColumns(selectedModel);
+            });
+
+            function fetchColumns(model) {
+                $.ajax({
+                    url: "{{ route('get-columns-by-model') }}",
+                    type: "GET",
+                    data: {
+                        model
+                    },
+                    success: function(data) {
+                        if (data.success) {
+                            columns = data.columns;
+                        } else {
+                            alert('Failed to load columns! / 无法加载列！');
+                        }
+                    },
+                    error: function() {
+                        alert('An error occurred! / 发生错误！');
+                    }
+                });
+            }
+
             addLevelButton.addEventListener('click', function() {
                 const newRow = document.createElement('tr');
-                const currentOrder = tableBody.querySelectorAll('tr').length + 1; // Auto-increment order
+                const currentOrder = tableBody.querySelectorAll('tr').length + 1;
 
                 newRow.innerHTML = `
-            <td>
-                <input type="hidden" name="ids[]" class="form-control" readonly />
-                <input type="number" name="orders[]" class="form-control" value="${currentOrder}" readonly />
-            </td>
-            <td>
-                <select name="approver_types[]" class="form-select approver-type" required>
-                    <option value="" disabled selected>Select Type / 选择类型</option>
-                    <option value="App\\Models\\Role">Role</option>
-                    <option value="App\\Models\\User">User</option>
-                </select>
-            </td>
-            <td>
-                <select name="reference_ids[]" class="form-select reference-id" required>
-                    <option value="" disabled selected>Select Reference / 选择参考</option>
-                </select>
-            </td>
-            <td>
-                <input type="text" name="on_approves[]" class="form-control" placeholder="Enter update on approve / 输入批准时更新" required />
-            </td>
-            <td>
-                <input type="text" name="on_rejects[]" class="form-control" placeholder="Enter update on reject / 输入拒绝时更新" required />
-            </td>
-            <td class="text-center">
-                <input type="checkbox" name="requireds[]" class="form-check-input" value="1" checked />
-            </td>
-            <td>
-                <button type="button" class="btn btn-danger btn-sm remove-level-row">Delete / 删除</button>
-            </td>
-        `;
+                <td>
+                    <input type="number" name="orders[]" class="form-control" value="${currentOrder}" readonly />
+                    <input type="hidden" name="level_ids[]" value="new" />
+                </td>
+                <td>
+                    <select name="approver_types[]" class="form-select approver-type" required>
+                        <option value="" disabled selected>Select Type / 选择类型</option>
+                        <option value="App\\Models\\Role">Role</option>
+                        <option value="App\\Models\\User">User</option>
+                    </select>
+                </td>
+                <td>
+                    <select name="reference_ids[]" class="form-select reference-id" required>
+                        <option value="" disabled selected>Select Reference / 选择参考</option>
+                    </select>
+                </td>
+                <td>
+                    <button type="button" class="btn btn-info btn-sm add-column" data-target="on_approve">
+                        + Add Column
+                    </button>
+                    <div class="on_approve-columns"></div>
+                </td>
+                <td>
+                    <button type="button" class="btn btn-warning btn-sm add-column" data-target="on_reject">
+                        + Add Column
+                    </button>
+                    <div class="on_reject-columns"></div>
+                </td>
+                <td>
+                    <select name="department_id[]" class="form-select">
+                        <option value="-" selected>No Specific Department / 不指定部门</option>
+                        <option value="0">Spesific Requester Department / 指定申请人部门</option>
+                        @foreach ($departments as $department_id => $department)
+                            <option value="{{ $department_id }}">{{ $department }}</option>
+                        @endforeach
+                    </select>
+                </td>
+                <td class="text-center">
+                    <input type="checkbox" name="requireds[]" class="form-check-input" value="1" checked />
+                </td>
+                <td>
+                    <button type="button" class="btn btn-danger btn-sm remove-level-row">Delete / 删除</button>
+                </td>
+            `;
                 tableBody.appendChild(newRow);
             });
 
-            // Remove a row
             tableBody.addEventListener('click', function(event) {
                 if (event.target.classList.contains('remove-level-row')) {
                     const row = event.target.closest('tr');
@@ -208,9 +321,31 @@
                         row.querySelector('input[name="orders[]"]').value = index + 1;
                     });
                 }
+
+                if (event.target.classList.contains('add-column')) {
+                    const target = event.target.dataset.target;
+                    const row = event.target.closest('tr');
+                    const container = row.querySelector(`.${target}-columns`);
+
+                    const columnRow = document.createElement('div');
+                    columnRow.classList.add('d-flex', 'mt-2');
+
+                    columnRow.innerHTML = `
+                        <select class="form-select me-2" name="${target}_columns[]">
+                            ${columns.map(col => `<option value="${col}">${col}</option>`).join('')}
+                        </select>
+                        <input type="text" class="form-control me-2" name="${target}_values[]" placeholder="Value">
+                        <button type="button" class="btn btn-danger btn-sm remove-column">X</button>
+                    `;
+
+                    container.appendChild(columnRow);
+                }
+
+                if (event.target.classList.contains('remove-column')) {
+                    event.target.closest('.d-flex').remove();
+                }
             });
 
-            // Load Reference IDs dynamically
             tableBody.addEventListener('change', function(event) {
                 if (event.target.classList.contains('approver-type')) {
                     const approverType = event.target.value;
@@ -236,43 +371,6 @@
                             alert('Failed to load references! / 无法加载参考！');
                         });
                 }
-            });
-        });
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const modelDropdown = document.getElementById('class_name');
-            const columnDropdown = document.getElementById('column_update');
-
-            modelDropdown.addEventListener('change', function() {
-                const selectedModel = this.value;
-
-                // Reset column dropdown
-                columnDropdown.innerHTML =
-                    `<option value="" disabled selected>Loading... / 加载中...</option>`;
-
-                // Fetch columns based on model
-                $.ajax({
-                    url: "{{ route('get-columns-by-model') }}", // Route to fetch columns
-                    type: "GET",
-                    data: {
-                        model: selectedModel
-                    },
-                    success: function(data) {
-                        if (data.success) {
-                            columnDropdown.innerHTML =
-                                `<option value="" disabled selected>Select a column / 选择列</option>`;
-                            data.columns.forEach(column => {
-                                columnDropdown.innerHTML +=
-                                    `<option value="${column}">${column}</option>`;
-                            });
-                        } else {
-                            alert('Failed to load columns! / 无法加载列！');
-                        }
-                    },
-                    error: function() {
-                        alert('An error occurred! / 发生错误！');
-                    }
-                });
             });
         });
     </script>

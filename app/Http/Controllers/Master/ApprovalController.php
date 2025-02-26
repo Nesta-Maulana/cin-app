@@ -239,107 +239,132 @@ class ApprovalController extends Controller
     {
         try {
             // Fetch the approval data with its levels
-            $data = $this->repository->find($id);
+            $approval = $this->repository->find($id);
 
-            // Fetch additional data for dropdowns if needed
-            $roles = $this->roleRepository->getData([], [], [], null, [], 'all')->pluck('name', 'id');
-            $users = $this->userRepository->getData([], [], [], null, [], 'all')->pluck('name', 'id');
 
-            return view("{$this->view}.edit", compact('data', 'roles', 'users'));
+            // Get departments for dropdown
+            $departments = $this->departmentRepository->getData()->pluck('name', 'id');
+
+            // Get columns
+            $columns = [];
+            if (class_exists($approval->class_name)) {
+                $modelInstance = new $approval->class_name;
+                $columns = \Schema::getColumnListing($modelInstance->getTable());
+            }
+            $columns = json_encode($columns);
+
+            // Get roles and users
+            $roles = $this->roleRepository->getData([], [], [], null, [], 'all');
+            $users = $this->userRepository->getData([], [], [], null, [], 'all');
+
+            return view("{$this->view}.edit", compact('approval', 'departments', 'columns', 'roles', 'users'));
         } catch (Exception $e) {
             Log::error($e->getMessage());
             alertNotif('error', $e->getMessage());
             return redirect()->route("{$this->route}.index");
         }
     }
-
-
     public function update(Request $request, $id)
     {
-        // Validasi data utama approval
+        // Validate input data
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'event' => 'required|string|max:255',
-            'class_name' => 'required|string|max:255',
-            'column_update' => 'nullable|string|max:255',
-            'is_active' => 'nullable|boolean',
-        ], [
-            'name.required' => 'Approval name is required / 审批名称是必填项。',
-            'name.string' => 'Approval name must be a valid string / 审批名称必须是有效的字符串。',
-            'name.max' => 'Approval name cannot exceed 255 characters / 审批名称不能超过255个字符。',
-            'event.required' => 'Event is required / 事件是必填项。',
-            'event.string' => 'Event must be a valid string / 事件必须是有效的字符串。',
-            'event.max' => 'Event cannot exceed 255 characters / 事件不能超过255个字符。',
-            'class_name.required' => 'Class name is required / 模型类是必填项。',
-            'class_name.string' => 'Class name must be a valid string / 模型类必须是有效的字符串。',
-            'class_name.max' => 'Class name cannot exceed 255 characters / 模型类不能超过255个字符。',
-            'column_update.string' => 'Column to update must be a valid string / 更新的列必须是有效的字符串。',
-            'column_update.max' => 'Column to update cannot exceed 255 characters / 更新的列不能超过255个字符。',
-            'is_active.boolean' => 'Is Active must be a valid boolean / 状态必须是有效的布尔值。',
-        ]);
-
-        // Validasi data untuk approval levels
-        $levels = $request->validate([
-            'orders.*' => 'required|integer',
-            'approver_types.*' => 'required|string|max:255',
-            'reference_ids.*' => 'required|string|max:255',
-            'on_approves.*' => 'required|string|max:255',
-            'on_rejects.*' => 'required|string|max:255',
-            'requireds.*' => 'required|boolean',
-        ], [
-            'orders.*.required' => 'Order is required for all levels / 每个级别的顺序是必填项。',
-            'orders.*.integer' => 'Order must be a valid integer / 顺序必须是有效的整数。',
-            'approver_types.*.required' => 'Approver type is required / 审批人类型是必填项。',
-            'approver_types.*.string' => 'Approver type must be a valid string / 审批人类型必须是有效的字符串。',
-            'approver_types.*.max' => 'Approver type cannot exceed 255 characters / 审批人类型不能超过255个字符。',
-            'reference_ids.*.required' => 'Reference ID is required / 参考ID是必填项。',
-            'reference_ids.*.string' => 'Reference ID must be a valid string / 参考ID必须是有效的字符串。',
-            'reference_ids.*.max' => 'Reference ID cannot exceed 255 characters / 参考ID不能超过255个字符。',
-            'on_approves.*.required' => 'On approve value is required / 批准时的更新值是必填项。',
-            'on_approves.*.string' => 'On approve value must be a valid string / 批准时的更新值必须是有效的字符串。',
-            'on_approves.*.max' => 'On approve value cannot exceed 255 characters / 批准时的更新值不能超过255个字符。',
-            'on_rejects.*.required' => 'On reject value is required / 拒绝时的更新值是必填项。',
-            'on_rejects.*.string' => 'On reject value must be a valid string / 拒绝时的更新值必须是有效的字符串。',
-            'on_rejects.*.max' => 'On reject value cannot exceed 255 characters / 拒绝时的更新值不能超过255个字符。',
-            'requireds.*.required' => 'Required status is required for all levels / 每个级别的必需状态是必填项。',
-            'requireds.*.boolean' => 'Required status must be a valid boolean / 必需状态必须是有效的布尔值。',
+            'event' => 'required|string',
+            'class_name' => 'required|string',
+            'orders' => 'required|array',
+            'approver_types' => 'required|array',
+            'reference_ids' => 'required|array',
+            'level_ids' => 'required|array',
+            'department_id' => 'array',
+            'requireds' => 'nullable|array',
         ]);
 
         try {
-            DB::transaction(function () use ($request, $id, $data, $levels) {
-                // Update approval data
-                $approval = $this->repository->update($id, $data);
+            DB::transaction(function () use ($request, $id, $data) {
+                // Update main approval record
+                $approval = $this->repository->update($id, [
+                    'name' => $data['name'],
+                    'class_name' => $data['class_name'],
+                    'event' => $data['event'],
+                    'levels' => count($data['orders']),
+                    'is_active' => true,
+                ]);
 
-                // Hapus semua approval levels sebelumnya
+                // Delete existing approval levels
+                $approval = $this->repository->find($id);
                 $approval->approvalLevels()->delete();
 
-                // Tambahkan approval levels baru
-                foreach ($levels['orders'] as $index => $order) {
-                    $level = [
-                        'hierarchy_order' => $order,
-                        'class_name_approver_type' => $levels['approver_types'][$index],
-                        'approver_reference_id' => $levels['reference_ids'][$index],
-                        'updated_value_on_approve' => $levels['on_approves'][$index],
-                        'updated_value_on_reject' => $levels['on_rejects'][$index],
-                        'required' => (bool) $levels['requireds'][$index],
-                        'description' => $levels['descriptions'][$index] ?? null,
-                    ];
+                // Recreate approval levels from form data
+                for ($i = 0; $i < count($data['orders']); $i++) {
+                    // Process on_approve configurations
+                    $onApproveConfig = [];
 
-                    // Buat approval level baru
-                    $approval->approvalLevels()->create($level);
+                    // Get all on_approve columns and values for this level
+                    if ($request->has('on_approve_columns') && $request->has('on_approve_values')) {
+                        $onApproveColumns = $request->on_approve_columns;
+                        $onApproveValues = $request->on_approve_values;
+
+                        if (is_array($onApproveColumns) && is_array($onApproveValues)) {
+                            foreach ($onApproveColumns as $j => $column) {
+                                if (isset($onApproveValues[$j])) {
+                                    $onApproveConfig[$column] = $onApproveValues[$j];
+                                }
+                            }
+                        }
+                    }
+
+                    // Process on_reject configurations
+                    $onRejectConfig = [];
+
+                    // Get all on_reject columns and values for this level
+                    if ($request->has('on_reject_columns') && $request->has('on_reject_values')) {
+                        $onRejectColumns = $request->on_reject_columns;
+                        $onRejectValues = $request->on_reject_values;
+
+                        if (is_array($onRejectColumns) && is_array($onRejectValues)) {
+                            foreach ($onRejectColumns as $j => $column) {
+                                if (isset($onRejectValues[$j])) {
+                                    $onRejectConfig[$column] = $onRejectValues[$j];
+                                }
+                            }
+                        }
+                    }
+
+                    // Handle department ID
+                    $departmentId = null;
+                    if (isset($data['department_id'][$i])) {
+                        $departmentId = $data['department_id'][$i] == '-' ? null : $data['department_id'][$i];
+                    }
+
+                    // Check if required value exists
+                    $required = false;
+                    if (isset($data['requireds']) && is_array($data['requireds']) && isset($data['requireds'][$i])) {
+                        $required = (bool) $data['requireds'][$i];
+                    }
+
+                    // Create the approval level
+                    $this->approvalLevelRepository->create([
+                        'approval_id' => $id,
+                        'hierarchy_order' => $data['orders'][$i],
+                        'class_name_approver_type' => $data['approver_types'][$i],
+                        'approver_reference_id' => $data['reference_ids'][$i],
+                        'updated_values_on_approve' => $onApproveConfig,
+                        'updated_values_on_reject' => $onRejectConfig,
+                        'department_id' => $departmentId,
+                        'required' => $required,
+                    ]);
                 }
             });
 
             alertNotif('update');
+            return redirect()->route("{$this->route}.index");
+
         } catch (Exception $e) {
             Log::error($e->getMessage());
             alertNotif('error', $e->getMessage());
+            return redirect()->back()->withInput();
         }
-
-        return redirect()->route("{$this->route}.index");
     }
-
 
 
     public function destroy($id)
