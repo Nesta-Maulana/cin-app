@@ -115,7 +115,7 @@ class DeliveryOrderController extends Controller
                             $detail->itemPriceHistory->itemUom->unitOfMeasurement->id
                         ) {
 
-                            if ($stock >= $detail->quantity) {
+                            if ($stock >= $detail->quantity || $stock > 0) {
                                 $allDetails->push($detail);
                             }
                         } else {
