@@ -99,7 +99,7 @@
                             <button type="submit" class="btn btn-primary px-5 me-2" onclick="setSubmitType('submit')">
                                 Submit / 提交
                             </button>
-                            <button type="submit" class="btn btn-secondary px-5 me-2" onclick="setSubmitType('draft')">
+                            <button type="submit" class="btn btn-secondary px-5 me-2" onclick="setSubmitType('Draft')">
                                 Save as Draft / 保存草稿
                             </button>
                             <a href="{{ route('delivery-order.index') }}" class="btn btn-label-secondary">Cancel / 取消</a>

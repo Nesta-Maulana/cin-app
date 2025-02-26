@@ -389,7 +389,7 @@ class DeliveryOrderController extends Controller
                         ->where('section_id', $detail['section_id'])
                         ->latest()
                         ->first();
-
+                    $checkApproval = $this->repository->checkApproval('create', $deliveryOrder->id);
                     if ($stockEntry) {
                         $fullFillUOM = $this->itemUomRepository->find($detail['item_uom_fullfill_id']);
                         $fullFillQuantity = $detail['fullfill_quantity'];
