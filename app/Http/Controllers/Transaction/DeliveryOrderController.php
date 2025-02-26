@@ -122,7 +122,7 @@ class DeliveryOrderController extends Controller
                             $requestQuantity =
                                 $detail->quantity *
                                 $detail->itemPriceHistory->itemUom->conversion;
-                            if ($stock >= $requestQuantity) {
+                            if ($stock >= $requestQuantity || $stock > 0) {
                                 $allDetails->push($detail);
                             }
                         }
