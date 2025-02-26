@@ -265,7 +265,6 @@ class DeliveryOrderController extends Controller
             'details.*.item_id.exists' => 'Selected item does not exist. / 选择的物品不存在。',
             'details.*.quantity.required' => 'Request Quantity is required. / 请求数量是必填项。',
             'details.*.quantity.numeric' => 'Request Quantity must be a valid number. / 请求数量必须是有效数字。',
-            'details.*.quantity.min' => 'Request Quantity must be at least 0.001. / 请求数量必须至少为0.001。',
             'details.*.item_uom_id.required' => 'Unit of Measurement is required. / 计量单位是必填项。',
             'details.*.item_uom_id.exists' => 'Selected Unit of Measurement does not exist. / 选择的计量单位不存在。',
             'details.*.stock.required' => 'Stock is required. / 库存是必填项。',
@@ -499,7 +498,6 @@ class DeliveryOrderController extends Controller
             'details.*.section_id.exists' => 'Selected Warehouse Section does not exist. / 选择的仓库区域不存在。',
             'details.*.fullfill_quantity.required' => 'Fullfill Quantity is required. / 完成数量是必填项。',
             'details.*.fullfill_quantity.numeric' => 'Fullfill Quantity must be a valid number. / 完成数量必须是有效数字。',
-            'details.*.fullfill_quantity.min' => 'Fullfill Quantity must be at least 0. / 完成数量必须至少为0。',
             'details.*.item_uom_fullfill_id.required' => 'Fullfill Unit of Measurement is required. / 完成单位是必填项。',
             'details.*.item_uom_fullfill_id.exists' => 'Selected Fullfill Unit of Measurement does not exist. / 选择的完成单位不存在。',
             'details.*.remarks.max' => 'Remarks must not exceed 255 characters. / 备注不能超过255个字符。',
@@ -544,7 +542,7 @@ class DeliveryOrderController extends Controller
             ], $messages);
 
             // Determine the status based on submit type
-            $status = $request->input('submit_type') === 'draft' ? 'Draft' : 'Waiting Approval Manager';
+            $status = $request->input('submit_type') === 'Draft' ? 'Draft' : 'Waiting Approval Manager';
 
             // Update delivery order header
             $deliveryOrder->update([
