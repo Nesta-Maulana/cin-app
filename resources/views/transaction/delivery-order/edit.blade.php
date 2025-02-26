@@ -236,8 +236,7 @@
 
                     // Reset validation state
                     validationStates[itemId] = false;
-
-                    if (!fullfillQuantity || fullfillQuantity < 0) {
+                    if (fullfillQuantity < 0) {
                         errorElement.text('Fullfill quantity cannot be negative / 不能为负数').removeClass(
                             'd-none');
                         inputElement.addClass('is-invalid');

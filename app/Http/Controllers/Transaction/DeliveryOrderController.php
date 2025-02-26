@@ -103,7 +103,13 @@ class DeliveryOrderController extends Controller
                         $detail->section_name = $detail->itemPriceHistory->itemUom->item->warehouseStocks->first()->warehouseSection->name;
                         $detail->stock_uom = $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->name;
                         $detail->stock_uom_id = $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->id;
-                        $detail->quantity -= $detail->deliveryOrderDetails->sum('quantity');
+                        $processedDeliveryQuantity = $detail->deliveryOrderDetails
+                            ->filter(function ($deliveryDetail) {
+                                return $deliveryDetail->header->process_status != 'Draft';
+                            })
+                            ->sum('quantity');
+
+                        $detail->quantity -= $processedDeliveryQuantity;
                         if (
                             $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->id ==
                             $detail->itemPriceHistory->itemUom->unitOfMeasurement->id
@@ -270,7 +276,7 @@ class DeliveryOrderController extends Controller
             'details.*.section_id.exists' => 'Selected Warehouse Section does not exist. / 选择的仓库区域不存在。',
             'details.*.fullfill_quantity.required' => 'Fullfill Quantity is required. / 完成数量是必填项。',
             'details.*.fullfill_quantity.numeric' => 'Fullfill Quantity must be a valid number. / 完成数量必须是有效数字。',
-            'details.*.fullfill_quantity.min' => 'Fullfill Quantity must be at least 0.001. / 完成数量必须至少为0.001。',
+            'details.*.fullfill_quantity.min' => 'Fullfill Quantity must be at least 0. / 完成数量必须至少为0。',
             'details.*.item_uom_fullfill_id.required' => 'Fullfill Unit of Measurement is required. / 完成单位是必填项。',
             'details.*.item_uom_fullfill_id.exists' => 'Selected Fullfill Unit of Measurement does not exist. / 选择的完成单位不存在。',
             'details.*.remarks.max' => 'Remarks must not exceed 255 characters. / 备注不能超过255个字符。',
@@ -291,7 +297,7 @@ class DeliveryOrderController extends Controller
             'details.*.fullfill_quantity' => [
                 'required',
                 'numeric',
-                'min:0.001',
+                'min:0', // Changed from 0.001 to 0
                 function ($attribute, $value, $fail) use ($request) {
                     preg_match('/\d+/', $attribute, $matches);
                     $index = $matches[0] ?? null;
@@ -309,53 +315,74 @@ class DeliveryOrderController extends Controller
             'details.*.remarks' => 'nullable|string|max:255',
         ], $messages);
         try {
-            // Custom validation messages (English & Mandarin)
-            $status = $request->input('submit_type') === 'Draft' ? 'Draft' : 'Waiting Approval Manager';
-            // Validasi request data
+            // Determine status based on submit type
+            $status = $request->input('submit_type') === 'draft' ? 'Draft' : 'Waiting Approval Manager';
 
-            // Buat header Delivery Order
+            // Create the Delivery Order header
             $deliveryOrder = $this->repository->create([
                 'process_number' => $data['process_number'],
                 'customer_order_id' => $data['customer_order_id'],
                 'process_date' => $data['process_date'],
-                'process_status' => $status, // Use dynamic status
+                'process_status' => $status,
                 'remarks' => $data['remarks'],
                 'created_by' => auth()->id(),
             ]);
+
             if ($status === 'Waiting Approval Manager') {
                 $checkApproval = $this->repository->checkApproval('create', $deliveryOrder->id);
             }
 
-            // Simpan detail Delivery Order
+            // Track if any details were added
+            $detailsAdded = false;
+
+            // Save Delivery Order details
             foreach ($data['details'] as $detail) {
+                // Skip details with fullfill_quantity of 0
+                if (floatval($detail['fullfill_quantity']) <= 0) {
+                    continue;
+                }
+
+                $detailsAdded = true;
+
                 $DeliveryOrderDetail = $deliveryOrder->details()->create([
                     'header_id' => $deliveryOrder->id,
                     'item_request_detail_id' => $detail['item_request_detail_id'],
                     'item_id' => $detail['item_id'],
-                    'quantity' => $detail['fullfill_quantity'], // Gunakan fullfill quantity
+                    'quantity' => $detail['fullfill_quantity'],
                     'item_uom_id' => $detail['item_uom_fullfill_id'],
                     'warehouse_id' => $detail['warehouse_id'],
                     'section_id' => $detail['section_id'],
                     'remarks' => $detail['remarks'],
                 ]);
+
+                // Update item request status
                 $itemRequestDetail = $this->itemRequestDetailRepository->find($detail['item_request_detail_id']);
                 $itemRequest = $itemRequestDetail->itemRequest;
                 $itemDetailNeedFullfill = 0;
-                foreach ($itemRequest->details as $itemRequestDetail) {
-                    $fullfill = $detail['fullfill_quantity'];
-                    if ($fullfill < $itemRequestDetail->quantity) {
-                        $itemDetailNeedFullfill += $itemRequestDetail->quantity - $fullfill;
+
+                foreach ($itemRequest->details as $reqDetail) {
+                    // Get the total fulfilled quantity across all delivery orders
+                    $totalFulfilledQuantity = $reqDetail->deliveryOrderDetails()
+                        ->whereHas('header', function ($query) {
+                            $query->where('process_status', '!=', 'Draft');
+                        })
+                        ->sum('quantity');
+
+                    // Calculate what's still needed
+                    $stillNeeded = $reqDetail->quantity - $totalFulfilledQuantity;
+                    if ($stillNeeded > 0) {
+                        $itemDetailNeedFullfill += $stillNeeded;
                     }
                 }
-                if ($itemDetailNeedFullfill == 0) {
-                    $itemRequest->update([
-                        'request_status' => 'On Proccess Delivery by Warehouse'
-                    ]);
-                } else {
-                    $itemRequest->update([
-                        'request_status' => 'Partial Delivery by Warehouse'
-                    ]);
-                }
+
+                $itemRequest->update([
+                    'request_status' => $itemDetailNeedFullfill == 0
+                        ? 'On Proccess Delivery by Warehouse'
+                        : 'Partial Delivery by Warehouse'
+                ]);
+
+
+                // Only update stock if not a draft
                 if ($status === 'Waiting Approval Manager') {
                     $stockEntry = WarehouseSectionStock::where('item_id', $detail['item_id'])
                         ->where('warehouse_id', $detail['warehouse_id'])
@@ -371,6 +398,7 @@ class DeliveryOrderController extends Controller
                         if ($fullFillUOM->id !== $item->unitOfMeasurement->id) {
                             $fullFillQuantity *= $fullFillUOM->conversion;
                         }
+
                         $stockEntry->update([
                             'current_stock' => $stockEntry->current_stock - $fullFillQuantity
                         ]);
@@ -380,7 +408,14 @@ class DeliveryOrderController extends Controller
                 }
             }
 
-            $message = $status === 'Draft' ? 'Delivery Order saved as draft! / 送货单已保存为草稿！' : 'Delivery Order created successfully! / 送货单创建成功！';
+            // If no details were added (all were 0 quantity), throw an error
+            if (!$detailsAdded) {
+                throw new Exception("At least one item must have a fulfill quantity greater than 0. / 至少一个物品的完成数量必须大于0。");
+            }
+
+            $message = $status === 'Draft'
+                ? 'Delivery Order saved as draft! / 送货单已保存为草稿！'
+                : 'Delivery Order created successfully! / 送货单创建成功！';
 
             DB::commit();
             alertNotif('success', $message);
@@ -389,10 +424,11 @@ class DeliveryOrderController extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             Log::error('Delivery Order Store Error: ' . $e->getMessage());
-            dd($e->getMessage());
-            return redirect()->back();
+            alertNotif('error', $e->getMessage());
+            return redirect()->back()->withInput();
         }
     }
+
 
 
     public function edit($id)
@@ -463,7 +499,7 @@ class DeliveryOrderController extends Controller
             'details.*.section_id.exists' => 'Selected Warehouse Section does not exist. / 选择的仓库区域不存在。',
             'details.*.fullfill_quantity.required' => 'Fullfill Quantity is required. / 完成数量是必填项。',
             'details.*.fullfill_quantity.numeric' => 'Fullfill Quantity must be a valid number. / 完成数量必须是有效数字。',
-            'details.*.fullfill_quantity.min' => 'Fullfill Quantity must be at least 0.001. / 完成数量必须至少为0.001。',
+            'details.*.fullfill_quantity.min' => 'Fullfill Quantity must be at least 0. / 完成数量必须至少为0。',
             'details.*.item_uom_fullfill_id.required' => 'Fullfill Unit of Measurement is required. / 完成单位是必填项。',
             'details.*.item_uom_fullfill_id.exists' => 'Selected Fullfill Unit of Measurement does not exist. / 选择的完成单位不存在。',
             'details.*.remarks.max' => 'Remarks must not exceed 255 characters. / 备注不能超过255个字符。',
@@ -489,7 +525,7 @@ class DeliveryOrderController extends Controller
                 'details.*.fullfill_quantity' => [
                     'required',
                     'numeric',
-                    'min:0.001',
+                    'min:0', // Changed from 0.001 to 0
                     function ($attribute, $value, $fail) use ($request) {
                         preg_match('/\d+/', $attribute, $matches);
                         $index = $matches[0] ?? null;
@@ -509,6 +545,7 @@ class DeliveryOrderController extends Controller
 
             // Determine the status based on submit type
             $status = $request->input('submit_type') === 'draft' ? 'Draft' : 'Waiting Approval Manager';
+
             // Update delivery order header
             $deliveryOrder->update([
                 'customer_order_id' => $data['customer_order_id'],
@@ -537,7 +574,7 @@ class DeliveryOrderController extends Controller
                     if ($stockEntry) {
                         // Convert quantity back to base unit if necessary
                         $returnQuantity = $detail->quantity;
-                        if ($detail->itemUom->id !== $detail->item->unit_of_measurement_id) {
+                        if ($detail->itemUom && $detail->item && $detail->itemUom->id !== $detail->item->unit_of_measurement_id) {
                             $returnQuantity *= $detail->itemUom->conversion;
                         }
 
@@ -551,8 +588,18 @@ class DeliveryOrderController extends Controller
             // Delete existing details
             $deliveryOrder->details()->delete();
 
+            // Track if any details were added
+            $detailsAdded = false;
+
             // Create new details
             foreach ($data['details'] as $detail) {
+                // Skip details with fullfill_quantity of 0
+                if (floatval($detail['fullfill_quantity']) <= 0) {
+                    continue;
+                }
+
+                $detailsAdded = true;
+
                 $DeliveryOrderDetail = $deliveryOrder->details()->create([
                     'header_id' => $deliveryOrder->id,
                     'item_request_detail_id' => $detail['item_request_detail_id'],
@@ -563,6 +610,7 @@ class DeliveryOrderController extends Controller
                     'section_id' => $detail['section_id'],
                     'remarks' => $detail['remarks'] ?? null,
                 ]);
+                $detailsToKeep[] = $DeliveryOrderDetail->id;
 
                 // Only process stock updates if not draft
                 if ($status !== 'Draft') {
@@ -594,10 +642,18 @@ class DeliveryOrderController extends Controller
                     $itemRequest = $itemRequestDetail->itemRequest;
                     $itemDetailNeedFullfill = 0;
 
-                    foreach ($itemRequest->details as $itemRequestDetail) {
-                        $fullfill = $detail['fullfill_quantity'];
-                        if ($fullfill < $itemRequestDetail->quantity) {
-                            $itemDetailNeedFullfill += $itemRequestDetail->quantity - $fullfill;
+                    foreach ($itemRequest->details as $reqDetail) {
+                        // Get the total fulfilled quantity across all delivery orders
+                        $totalFulfilledQuantity = $reqDetail->deliveryOrderDetails()
+                            ->whereHas('header', function ($query) {
+                                $query->where('process_status', '!=', 'Draft');
+                            })
+                            ->sum('quantity');
+
+                        // Calculate what's still needed
+                        $stillNeeded = $reqDetail->quantity - $totalFulfilledQuantity;
+                        if ($stillNeeded > 0) {
+                            $itemDetailNeedFullfill += $stillNeeded;
                         }
                     }
 
@@ -606,9 +662,20 @@ class DeliveryOrderController extends Controller
                             ? 'On Proccess Delivery by Warehouse'
                             : 'Partial Delivery by Warehouse'
                     ]);
+
                 }
             }
 
+            // If no details were added (all were 0 quantity), throw an error
+            if (!$detailsAdded) {
+                throw new Exception("At least one item must have a fulfill quantity greater than 0. / 至少一个物品的完成数量必须大于0。");
+            }
+            if (count($detailsToKeep) > 0) {
+                $deliveryOrder->details()->whereNotIn('id', $detailsToKeep)->delete();
+            } else {
+                // All details were set to 0, don't delete what we just added
+                $deliveryOrder->details()->where('id', '<', 0)->delete(); // Won't delete anything, just a placeholder
+            }
             DB::commit();
 
             $message = $status === 'Draft'
@@ -625,6 +692,7 @@ class DeliveryOrderController extends Controller
             return redirect()->back()->withInput();
         }
     }
+
     public function destroy($id)
     {
         try {
