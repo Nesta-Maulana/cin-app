@@ -170,7 +170,7 @@ class DeliveryOrderController extends Controller
             $customer_order_id = request()->input('customer_order_id');
             $orderBy = ['id' => 'asc'];
             $with = [];
-            $scope = ['requestStatus' => [['Waiting On Process Warehouse']]];
+            $scope = ['requestStatus' => [['Waiting On Process Warehouse','Partial Delivery by Warehouse']]];
 
             $customerData = $this->customerOrderRepository->getData(
                 $scope,
@@ -195,7 +195,7 @@ class DeliveryOrderController extends Controller
                 $itemNeedToPurchase->process_status = $checkApproval['message'];
                 $itemNeedToPurchase->save();
             }
-            foreach ($customerData->itemRequests->whereIn('request_status', ['Waiting On Process Warehouse']) as $key => $itemRequest) {
+            foreach ($customerData->itemRequests->whereIn('request_status', ['Waiting On Process Warehouse','Partial Delivery by Warehouse']) as $key => $itemRequest) {
                 foreach ($itemRequest->details as $k => $data) {
                     $itemNeedToPurchaseDetail = $this->itemNeedToPurchaseDetailRepository->create([
                         'header_id' => $itemNeedToPurchase->id,
