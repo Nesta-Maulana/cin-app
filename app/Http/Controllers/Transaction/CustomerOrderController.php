@@ -59,7 +59,7 @@ class CustomerOrderController extends Controller
 
         // Count existing orders for the current month
         $count = CustomerOrder::whereYear('order_date', date('Y'))
-            ->whereMonth('order_date', date('m'))
+            ->whereMonth('created_at', date('m'))
             ->count();
 
         // Increment and format the count as 3 digits (e.g., 001, 002)

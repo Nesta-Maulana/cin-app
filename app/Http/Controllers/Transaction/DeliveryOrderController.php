@@ -170,7 +170,7 @@ class DeliveryOrderController extends Controller
             $customer_order_id = request()->input('customer_order_id');
             $orderBy = ['id' => 'asc'];
             $with = [];
-            $scope = ['requestStatus' => ['Waiting On Process Warehouse']];
+            $scope = ['requestStatus' => [['Waiting On Process Warehouse']]];
 
             $customerData = $this->customerOrderRepository->getData(
                 $scope,
