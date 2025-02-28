@@ -25,9 +25,9 @@ class PurchaseOrderSupplierOfferDetail extends Model
     }
 
     // Relasi ke Item
-    public function item()
+    public function purchaseOrderDetail()
     {
-        return $this->belongsTo(Item::class, 'item_id');
+        return $this->belongsTo(PurchaseOrderDetail::class, 'purchase_order_detail_id');
     }
 
     // Relasi ke Satuan Unit of Measurement (UOM)

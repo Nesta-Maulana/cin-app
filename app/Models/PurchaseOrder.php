@@ -36,6 +36,11 @@ class PurchaseOrder extends Model
         return $this->belongsTo(CustomerOrder::class, 'customer_order_id');
     }
 
+    // Relasi ke user yang membuat PO
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
     // Scope filter untuk pencarian
     public function scopeFilter($query, $search)
     {

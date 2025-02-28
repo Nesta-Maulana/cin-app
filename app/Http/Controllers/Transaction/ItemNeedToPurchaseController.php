@@ -40,63 +40,84 @@ class ItemNeedToPurchaseController extends Controller
     }
 
 
-    public function getItemByCustomerOrder()
+    public function getItemByCustomerOrder(Request $request)
     {
+        $orderId = $request->input('order_id');
+
+        if (!$orderId) {
+            return response()->json(['success' => false, 'message' => 'Customer order ID is required']);
+        }
+
         $itemNeedToPurchases = $this->repository->getData(
             [],
             [
                 'customerOrder',
-                'itemNeedToPurchaseDetail',
-                'itemNeedToPurchaseDetail.itemRequestDetail',
-                'itemNeedToPurchaseDetail.itemRequestDetail',
-                'itemNeedToPurchaseDetail.itemRequestDetail.itemPriceHistory',
                 'itemNeedToPurchaseDetail.itemRequestDetail.itemRequest',
-                'itemNeedToPurchaseDetail.itemRequestDetail.itemPriceHistory.itemUom',
                 'itemNeedToPurchaseDetail.itemRequestDetail.itemPriceHistory.itemUom.item',
                 'itemNeedToPurchaseDetail.itemRequestDetail.itemPriceHistory.itemUom.unitOfMeasurement',
+                'itemNeedToPurchaseDetail.itemRequestDetail.deliveryOrderDetails.header',
+                'itemNeedToPurchaseDetail.itemRequestDetail.purchaseOrderDetails',
             ],
             [],
             null,
-            [['process_status', '=', 'Waiting Process Purchasing']],
+            [
+                ['process_status', '=', 'Waiting Process Purchasing'],
+                ['customer_order_id', '=', $orderId]
+            ],
             'all'
         );
-        $items = [];
-        foreach ($itemNeedToPurchases as $key => $customerOrder) {
-            foreach ($customerOrder->itemNeedToPurchaseDetail as $key => $itemNeedToPurchaseDetail) {
-                $item['item_id'] = $itemNeedToPurchaseDetail->itemRequestDetail->itemPriceHistory->itemUom->item->id;
-                $item['item_name'] = $itemNeedToPurchaseDetail->itemRequestDetail->itemPriceHistory->itemUom->item->name;
-                $requestedQuantity = $itemNeedToPurchaseDetail->itemRequestDetail->quantity;
-                $receivedQuantity = $itemNeedToPurchaseDetail->itemRequestDetail->deliveryOrderDetails->sum('quantity');
+
+        // Filter out item need to purchase details with needToBuyQuantity <= 0
+        foreach ($itemNeedToPurchases as $itemNeedToPurchase) {
+            $validDetails = collect();
+
+            foreach ($itemNeedToPurchase->itemNeedToPurchaseDetail as $detail) {
+                // Calculate required quantities
+                $requestedQuantity = $detail->itemRequestDetail->quantity;
+
+                $receivedQuantity = $detail->itemRequestDetail->deliveryOrderDetails()
+                    ->whereHas('header', function ($query) {
+                        $query->where('process_status', '<>', 'Draft');
+                    })
+                    ->sum('quantity');
+
                 $pendingQuantity = $requestedQuantity - $receivedQuantity;
-                $purchaseQuantity = $itemNeedToPurchaseDetail->itemRequestDetail->purchaseOrderDetails->sum('quantity');
+                $purchaseQuantity = $detail->itemRequestDetail->purchaseOrderDetails->sum('quantity');
 
-                $requestedUOM = $itemNeedToPurchaseDetail->itemRequestDetail->itemPriceHistory->itemUom->unitOfMeasurement->id;
-                $baseUOM = $itemNeedToPurchaseDetail->itemRequestDetail->itemPriceHistory->itemUom->item->unitOfMeasurement->id;
+                // Apply UOM conversion if needed
+                $requestedUOM = $detail->itemRequestDetail->itemPriceHistory->itemUom->unitOfMeasurement->id;
+                $baseUOM = $detail->itemRequestDetail->itemPriceHistory->itemUom->item->unitOfMeasurement->id;
+
                 if ($requestedUOM != $baseUOM) {
-                    $pendingQuantity *= $itemNeedToPurchaseDetail->itemRequestDetail->itemPriceHistory->itemUom->conversion;
-                    $receivedQuantity *= $itemNeedToPurchaseDetail->itemRequestDetail->itemPriceHistory->itemUom->conversion;
+                    $pendingQuantity *= $detail->itemRequestDetail->itemPriceHistory->itemUom->conversion;
+                    $receivedQuantity *= $detail->itemRequestDetail->itemPriceHistory->itemUom->conversion;
                 }
-                $needToBuyQuantity = $pendingQuantity - $purchaseQuantity;
-                $item['need_to_buy_quantity'] = $needToBuyQuantity;
-                $item['uom_id'] = $itemNeedToPurchaseDetail->itemRequestDetail->itemPriceHistory->itemUom->item->unitOfMeasurement->id;
-                $item['uom_name'] = $itemNeedToPurchaseDetail->itemRequestDetail->itemPriceHistory->itemUom->item->unitOfMeasurement->name;
-                $existingItem = array_filter($items, function ($item) use ($itemNeedToPurchaseDetail) {
-                    return $item['item_id'] == $itemNeedToPurchaseDetail->itemRequestDetail->itemPriceHistory->itemUom->item->id;
-                });
 
-                if (count($existingItem) > 0) {
-                    $items = array_map(function ($item) use ($existingItem, $needToBuyQuantity) {
-                        if ($item['item_id'] == $existingItem[0]['item_id']) {
-                            $item['need_to_buy_quantity'] += $needToBuyQuantity;
-                        }
-                        return $item;
-                    }, $items);
-                } else {
-                    $items[] = $item;
+                $needToBuyQuantity = $pendingQuantity - $purchaseQuantity;
+
+                // Only keep details where needToBuyQuantity > 0
+                if ($needToBuyQuantity > 0) {
+                    // If needed, you could add this calculated value to the detail object
+                    $detail->needToBuyQuantity = $needToBuyQuantity;
+                    $validDetails->push($detail);
                 }
             }
+
+            // Replace the original details collection with the filtered one
+            $itemNeedToPurchase->setRelation('itemNeedToPurchaseDetail', $validDetails);
         }
-        return response()->json(['success' => true, 'data' => ['items' => $items, 'itemNeedToPurchases' => $itemNeedToPurchases]]);
+
+        // Filter out any itemNeedToPurchases that now have no valid details
+        $itemNeedToPurchases = $itemNeedToPurchases->filter(function ($item) {
+            return $item->itemNeedToPurchaseDetail->isNotEmpty();
+        })->values();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'itemNeedToPurchases' => $itemNeedToPurchases
+            ]
+        ]);
     }
     public function create()
     {

@@ -30,6 +30,7 @@ class PurchaseOrderSupplierOffer extends Model
         return $this->belongsTo(PurchaseOrderDetail::class, 'purchase_order_detail_id');
     }
 
+
     // Relasi ke Supplier
     public function supplier()
     {

@@ -27,7 +27,7 @@ class PurchaseOrderDetail extends Model
     // Relasi ke Item
     public function itemRequestDetail()
     {
-        return $this->belongsTo(ItemRequest::class, 'item_request_detail_id');
+        return $this->belongsTo(ItemRequestDetail::class, 'item_request_detail_id');
     }
 
     // Relasi ke Satuan Unit of Measurement (UOM)
