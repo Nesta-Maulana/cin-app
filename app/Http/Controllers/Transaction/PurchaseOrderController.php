@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Transaction;
 
+use App\Exports\SupplierOffersExport;
 use App\Http\Controllers\Controller;
 use App\Models\ItemNeedToPurchaseDetail;
 use App\Models\PurchaseOrder;
@@ -15,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Exception;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PurchaseOrderController extends Controller
 {
@@ -229,6 +231,12 @@ class PurchaseOrderController extends Controller
 
                     $itemNeedToPurchase->update([
                         'process_status' => $newStatus
+                    ]);
+                }
+                $checkApproval = $this->repository->checkApproval('create', $purchaseOrder->id);
+                if ($checkApproval['status'] == 200) {
+                    $purchaseOrder->update([
+                        'process_status' => 'Waiting Approval Manager'
                     ]);
                 }
             }
@@ -509,14 +517,12 @@ class PurchaseOrderController extends Controller
                     }
                 }
             }
-
             // Update item need to purchase statuses
             if ($status !== 'Draft' && !empty($itemNeedToPurchaseMap)) {
                 foreach ($itemNeedToPurchaseMap as $itemNeedToPurchase) {
                     // Calculate if any related details still need purchasing
                     $needMorePurchases = false;
-
-                    foreach ($itemNeedToPurchase->itemNeedToPurchaseDetails as $relatedDetail) {
+                    foreach ($itemNeedToPurchase->itemNeedToPurchaseDetail as $relatedDetail) {
                         $requestQuantity = $relatedDetail->itemRequestDetail->quantity;
                         $receivedQuantity = $relatedDetail->itemRequestDetail->deliveryOrderDetails()
                             ->whereHas('header', function ($query) {
@@ -550,6 +556,12 @@ class PurchaseOrderController extends Controller
 
                     $itemNeedToPurchase->update([
                         'process_status' => $newStatus
+                    ]);
+                }
+                $checkApproval = $this->repository->checkApproval('create', $purchaseOrder->id);
+                if ($checkApproval['status'] == 200) {
+                    $purchaseOrder->update([
+                        'process_status' => 'Waiting Approval Manager'
                     ]);
                 }
             }
@@ -674,5 +686,115 @@ class PurchaseOrderController extends Controller
             alertNotif('error', $e->getMessage());
         }
         return redirect()->route("{$this->route}.index");
+    }
+    public function downloadSupplierOffers(PurchaseOrder $purchaseOrder)
+    {
+        $offers = $purchaseOrder->offers()->with('supplier', 'offerDetails.purchaseOrderDetail.itemRequestDetail.itemPriceHistory.itemUom.item')->get();
+
+        $excelData = [
+            ['NO', 'ITEM / 物品', 'UNIT / 单位']
+        ];
+
+        $suppliers = $offers->pluck('supplier')->unique();
+        foreach ($suppliers as $supplier) {
+            $excelData[0][] = $supplier->name . ' / ' . $supplier->name_cn;
+        }
+
+        $itemMap = [];
+
+        foreach ($offers as $offer) {
+            foreach ($offer->offerDetails as $detail) {
+                $item = $detail->purchaseOrderDetail->itemRequestDetail->itemPriceHistory->itemUom->item;
+                $unit = $detail->purchaseOrderDetail->itemRequestDetail->itemPriceHistory->itemUom->unitOfMeasurement->name;
+                $key = $item->id . '-' . $unit;
+
+                if (!isset($itemMap[$key])) {
+                    $itemMap[$key] = [
+                        'item_name' => $item->name,
+                        'unit' => $unit,
+                        'prices' => [],
+                    ];
+                }
+
+                $itemMap[$key]['prices'][$offer->supplier->name] = 'Rp ' . number_format($detail->total_price, 0, ',', '.');
+            }
+        }
+        $no = 0;
+        foreach ($itemMap as $index => $item) {
+            $row = [$no + 1, $item['item_name'], $item['unit']];
+            foreach ($suppliers as $supplier) {
+                $row[] = $item['prices'][$supplier->name] ?? '-';
+            }
+
+            $excelData[] = $row;
+        }
+
+        $excelData[] = ['', 'TOTAL / 总计', '', '=SUM(D2:D' . (count($itemMap) + 1) . ')'];
+        foreach (range(4, count($suppliers) + 3) as $column) {
+            $columnName = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($column);
+            $excelData[count($excelData) - 1][] = '=SUM(' . $columnName . '2:' . $columnName . (count($itemMap) + 1) . ')';
+        }
+
+        $excelData[] = ['', 'VAT 11% / 11% 增值税', '', '=D' . (count($itemMap) + 2) . '*0.11'];
+        foreach (range(4, count($suppliers) + 3) as $column) {
+            $columnName = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($column);
+            $excelData[count($excelData) - 1][] = '=' . $columnName . (count($itemMap) + 2) . '*0.11';
+        }
+
+        $excelData[] = ['', 'SHIPPING / 运费', '', '', '', ''];
+
+        $excelData[] = ['', 'GRAND TOTAL / 总金额', '', '=D' . (count($itemMap) + 2) . '+D' . (count($itemMap) + 3) . '+D' . (count($itemMap) + 4)];
+        foreach (range(4, count($suppliers) + 3) as $column) {
+            $columnName = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($column);
+            $excelData[count($excelData) - 1][] = '=' . $columnName . (count($itemMap) + 2) . '+' . $columnName . (count($itemMap) + 3) . '+' . $columnName . (count($itemMap) + 4);
+        }
+
+        $filename = 'supplier_offers_comparison_' . $purchaseOrder->po_number . '.xlsx';
+
+        return Excel::download(new SupplierOffersExport($excelData, $suppliers), $filename);
+    }
+    public function updateSupplierOfferSelection(Request $request)
+    {
+        // Validasi input
+        $request->validate([
+            'offer_id' => 'required|exists:purchase_order_supplier_offers,id',
+            'purchase_order_id' => 'required|exists:purchase_orders,id',
+        ]);
+
+        try {
+            // Mulai transaction untuk memastikan konsistensi data
+            DB::beginTransaction();
+
+            // Ambil data yang diperlukan
+            $offerId = $request->offer_id;
+            $purchaseOrderId = $request->purchase_order_id;
+
+            // Reset semua supplier offers untuk PO ini (is_selected = false)
+            $purchaseOrderSupplierOffer = PurchaseOrderSupplierOffer::where('purchase_order_id', $purchaseOrderId)->first();
+            $purchaseOrderSupplierOffer->is_selected = false;
+            $purchaseOrderSupplierOffer->save();
+
+            // Update supplier offer yang dipilih menjadi is_selected = true
+            $purchaseOrderSupplierOffer = PurchaseOrderSupplierOffer::where('id', $offerId)->first();
+            $purchaseOrderSupplierOffer->is_selected = true;
+            $purchaseOrderSupplierOffer->save();
+
+            // Commit transaction jika semua operasi berhasil
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Supplier offer selection updated successfully',
+            ]);
+        } catch (\Exception $e) {
+            // Rollback jika terjadi error
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update supplier offer selection',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

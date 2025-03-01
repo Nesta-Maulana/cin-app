@@ -197,6 +197,7 @@ return [
         Barryvdh\Debugbar\ServiceProvider::class,
         App\Providers\RepositoryServiceProvider::class,
         App\Providers\BotServiceProvider::class,
+        Maatwebsite\Excel\ExcelServiceProvider::class,
 
     ],
 
@@ -214,6 +215,8 @@ return [
     'aliases' => Facade::defaultAliases()->merge([
         // 'ExampleClass' => App\Example\ExampleClass::class,
         'Debugbar' => Barryvdh\Debugbar\Facade::class,
+        'Excel' => Maatwebsite\Excel\Facades\Excel::class,
+
 
     ])->toArray(),
 

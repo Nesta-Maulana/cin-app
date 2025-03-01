@@ -148,4 +148,10 @@ class ApprovalRequest extends Model
             'current_level_id' => $nextLevelId,
         ]);
     }
+    public function purchaseOrder()
+    {
+        return $this->morphTo(__FUNCTION__, 'class_name', 'reference_id')
+            ->constrain([PurchaseOrder::class]);
+    }
+
 }

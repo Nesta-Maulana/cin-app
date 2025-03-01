@@ -111,6 +111,9 @@ Route::middleware(['auth', 'auth.status'])->group(function () {
         ->name('get-items-by-customer-order');
     Route::resource('item-need-to-purchase', ItemNeedToPurchaseController::class);
 
+    Route::get('/purchase-order/{purchaseOrder}/download-supplier-offers', [PurchaseOrderController::class, 'downloadSupplierOffers'])->name('download-supplier-offers');
+    Route::post('/update-supplier-offer-selection', [PurchaseOrderController::class, 'updateSupplierOfferSelection'])
+    ->name('update-supplier-offer-selection');
 
     Route::resource('purchase-order', PurchaseOrderController::class);
 });
