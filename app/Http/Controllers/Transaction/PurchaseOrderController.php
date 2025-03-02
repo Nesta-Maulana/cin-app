@@ -197,7 +197,7 @@ class PurchaseOrderController extends Controller
                     // Calculate if any related details still need purchasing
                     $needMorePurchases = false;
 
-                    foreach ($itemNeedToPurchase->itemNeedToPurchaseDetails as $relatedDetail) {
+                    foreach ($itemNeedToPurchase->itemNeedToPurchaseDetail as $relatedDetail) {
                         $requestQuantity = $relatedDetail->itemRequestDetail->quantity;
                         $receivedQuantity = $relatedDetail->itemRequestDetail->deliveryOrderDetails()
                             ->whereHas('header', function ($query) {
