@@ -259,33 +259,65 @@
                                                         <thead class="table-light">
                                                             <tr>
                                                                 <th style="width: 5%">#</th>
-                                                                <th style="width: 40%">Item / 物品</th>
-                                                                <th style="width: 15%">Quantity / 数量</th>
-                                                                <th style="width: 15%">UOM / 单位</th>
-                                                                <th style="width: 25%">Price / 价格</th>
+                                                                <th>Item / 物品</th>
+                                                                <th>Quantity / 数量</th>
+                                                                <th>UOM / 单位</th>
+                                                                <th>Unit Price / 单价 </th>
+                                                                <th>Subtotal Price / 小计</th>
+                                                                <th>Shipping Cost / 运输费</th>
+                                                                <th>Grand Total / 总计</th>
+                                                                <th>Remaks / 备注</th>
+                                                                <th>New Shipping Cost / 新运输费</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
                                                             @forelse($offer->offerDetails->groupBy(function($detail) {
-                                                                            return $detail->purchaseOrderDetail->itemRequestDetail->itemPriceHistory->itemUom->item->name . '-' . $detail->purchaseOrderDetail->uom->unitOfMeasurement->name;
-                                                                        }) as $key => $groupedDetails)
+                                                                                                        return $detail->purchaseOrderDetail->itemRequestDetail->itemPriceHistory->itemUom->item->name . '-' . $detail->purchaseOrderDetail->uom->unitOfMeasurement->name;
+                                                                                                    }) as $key => $groupedDetails)
                                                                 @php
                                                                     $firstDetail = $groupedDetails->first();
                                                                     $totalQuantity = $groupedDetails->sum('quantity');
+                                                                    $offeredPrice =
+                                                                        $groupedDetails->offered_price_per_unit;
                                                                     $totalPrice = round(
-                                                                        $groupedDetails->sum('total_price'),
+                                                                        $groupedDetails->sum('offered_price_per_unit') *
+                                                                            $groupedDetails->sum('quantity'),
                                                                     );
+                                                                    $shippingCost = round(
+                                                                        $groupedDetails->sum('shipping_cost'),
+                                                                    );
+                                                                    $grandTotal = round($totalPrice + $shippingCost);
+                                                                    $remarks = $groupedDetails->first()->remarks;
+                                                                    $newShippingCost = round(
+                                                                        $grandTotal / $totalQuantity,
+                                                                    );
+
                                                                 @endphp
                                                                 <tr>
                                                                     <td>{{ $loop->iteration }}</td>
                                                                     <td>{{ $firstDetail->purchaseOrderDetail->itemRequestDetail->itemPriceHistory->itemUom->item->name ?? '-' }}
                                                                     </td>
                                                                     <td>{{ $totalQuantity }}</td>
+                                                                    <td>
+                                                                        {{ $firstDetail->purchaseOrderDetail->uom->unitOfMeasurement->name ?? '-' }}
+                                                                    </td>
+                                                                    <td>{{ strtoupper($offer->currency) }}
+                                                                        {{ number_format($offeredPrice, 2) }}</td>
+                                                                    <td>{{ strtoupper($offer->currency) }}
+                                                                        {{ number_format($totalPrice, 2) }}</td>
+                                                                    <td>{{ strtoupper($offer->currency) }}
+                                                                        {{ number_format($shippingCost, 2) }}</td>
+                                                                    <td>{{ strtoupper($offer->currency) }}
+                                                                        {{ number_format($grandTotal, 2) }}</td>
+                                                                    <td>{{ $remarks ?? '-' }}</td>
+                                                                    <td>{{ strtoupper($offer->currency) }}
+                                                                        {{ number_format($newShippingCost, 2) }}</td>
+                                                                    {{-- <td>{{ $totalQuantity }}</td>
                                                                     <td>{{ $firstDetail->purchaseOrderDetail->uom->unitOfMeasurement->name ?? '-' }}
                                                                     </td>
                                                                     <td>{{ strtoupper($offer->currency) }}
                                                                         {{ number_format($totalPrice, 2) }}
-                                                                    </td>
+                                                                    </td> --}}
                                                                 </tr>
                                                             @empty
                                                                 <tr>

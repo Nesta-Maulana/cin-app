@@ -175,30 +175,30 @@
             function addItemRow(itemRequests) {
                 itemRequests.item_need_to_purchase_detail.forEach(itemNeedToPurchaseDetail => {
                     let newRow = `
-                    <tr id="item-${detailIndex}" data-item-id="${itemNeedToPurchaseDetail.item_request_detail.item_price_history.item_uom.item_id}">
-                        <td>${detailIndex + 1}</td>
-                        <td>
-                            <input type="hidden" name="details[${detailIndex}][item_request_detail_id]" value="${itemNeedToPurchaseDetail.item_request_detail.id}">
-                            <input type="hidden" name="details[${detailIndex}][item_need_to_purchase_detail_id]" value="${itemNeedToPurchaseDetail.id}">
-                            ${itemNeedToPurchaseDetail.item_request_detail.item_request.request_number}
-                        </td>
-                        <td>
-                            <input type="hidden" name="details[${detailIndex}][item_id]" value="${itemNeedToPurchaseDetail.item_request_detail.item_price_history.item_uom.item_id}" class="item-id">
-                            <span class="item-name">${itemNeedToPurchaseDetail.item_request_detail.item_price_history.item_uom.item.name}</span>
-                        </td>
-                        <td>
-                            <input type="hidden" name="details[${detailIndex}][request_quantity]" class="form-control request-quantity" value="${itemNeedToPurchaseDetail.item_request_detail.quantity}" readonly>
-                            ${itemNeedToPurchaseDetail.item_request_detail.quantity}
-                        </td>
-                        <td>
-                            <input type="number" name="details[${detailIndex}][order_quantity]" class="form-control order-quantity" min="0" value="0" required>
-                        </td>
-                        <td>
-                            <input type="hidden" name="details[${detailIndex}][uom_id]" class="form-control uom-id" value="${itemNeedToPurchaseDetail.item_request_detail.item_price_history.item_uom.id}">
-                            <span class="uom-name">${itemNeedToPurchaseDetail.item_request_detail.item_price_history.item_uom.unit_of_measurement.name}</span>
-                        </td>
-                    </tr>
-                    `;
+            <tr id="item-${detailIndex}" data-item-id="${itemNeedToPurchaseDetail.item_request_detail.item_price_history.item_uom.item_id}">
+                <td>${detailIndex + 1}</td>
+                <td>
+                    <input type="hidden" name="details[${detailIndex}][item_request_detail_id]" value="${itemNeedToPurchaseDetail.item_request_detail.id}">
+                    <input type="hidden" name="details[${detailIndex}][item_need_to_purchase_detail_id]" value="${itemNeedToPurchaseDetail.id}">
+                    ${itemNeedToPurchaseDetail.item_request_detail.item_request.request_number}
+                </td>
+                <td>
+                    <input type="hidden" name="details[${detailIndex}][item_id]" value="${itemNeedToPurchaseDetail.item_request_detail.item_price_history.item_uom.item_id}" class="item-id">
+                    <span class="item-name">${itemNeedToPurchaseDetail.item_request_detail.item_price_history.item_uom.item.name}</span>
+                </td>
+                <td>
+                    <input type="hidden" name="details[${detailIndex}][request_quantity]" class="form-control request-quantity" value="${itemNeedToPurchaseDetail.item_request_detail.quantity}" readonly>
+                    ${itemNeedToPurchaseDetail.item_request_detail.quantity}
+                </td>
+                <td>
+                    <input type="number" name="details[${detailIndex}][order_quantity]" class="form-control order-quantity" min="0" value="0" required>
+                </td>
+                <td>
+                    <input type="hidden" name="details[${detailIndex}][uom_id]" class="form-control uom-id" value="${itemNeedToPurchaseDetail.item_request_detail.item_price_history.item_uom.id}">
+                    <span class="uom-name">${itemNeedToPurchaseDetail.item_request_detail.item_price_history.item_uom.unit_of_measurement.name}</span>
+                </td>
+            </tr>
+            `;
                     $('#detailsTable tbody').append(newRow);
                     detailIndex++;
                 });
@@ -286,63 +286,68 @@
 
                 // Create card for each supplier offer
                 let supplierCard = `
-                <div id="supplier-card-${supplierIndex}" class="card mb-4 border-1">
-                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0">Supplier Offer #${supplierIndex + 1}</h6>
-                        <button type="button" class="btn btn-danger btn-sm remove-supplier" data-id="${supplierIndex}">
-                            <i class="fa fa-trash"></i> Remove / 删除
-                        </button>
+        <div id="supplier-card-${supplierIndex}" class="card mb-4 border-1">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Supplier Offer #${supplierIndex + 1}</h6>
+                <button type="button" class="btn btn-danger btn-sm remove-supplier" data-id="${supplierIndex}">
+                    <i class="fa fa-trash"></i> Remove / 删除
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3 mt-2">
+                    <div class="col-md-6">
+                        <label class="form-label">Supplier / 供应商</label>
+                        <select name="offers[${supplierIndex}][supplier_id]" class="form-select supplier-select" required>
+                            <option value="" disabled selected>Please choose supplier / 请选择供应商</option>
+                            ${supplierOptions}
+                        </select>
                     </div>
-                    <div class="card-body">
-                        <div class="row mb-3 mt-2">
-                            <div class="col-md-6">
-                                <label class="form-label">Supplier / 供应商</label>
-                                <select name="offers[${supplierIndex}][supplier_id]" class="form-select supplier-select" required>
-                                    <option value="" disabled selected>Please choose supplier / 请选择供应商</option>
-                                    ${supplierOptions}
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Currency / 货币</label>
-                                <select name="offers[${supplierIndex}][currency]" class="form-select currency-select" required>
-                                    ${currencyOptions}
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="table-responsive">
-                            <table class="table table-bordered" id="offer-items-table-${supplierIndex}">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Item / 物品</th>
-                                        <th>Quantity / 数量</th>
-                                        <th>UOM / 单位</th>
-                                        <th>Offered Price / 报价</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Offer items will be added here -->
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="row mt-3">
-                            <div class="col-md-4">
-                                <label class="form-label">Shipping Cost / 运输费</label>
-                                <input type="number" name="offers[${supplierIndex}][shipping_cost]" class="form-control" step="0.01" min="0" value="0">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Other Cost / 其他费用</label>
-                                <input type="number" name="offers[${supplierIndex}][other_cost]" class="form-control" step="0.01" min="0" value="0">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Remarks / 备注</label>
-                                <input type="text" name="offers[${supplierIndex}][remarks]" class="form-control">
-                            </div>
-                        </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Currency / 货币</label>
+                        <select name="offers[${supplierIndex}][currency]" class="form-select currency-select" required>
+                            ${currencyOptions}
+                        </select>
                     </div>
                 </div>
-                `;
+
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="offer-items-table-${supplierIndex}">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Item / 物品</th>
+                                <th>Quantity / 数量</th>
+                                <th>UOM / 单位</th>
+                                <th>Unit Price / 单价 </th>
+                                <th>Subtotal Price / 小计</th>
+                                <th>Shipping Cost / 运输费</th>
+                                <th>Grand Total / 总计</th>
+                                <th>Remaks / 备注</th>
+                                <th>New Shipping Cost / 新运输费</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Offer items will be added here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Shipping Cost / 运输费</label>
+                        <input type="number" name="offers[${supplierIndex}][shipping_cost]" class="form-control" step="0.01" min="0" value="0">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Other Cost / 其他费用</label>
+                        <input type="number" name="offers[${supplierIndex}][other_cost]" class="form-control" step="0.01" min="0" value="0">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Remarks / 备注</label>
+                        <input type="text" name="offers[${supplierIndex}][remarks]" class="form-control">
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
 
                 // Append the card to the container
                 $('#supplierOffersContainer').append(supplierCard);
@@ -364,26 +369,82 @@
                 // Add rows for each order item
                 orderItems.forEach((item, idx) => {
                     let offerRow = `
-                    <tr>
-                        <td>
-                            <input type="hidden" name="offers[${supplierIdx}][items][${idx}][item_id]" value="${item.itemId}">
-                            ${item.itemName}
-                        </td>
-                        <td>
-                            <input type="hidden" name="offers[${supplierIdx}][items][${idx}][quantity]" value="${item.quantity}">
-                            ${item.quantity}
-                        </td>
-                        <td>
-                            <input type="hidden" name="offers[${supplierIdx}][items][${idx}][uom_id]" value="${item.uomId}">
-                            ${item.uomName}
-                        </td>
-                        <td>
-                            <input type="number" name="offers[${supplierIdx}][items][${idx}][price]" class="form-control" step="0.01" min="0" required>
-                        </td>
-                    </tr>
-                    `;
+            <tr>
+                <td>
+                    <input type="hidden" name="offers[${supplierIdx}][items][${idx}][item_id]" value="${item.itemId}">
+                    ${item.itemName}
+                </td>
+                <td>
+                    <input type="hidden" name="offers[${supplierIdx}][items][${idx}][quantity]" value="${item.quantity}" class="item-quantity">
+                    ${item.quantity}
+                </td>
+                <td>
+                    <input type="hidden" name="offers[${supplierIdx}][items][${idx}][uom_id]" value="${item.uomId}">
+                    ${item.uomName}
+                </td>
+                <td>
+                    <input type="number" name="offers[${supplierIdx}][items][${idx}][price]" class="form-control item-price" step="0.01" min="0" required>
+                </td>
+                <td>
+                    <input type="number" name="offers[${supplierIdx}][items][${idx}][subtotal_price]" class="form-control item-subtotal" step="0.01" min="0" readonly required>
+                </td>
+                <td>
+                    <input type="number" name="offers[${supplierIdx}][items][${idx}][shipping_cost]" class="form-control item-shipping" step="0.01" min="0" value="0" required>
+                </td>
+                <td>
+                    <input type="number" name="offers[${supplierIdx}][items][${idx}][grand_total]" class="form-control item-grand-total" step="0.01" min="0" readonly required>
+                </td>
+                <td>
+                    <textarea name="offers[${supplierIdx}][items][${idx}][remarks]" class="form-control" rows="2" placeholder="Remarks (optional) / 备注 (可选) "></textarea>
+                </td>
+                <td>
+                    <input type="number" name="offers[${supplierIdx}][items][${idx}][new_unit_price]" class="form-control item-new-price" step="0.01" min="0" readonly required>
+                </td>
+            </tr>
+            `;
                     offerItemsTable.append(offerRow);
                 });
+
+                // Add event listeners to calculate values automatically
+                setupCalculationEvents(supplierIdx);
+            }
+
+            // Set up event listeners for automatic calculations
+            function setupCalculationEvents(supplierIdx) {
+                // Get the current table
+                const table = $(`#offer-items-table-${supplierIdx}`);
+
+                // When unit price changes, update subtotal, grand total, and new unit price
+                table.find('.item-price').on('input', function() {
+                    const row = $(this).closest('tr');
+                    calculateRowValues(row);
+                });
+
+                // When shipping cost changes, update grand total and new unit price
+                table.find('.item-shipping').on('input', function() {
+                    const row = $(this).closest('tr');
+                    calculateRowValues(row);
+                });
+            }
+
+            // Calculate values for a specific row
+            function calculateRowValues(row) {
+                // Get input values
+                const quantity = parseFloat(row.find('.item-quantity').val()) || 0;
+                const unitPrice = parseFloat(row.find('.item-price').val()) || 0;
+                const shippingCost = parseFloat(row.find('.item-shipping').val()) || 0;
+
+                // Calculate subtotal (Quantity * Unit Price)
+                const subtotal = quantity * unitPrice;
+                row.find('.item-subtotal').val(subtotal.toFixed(2));
+
+                // Calculate grand total (Subtotal + Shipping Cost)
+                const grandTotal = subtotal + shippingCost;
+                row.find('.item-grand-total').val(grandTotal.toFixed(2));
+
+                // Calculate new unit price (Grand Total / Quantity)
+                const newUnitPrice = quantity > 0 ? grandTotal / quantity : 0;
+                row.find('.item-new-price').val(newUnitPrice.toFixed(2));
             }
 
             function updateAllSupplierOfferTables() {

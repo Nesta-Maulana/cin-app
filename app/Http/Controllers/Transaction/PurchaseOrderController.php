@@ -115,12 +115,14 @@ class PurchaseOrderController extends Controller
             'offers.*.supplier_id' => 'required_with:offers|exists:suppliers,id',
             'offers.*.shipping_cost' => 'required_with:offers|numeric|min:0',
             'offers.*.other_cost' => 'required_with:offers|numeric|min:0',
-            'offers.*.remarks' => 'required_with:offers|nullable|string',
+            'offers.*.remarks' => 'nullable|string',
             'offers.*.items' => 'required_with:offers|array',
             'offers.*.items.*.item_id' => 'required_with:offers.*.items|exists:items,id',
             'offers.*.items.*.price' => 'required_with:offers.*.items|numeric|min:0',
             'offers.*.items.*.quantity' => 'required_with:offers.*.items|numeric|min:0.001',
             'offers.*.items.*.uom_id' => 'required_with:offers.*.items|exists:item_uoms,id',
+            'offers.*.items.*.shipping_cost' => 'required_with:offers.*.items|numeric|min:0',
+            'offers.*.items.*.remarks' => 'required_with:offers.*.items|nullable|string',
             'offers.*.currency' => 'required_with:offers|string|size:3',
         ], [
             'po_number.required' => 'Purchase order number is required. / 采购单编号是必填项。',
@@ -264,6 +266,8 @@ class PurchaseOrderController extends Controller
                         $key = $item['item_id'] . '-' . $item['uom_id'];
                         $offerItemQuantity = $item['quantity'];
                         $offerdItemPrice = $item['price'];
+                        $shippingCost = $item['shipping_cost'] ?? 0;
+
                         // Check if this item is in our purchase order details
                         if (isset($purchaseOrderDetailsMap[$key]) && !empty($purchaseOrderDetailsMap[$key])) {
                             $totalPOQuantity = array_sum($purchaseOrderDetailsMap[$key]);
@@ -283,17 +287,25 @@ class PurchaseOrderController extends Controller
                                     : round($offerItemQuantity * $proportion, 3);
 
                                 $remainingQuantity -= $offerDetailQuantity;
+                                $subtotalPrice = $offerdItemPrice * $offerDetailQuantity;
+                                $shippingCostPerunit = ($shippingCost / $offerItemQuantity)*$offerDetailQuantity;
+                                $grandTotal = $subtotalPrice + $shippingCostPerunit;
+                                $newUnitPrice = $grandTotal / $offerDetailQuantity;
+
                                 // Create offer detail linking to this PO detail
                                 PurchaseOrderSupplierOfferDetail::create([
                                     'offer_id' => $offer->id,
                                     'purchase_order_detail_id' => $poDetailId,
                                     'quantity' => $offerDetailQuantity,
-                                    'offered_price_per_unit' => $offerdItemPrice / $item['quantity'],
+                                    'offered_price_per_unit' => $offerdItemPrice,
+                                    'shipping_cost' => $shippingCostPerunit,
+                                    'grand_total' => $grandTotal,
+                                    'new_price_per_unit' => $newUnitPrice,
                                     // total_price is calculated automatically (GENERATED ALWAYS AS)
                                 ]);
                             }
 
-                            $offerSubtotal += $item['price'];
+                            $offerSubtotal += $subtotalPrice;
                         }
                     }
 
