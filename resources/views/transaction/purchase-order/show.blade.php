@@ -272,16 +272,15 @@
                                                         </thead>
                                                         <tbody>
                                                             @forelse($offer->offerDetails->groupBy(function($detail) {
-                                                                                                        return $detail->purchaseOrderDetail->itemRequestDetail->itemPriceHistory->itemUom->item->name . '-' . $detail->purchaseOrderDetail->uom->unitOfMeasurement->name;
-                                                                                                    }) as $key => $groupedDetails)
+                                                                                                                    return $detail->purchaseOrderDetail->itemRequestDetail->itemPriceHistory->itemUom->item->name . '-' . $detail->purchaseOrderDetail->uom->unitOfMeasurement->name;
+                                                                                                                }) as $key => $groupedDetails)
                                                                 @php
                                                                     $firstDetail = $groupedDetails->first();
                                                                     $totalQuantity = $groupedDetails->sum('quantity');
                                                                     $offeredPrice =
-                                                                        $groupedDetails->offered_price_per_unit;
+                                                                        $firstDetail->offered_price_per_unit;
                                                                     $totalPrice = round(
-                                                                        $groupedDetails->sum('offered_price_per_unit') *
-                                                                            $groupedDetails->sum('quantity'),
+                                                                        $groupedDetails->sum('total_price'),
                                                                     );
                                                                     $shippingCost = round(
                                                                         $groupedDetails->sum('shipping_cost'),
@@ -289,9 +288,10 @@
                                                                     $grandTotal = round($totalPrice + $shippingCost);
                                                                     $remarks = $groupedDetails->first()->remarks;
                                                                     $newShippingCost = round(
-                                                                        $grandTotal / $totalQuantity,
+                                                                        ($offeredPrice * $totalQuantity +
+                                                                            $shippingCost) /
+                                                                            $totalQuantity,
                                                                     );
-
                                                                 @endphp
                                                                 <tr>
                                                                     <td>{{ $loop->iteration }}</td>

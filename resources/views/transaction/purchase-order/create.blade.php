@@ -322,7 +322,7 @@
                                 <th>Shipping Cost / 运输费</th>
                                 <th>Grand Total / 总计</th>
                                 <th>Remaks / 备注</th>
-                                <th>New Shipping Cost / 新运输费</th>
+                                <th>New Unit Price / 新单价</th>
                             </tr>
                         </thead>
                         <tbody>
