@@ -13,12 +13,14 @@ use App\Http\Controllers\Master\SupplierController;
 use App\Http\Controllers\Master\UnitOfMeasurementController;
 use App\Http\Controllers\Master\WarehouseController;
 use App\Http\Controllers\Master\WarehouseSectionController;
+use App\Http\Controllers\Transaction\BomStatusController;
 use App\Http\Controllers\Transaction\CustomerOrderController;
 use App\Http\Controllers\Transaction\DeliveryOrderController;
 use App\Http\Controllers\Transaction\ItemNeedToPurchaseController;
 use App\Http\Controllers\Transaction\ItemRequestController;
 use App\Http\Controllers\Transaction\ItemRequestProcessController;
 use App\Http\Controllers\Transaction\PurchaseOrderController;
+use App\Http\Controllers\Transaction\QuotationComparisonController;
 use App\Http\Controllers\Transaction\StockEntryController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -115,5 +117,7 @@ Route::middleware(['auth', 'auth.status'])->group(function () {
     Route::post('/update-supplier-offer-selection', [PurchaseOrderController::class, 'updateSupplierOfferSelection'])
     ->name('update-supplier-offer-selection');
 
+    Route::resource('bom-status', BomStatusController::class);
+    Route::resource('quotation-comparison', QuotationComparisonController::class);
     Route::resource('purchase-order', PurchaseOrderController::class);
 });

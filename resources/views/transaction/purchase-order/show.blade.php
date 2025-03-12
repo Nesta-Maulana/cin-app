@@ -272,8 +272,8 @@
                                                         </thead>
                                                         <tbody>
                                                             @forelse($offer->offerDetails->groupBy(function($detail) {
-                                                                                                                    return $detail->purchaseOrderDetail->itemRequestDetail->itemPriceHistory->itemUom->item->name . '-' . $detail->purchaseOrderDetail->uom->unitOfMeasurement->name;
-                                                                                                                }) as $key => $groupedDetails)
+                                                                                                                        return $detail->purchaseOrderDetail->itemRequestDetail->itemPriceHistory->itemUom->item->name . '-' . $detail->purchaseOrderDetail->uom->unitOfMeasurement->name;
+                                                                                                                    }) as $key => $groupedDetails)
                                                                 @php
                                                                     $firstDetail = $groupedDetails->first();
                                                                     $totalQuantity = $groupedDetails->sum('quantity');
@@ -287,11 +287,10 @@
                                                                     );
                                                                     $grandTotal = round($totalPrice + $shippingCost);
                                                                     $remarks = $groupedDetails->first()->remarks;
-                                                                    $newShippingCost = round(
+                                                                    $newShippingCost =
                                                                         ($offeredPrice * $totalQuantity +
                                                                             $shippingCost) /
-                                                                            $totalQuantity,
-                                                                    );
+                                                                        $totalQuantity;
                                                                 @endphp
                                                                 <tr>
                                                                     <td>{{ $loop->iteration }}</td>

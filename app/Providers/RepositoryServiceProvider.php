@@ -46,6 +46,8 @@ use App\Repositories\Services\File\FileRepository;
 use App\Repositories\Services\File\FileRepositoryInterface;
 use App\Repositories\Transaction\ApprovalRequest\ApprovalRequestRepository;
 use App\Repositories\Transaction\ApprovalRequest\ApprovalRequestRepositoryInterface;
+use App\Repositories\Transaction\BomStatus\BomStatusRepository;
+use App\Repositories\Transaction\BomStatus\BomStatusRepositoryInterface;
 use App\Repositories\Transaction\CustomerOrder\CustomerOrderRepository;
 use App\Repositories\Transaction\CustomerOrder\CustomerOrderRepositoryInterface;
 use App\Repositories\Transaction\DeliveryOrder\DeliveryOrderRepository;
@@ -70,6 +72,10 @@ use App\Repositories\Transaction\PurchaseOrderSupplierOffer\PurchaseOrderSupplie
 use App\Repositories\Transaction\PurchaseOrderSupplierOffer\PurchaseOrderSupplierOfferRepositoryInterface;
 use App\Repositories\Transaction\PurchaseOrderSupplierOfferDetail\PurchaseOrderSupplierOfferDetailRepository;
 use App\Repositories\Transaction\PurchaseOrderSupplierOfferDetail\PurchaseOrderSupplierOfferDetailRepositoryInterface;
+use App\Repositories\Transaction\QuotationComparison\QuotationComparisonRepository;
+use App\Repositories\Transaction\QuotationComparison\QuotationComparisonRepositoryInterface;
+use App\Repositories\Transaction\QuotationComparisonDetail\QuotationComparisonDetailRepository;
+use App\Repositories\Transaction\QuotationComparisonDetail\QuotationComparisonDetailRepositoryInterface;
 use App\Repositories\Transaction\StockEntry\StockEntryRepository;
 use App\Repositories\Transaction\StockEntry\StockEntryRepositoryInterface;
 use Illuminate\Support\ServiceProvider;
@@ -118,6 +124,11 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(PurchaseOrderSupplierOfferRepositoryInterface::class, PurchaseOrderSupplierOfferRepository::class);
         $this->app->bind(PurchaseOrderSupplierOfferDetailRepositoryInterface::class, PurchaseOrderSupplierOfferDetailRepository::class);
 
+        // bom status
+        $this->app->bind(BomStatusRepositoryInterface::class, BomStatusRepository::class);
+
+        $this->app->bind(QuotationComparisonRepositoryInterface::class, QuotationComparisonRepository::class);
+        $this->app->bind(QuotationComparisonDetailRepositoryInterface::class, QuotationComparisonDetailRepository::class);
     }
 
     /**

@@ -109,7 +109,7 @@ class PurchaseOrderController extends Controller
             'details' => 'required|array|min:1',
             'details.*.item_request_detail_id' => 'required|exists:item_request_details,id',
             'details.*.item_id' => 'required|exists:items,id',
-            'details.*.order_quantity' => 'required|numeric|min:0.001',
+            'details.*.order_quantity' => 'required|numeric|min:0',
             'details.*.uom_id' => 'required|exists:item_uoms,id',
             'offers' => 'sometimes|array',
             'offers.*.supplier_id' => 'required_with:offers|exists:suppliers,id',
@@ -122,6 +122,7 @@ class PurchaseOrderController extends Controller
             'offers.*.items.*.quantity' => 'required_with:offers.*.items|numeric|min:0.001',
             'offers.*.items.*.uom_id' => 'required_with:offers.*.items|exists:item_uoms,id',
             'offers.*.items.*.shipping_cost' => 'required_with:offers.*.items|numeric|min:0',
+            'offers.*.items.*.grand_total' => 'required_with:offers.*.items|numeric|min:0',
             'offers.*.items.*.remarks' => 'required_with:offers.*.items|nullable|string',
             'offers.*.currency' => 'required_with:offers|string|size:3',
         ], [
@@ -304,13 +305,12 @@ class PurchaseOrderController extends Controller
                                     // total_price is calculated automatically (GENERATED ALWAYS AS)
                                 ]);
                             }
-
-                            $offerSubtotal += $subtotalPrice;
+                            $offerSubtotal += $item['grand_total'];
                         }
                     }
 
                     // Update the grand total
-                    $grandTotal = $offerSubtotal + $offerData['shipping_cost'] + $offerData['other_cost'];
+                    $grandTotal = $item['grand_total'] + $offerData['shipping_cost'] + $offerData['other_cost'];
                     $offer->update(['grand_total' => $grandTotal]);
 
                     // If this is the first offer, use it as the selected one
@@ -649,7 +649,7 @@ class PurchaseOrderController extends Controller
                     }
 
                     // Update the grand total
-                    $grandTotal = $offerSubtotal + $offerData['shipping_cost'] + $offerData['other_cost'];
+                    $grandTotal = $item['price'] + $offerData['shipping_cost'] + $offerData['other_cost'];
                     $offer->update(['grand_total' => $grandTotal]);
 
                     // If this is the first offer, use it as the selected one

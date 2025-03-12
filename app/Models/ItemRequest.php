@@ -22,10 +22,19 @@ class ItemRequest extends Model
     {
         return LogOptions::defaults()->logAll();
     }
+   /*  public function scopeFilter($query, $search)
+    {
+        return $query->where('bom_number', 'like', "%{$search}%")
+            ->orWhere('pic', 'like', "%{$search}%")
+            ->orWhere('request_status', 'like', "%{$search}%");
+    }
+ */
     public function scopeFilter($query, $search)
     {
         $query->when($search ?? false, function ($query, $search) {
-            return $query->where('name', 'like', "%$search%");
+            return $query->where('customer_order_id', 'like', "%$search%")
+            ->orWhere('request_status', 'like', "%$search%")
+            ->orWhere('request_number', 'like', "%$search%");
         });
     }
 
