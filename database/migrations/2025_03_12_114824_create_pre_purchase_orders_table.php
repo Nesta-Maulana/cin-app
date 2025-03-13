@@ -15,23 +15,17 @@ return new class extends Migration {
         Schema::create('pre_purchase_orders', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('customer_order_id');
-            $table->string('po_number', 100)->unique(); // Nomor unik PO
-            $table->date('request_date'); // Tanggal permintaan PO
-            $table->date('expected_delivery_date'); // Perkiraan tanggal pengiriman
+            $table->string('pre_po_number', 100)->unique(); // Nomor unik PO
             $table->string('process_status', 50)->default('pending'); // pending, under_review, approved, finalized, canceled
-            $table->text('remarks')->nullable(); // Catatan tambahan
+            $table->json('other_cost')->nullable();
+            $table->decimal('grand_total', 15, 2)->default(0); // Total keseluruhan (diupdate setelah detail diinput)
 
-            // Harga total
-            $table->decimal('subtotal_price', 15, 2)->default(0); // Harga barang sebelum biaya tambahan
-            $table->decimal('shipping_cost', 15, 2)->default(0); // Ongkos kirim
-            $table->decimal('other_cost', 15, 2)->default(0); // Biaya tambahan lain
-            $table->decimal('total_price', 15, 2)->storedAs('subtotal_price + shipping_cost + other_cost'); // Harga total
+            $table->text('remarks')->nullable(); // Catatan tambahan
 
             // User tracking
             $table->unsignedBigInteger('created_by'); // User yang membuat PO
             $table->unsignedBigInteger('approved_by')->nullable(); // User yang menyetujui PO
             $table->unsignedBigInteger('finalized_by')->nullable(); // User yang memilih supplier
-
             $table->timestamps();
 
             // Foreign keys

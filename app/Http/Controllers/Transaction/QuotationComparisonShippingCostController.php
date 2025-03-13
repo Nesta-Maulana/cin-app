@@ -3,24 +3,21 @@
 namespace App\Http\Controllers\Transaction;
 
 use App\Http\Controllers\Controller;
-use App\Models\CustomerOrder;
-use App\Models\PrePurchaseOrder;
-use App\Models\Supplier;
-use App\Repositories\Transaction\PrePurchaseOrder\PrePurchaseOrderRepositoryInterface;
+use App\Repositories\Transaction\QuotationComparisonShippingCost\QuotationComparisonShippingCostRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
-class PrePurchaseOrderController extends Controller
+class QuotationComparisonShippingCostController extends Controller
 {
     public $view, $route;
     protected $repository;
-    public function __construct(PrePurchaseOrderRepositoryInterface $repository)
+    public function __construct(QuotationComparisonShippingCostRepositoryInterface $repository)
     {
         $this->repository = $repository;
-        $this->view = 'transaction.pre-purchase-order';
-        $this->route = 'pre-purchase-order';
+        $this->view = 'transaction.quotationcomparisonshippingcost';
+        $this->route = '';
 
         $this->middleware("can:create-{$this->route}")->only('create','store');
         $this->middleware("can:read-{$this->route}")->only('index');
@@ -58,22 +55,7 @@ class PrePurchaseOrderController extends Controller
     public function edit($id)
     {
         try {
-            $data = PrePurchaseOrder::with([
-                'details.itemRequestDetail.itemRequest',
-                'details.itemRequestDetail.itemPriceHistory.itemUom.item',
-                'details.itemRequestDetail.itemPriceHistory.itemUom.unitOfMeasurement',
-                'details.uom.unitOfMeasurement',
-                'quotations.supplier',
-                'quotations.quotationDetails.prePurchaseOrderDetail.itemRequestDetail.itemPriceHistory.itemUom.item',
-                'quotations.quotationDetails.prePurchaseOrderDetail.uom.unitOfMeasurement',
-                'customerOrder'
-            ])->findOrFail($id);
-
-            $customerOrders = CustomerOrder::all();
-            $suppliers = Supplier::all();
-
-            return view('transaction.pre-purchase-order.edit', compact('data', 'customerOrders', 'suppliers'));
-
+            $data = $this->repository->find($id);
             return view("{$this->view}.edit", compact('data'));
         } catch (Exception $e) {
             Log::error($e->getMessage());

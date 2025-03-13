@@ -19,9 +19,11 @@ use App\Http\Controllers\Transaction\DeliveryOrderController;
 use App\Http\Controllers\Transaction\ItemNeedToPurchaseController;
 use App\Http\Controllers\Transaction\ItemRequestController;
 use App\Http\Controllers\Transaction\ItemRequestProcessController;
+use App\Http\Controllers\Transaction\PrePurchaseOrderController;
 use App\Http\Controllers\Transaction\PurchaseOrderController;
 use App\Http\Controllers\Transaction\QuotationComparisonController;
 use App\Http\Controllers\Transaction\StockEntryController;
+use App\Models\PrePurchaseOrder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Master\MenuController;
@@ -118,6 +120,6 @@ Route::middleware(['auth', 'auth.status'])->group(function () {
     ->name('update-supplier-offer-selection');
 
     Route::resource('bom-status', BomStatusController::class);
-    Route::resource('quotation-comparison', QuotationComparisonController::class);
+    Route::resource('pre-purchase-order', PrePurchaseOrderController::class);
     Route::resource('purchase-order', PurchaseOrderController::class);
 });

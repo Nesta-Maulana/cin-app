@@ -64,6 +64,10 @@ use App\Repositories\Transaction\ItemRequestDetail\ItemRequestDetailRepository;
 use App\Repositories\Transaction\ItemRequestDetail\ItemRequestDetailRepositoryInterface;
 use App\Repositories\Transaction\ItemRequestProcess\ItemRequestProcessRepository;
 use App\Repositories\Transaction\ItemRequestProcess\ItemRequestProcessRepositoryInterface;
+use App\Repositories\Transaction\PrePurchaseOrder\PrePurchaseOrderRepository;
+use App\Repositories\Transaction\PrePurchaseOrder\PrePurchaseOrderRepositoryInterface;
+use App\Repositories\Transaction\PrePurchaseOrderDetail\PrePurchaseOrderDetailRepository;
+use App\Repositories\Transaction\PrePurchaseOrderDetail\PrePurchaseOrderDetailRepositoryInterface;
 use App\Repositories\Transaction\PurchaseOrder\PurchaseOrderRepository;
 use App\Repositories\Transaction\PurchaseOrder\PurchaseOrderRepositoryInterface;
 use App\Repositories\Transaction\PurchaseOrderDetail\PurchaseOrderDetailRepository;
@@ -76,6 +80,8 @@ use App\Repositories\Transaction\QuotationComparison\QuotationComparisonReposito
 use App\Repositories\Transaction\QuotationComparison\QuotationComparisonRepositoryInterface;
 use App\Repositories\Transaction\QuotationComparisonDetail\QuotationComparisonDetailRepository;
 use App\Repositories\Transaction\QuotationComparisonDetail\QuotationComparisonDetailRepositoryInterface;
+use App\Repositories\Transaction\QuotationComparisonShippingCost\QuotationComparisonShippingCostRepository;
+use App\Repositories\Transaction\QuotationComparisonShippingCost\QuotationComparisonShippingCostRepositoryInterface;
 use App\Repositories\Transaction\StockEntry\StockEntryRepository;
 use App\Repositories\Transaction\StockEntry\StockEntryRepositoryInterface;
 use Illuminate\Support\ServiceProvider;
@@ -127,8 +133,11 @@ class RepositoryServiceProvider extends ServiceProvider
         // bom status
         $this->app->bind(BomStatusRepositoryInterface::class, BomStatusRepository::class);
 
+        $this->app->bind(PrePurchaseOrderRepositoryInterface::class, PrePurchaseOrderRepository::class);
+        $this->app->bind(PrePurchaseOrderDetailRepositoryInterface::class, PrePurchaseOrderDetailRepository::class);
         $this->app->bind(QuotationComparisonRepositoryInterface::class, QuotationComparisonRepository::class);
         $this->app->bind(QuotationComparisonDetailRepositoryInterface::class, QuotationComparisonDetailRepository::class);
+        $this->app->bind(QuotationComparisonShippingCostRepositoryInterface::class, QuotationComparisonShippingCostRepository::class);
     }
 
     /**

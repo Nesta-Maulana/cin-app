@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('pre_purchase_order_details', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('purchase_order_id'); // Referensi ke PO
+            $table->unsignedBigInteger('pre_purchase_order_id'); // Referensi ke PO
             $table->unsignedBigInteger('item_request_detail_id'); // Barang yang diajukan dari kebutuhan pembelian
             $table->decimal('quantity', 15, 3)->default(0); // Jumlah barang yang dibutuhkan
             $table->unsignedBigInteger('item_uom_id'); // Satuan unit pembelian
@@ -24,7 +24,7 @@ return new class extends Migration
             $table->timestamps();
 
             // Foreign keys
-            $table->foreign('purchase_order_id')->references('id')->on('purchase_orders')->onDelete('cascade');
+            $table->foreign('pre_purchase_order_id')->references('id')->on('pre_purchase_orders')->onDelete('cascade');
             $table->foreign('item_request_detail_id')->references('id')->on('item_request_details')->onDelete('cascade');
             $table->foreign('item_uom_id')->references('id')->on('item_uoms')->onDelete('cascade');
 

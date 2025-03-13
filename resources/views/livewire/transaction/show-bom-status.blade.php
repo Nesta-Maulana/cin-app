@@ -7,8 +7,9 @@
                     <label class="form-label">Customer Order</label>
                     <select wire:model="selectedCustomerOrder" class="form-select">
                         <option value="">All Customer Orders</option>
-                        @foreach ($customerOrders as $order)
-                            <option value="{{ $order->id }}">{{ $order->order_number }}</option>
+                        @foreach ($customerOrders as $key => $order)
+                            <option value="{{ $order->id }}" {{ $key == 0 ? 'selected' : '' }}>
+                                {{ $order->order_number }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -155,14 +156,21 @@
                                                 <tbody>
                                                     @forelse($item->details as $detail)
                                                         <tr>
-                                                            <td>{{ $detail->itemPriceHistory->itemUom->item->name }}</td>
-                                                            <td>{{$detail->deliveryOrderDetails->sum('quantity')}}/{{ $detail->quantity }}</td>
+                                                            <td>{{ $detail->itemPriceHistory->itemUom->item->name }}
+                                                            </td>
+                                                            <td>{{ $detail->deliveryOrderDetails->sum('quantity') }}/{{ $detail->quantity }}
+                                                            </td>
                                                             <td>{{ $detail->itemPriceHistory->itemUom->unitOfMeasurement->name }}
                                                             </td>
                                                             <td>
                                                                 <input type="number" class="form-control"
                                                                     wire:model.defer="comparisonPrices.{{ $detail->id }}"
+                                                                    wire:change="validateQuantity({{ $detail->id }}, {{ $detail->quantity }})"
                                                                     placeholder="Enter Quantity for Comparison">
+                                                                @if (isset($quantityErrors[$detail->id]))
+                                                                    <span
+                                                                        class="text-danger small">{{ $quantityErrors[$detail->id] }}</span>
+                                                                @endif
                                                             </td>
                                                             <td>{{ $detail->remarks }}</td>
                                                         </tr>
@@ -193,6 +201,15 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Create Comparison Table Button (Global) -->
+        @if (count($validComparisonItems) > 0)
+            <div class="card-footer text-end">
+                <button type="button" class="btn btn-primary" wire:click="createComparisonTable">
+                    Create Comparison Table ({{ count($validComparisonItems) }} items)
+                </button>
+            </div>
+        @endif
 
         <div class="card-body d-md-flex justify-content-md-between align-items-center pt-3 pb-2">
             <div class="align-self-start my-2 d-none d-md-block text-muted">
@@ -237,25 +254,76 @@
 
     <!-- Modal for Create Comparison Table confirmation -->
     <div wire:ignore.self class="modal fade" id="modalCreateComparison" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Create Comparison Table</h5>
+                    <h5 class="modal-title">Comparison Table</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Are you sure you want to create a comparison table for this Item Request?</p>
+                    @if (count($mergedComparisonItems) > 0)
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">No. CT</label>
+                                    <input type="text" class="form-control" readonly
+                                        value="{{ $comparisonNumber ?? 'CT01' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Items</th>
+                                        <th>Unit</th>
+                                        <th>Qty</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($mergedComparisonItems as $detail)
+                                        <tr>
+                                            <td>{{ $detail['item_name'] }}</td>
+                                            <td>{{ $detail['unit'] }}</td>
+                                            <td>{{ $detail['quantity'] }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="4" class="text-center">No items selected</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">PIC</label>
+                                    <input type="text" class="form-control" readonly
+                                        value="{{ auth()->user()->name ?? 'Citra' }}">
+                                </div>
+                            </div>
+                        </div>
+                    @else
+                        <p>No items selected for comparison.</p>
+                    @endif
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" wire:click="confirmCreateComparisonTable"
-                        class="btn btn-primary">Create</button>
+                        class="btn btn-primary">Confirm</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            @this.set('selectedCustomerOrder', @js($customerOrders->first()->id))
+        });
+
         window.addEventListener('close-modal', event => {
             $('.dropdown-toggle').dropdown('hide');
             $('#modalSelectedStatus').modal('hide');
