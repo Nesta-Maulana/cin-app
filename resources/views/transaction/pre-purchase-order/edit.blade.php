@@ -66,14 +66,9 @@
 
                         <!-- Pre-Purchase Order Details Section -->
                         <h6 class="text-primary mb-3">Pre-Purchase Order Details / 预采购单详细信息</h6>
-                        <!-- Read-only display for non-pending/draft status -->
-                        <div class="alert alert-info">
-                            <i class="fa fa-info-circle"></i> Pre-purchase order details cannot be modified as the status is
-                            not pending. / 预采购单状态不是待处理，无法修改详细信息。
-                        </div>
 
                         <div class="table-responsive">
-                            <table class="table table-bordered">
+                            <table class="table table-bordered" id="detailsTable">
                                 <thead class="table-light text-nowrap">
                                     <tr>
                                         <th>#</th>
@@ -86,281 +81,424 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($data->details as $index => $detail)
-                                        <tr>
+                                        <tr id="item-{{ $index }}"
+                                            data-item-id="{{ $detail->itemRequestDetail ? $detail->itemRequestDetail->itemPriceHistory->itemUom->item_id : '' }}">
                                             <td>{{ $index + 1 }}</td>
-                                            <td>{{ $detail->itemRequestDetail ? $detail->itemRequestDetail->itemRequest->request_number : '-' }}
+                                            <td>
+                                                {{ $detail->itemRequestDetail ? $detail->itemRequestDetail->itemRequest->request_number : '-' }}
+                                                <input type="hidden" name="details[{{ $index }}][id]"
+                                                    value="{{ $detail->id }}">
+                                                <input type="hidden"
+                                                    name="details[{{ $index }}][item_request_detail_id]"
+                                                    value="{{ $detail->item_request_detail_id }}">
                                             </td>
-                                            <td>{{ $detail->itemRequestDetail ? $detail->itemRequestDetail->itemPriceHistory->itemUom->item->name : '-' }}
+                                            <td>
+                                                <input type="hidden" name="details[{{ $index }}][item_id]"
+                                                    value="{{ $detail->itemRequestDetail ? $detail->itemRequestDetail->itemPriceHistory->itemUom->item_id : '' }}"
+                                                    class="item-id">
+                                                <span
+                                                    class="item-name">{{ $detail->itemRequestDetail ? $detail->itemRequestDetail->itemPriceHistory->itemUom->item->name : '-' }}</span>
                                             </td>
-                                            <td>{{ $detail->quantity }}</td>
-                                            <td>{{ $detail->uom ? $detail->uom->unitOfMeasurement->name : '-' }}</td>
-                                            <td>{{ $detail->remarks }}</td>
+                                            <td>
+                                                <input type="hidden" name="details[{{ $index }}][quantity]"
+                                                    value="{{ $detail->quantity }}" class="order-quantity">
+                                                {{ $detail->quantity }}
+                                            </td>
+                                            <td>
+                                                <input type="hidden" name="details[{{ $index }}][uom_id]"
+                                                    value="{{ $detail->uom_id }}" class="uom-id">
+                                                <span
+                                                    class="uom-name">{{ $detail->uom ? $detail->uom->unitOfMeasurement->name : '-' }}</span>
+                                            </td>
+                                            <td>
+                                                <input type="hidden" name="details[{{ $index }}][remarks]"
+                                                    value="{{ $detail->remarks }}">
+                                                {{ $detail->remarks }}
+                                            </td>
                                         </tr>
                                     @endforeach
                                 </tbody>
                             </table>
                         </div>
-                        @if ($data->process_status == 'draft')
-                            <!-- Quotation Comparison Section -->
-                            <h6 class="text-primary mt-4 mb-2">Quotation Comparisons / 报价比较</h6>
-                            <button type="button" class="btn btn-secondary mb-3" id="addQuotation">
-                                <i class="fa fa-plus"></i> Add Quotation / 添加报价
-                            </button>
 
-                            <div id="quotationsContainer">
-                                @foreach ($data->quotations as $quotationIndex => $quotation)
-                                    <div id="quotation-card-{{ $quotationIndex }}" class="card mb-4 border-1">
-                                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                                            <h6 class="mb-0">Quotation #{{ $quotationIndex + 1 }}</h6>
-                                            <div>
+                        <!-- Supplier Offers Section -->
+                        <h6 class="text-primary mt-4 mb-2">Supplier Offers / 供应商报价</h6>
+                        <button type="button" class="btn btn-secondary mb-3" id="addSupplierOffer">
+                            <i class="fa fa-plus"></i> Add Supplier Offer / 添加供应商报价
+                        </button>
+
+                        <div id="supplierOffersContainer">
+                            @foreach ($data->quotations as $quotationIndex => $quotation)
+                                <div id="supplier-card-{{ $quotationIndex }}"
+                                    class="card mb-4 border-1 {{ $quotation->is_selected ? 'border-success' : '' }}">
+                                    <div
+                                        class="card-header {{ $quotation->is_selected ? 'bg-success text-white' : 'bg-light' }} d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">Supplier Offer #{{ $quotationIndex + 1 }} -
+                                            {{ $quotation->supplier->name }}</h6>
+                                        <div>
+                                            @if ($quotation->is_selected)
+                                                <span class="badge bg-white text-success me-2">Selected / 已选择</span>
+                                            @endif
+                                            <button type="button" class="btn btn-danger btn-sm remove-supplier"
+                                                data-id="{{ $quotationIndex }}">
+                                                <i class="fa fa-trash"></i> Remove / 删除
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row mb-3 mt-2">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Supplier / 供应商</label>
+                                                <input type="hidden" name="quotations[{{ $quotationIndex }}][id]"
+                                                    value="{{ $quotation->id }}">
+                                                <select name="quotations[{{ $quotationIndex }}][supplier_id]"
+                                                    class="form-select supplier-select" required
+                                                    {{ $quotation->is_selected ? 'disabled' : '' }}>
+                                                    <option value="" disabled>Please choose supplier / 请选择供应商</option>
+                                                    @foreach ($suppliers as $supplier)
+                                                        <option value="{{ $supplier->id }}"
+                                                            {{ $quotation->supplier_id == $supplier->id ? 'selected' : '' }}>
+                                                            {{ $supplier->name }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
                                                 @if ($quotation->is_selected)
-                                                    <span class="badge bg-success me-2">Selected / 已选择</span>
+                                                    <input type="hidden"
+                                                        name="quotations[{{ $quotationIndex }}][supplier_id]"
+                                                        value="{{ $quotation->supplier_id }}">
                                                 @endif
-                                                <button type="button" class="btn btn-danger btn-sm remove-quotation"
-                                                    data-index="{{ $quotationIndex }}">
-                                                    <i class="fa fa-trash"></i> Remove / 删除
-                                                </button>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Currency / 货币</label>
+                                                <select name="quotations[{{ $quotationIndex }}][currency]"
+                                                    class="form-select currency-select" required
+                                                    {{ $quotation->is_selected ? 'disabled' : '' }}>
+                                                    @php
+                                                        $currencies = getCurrency();
+                                                    @endphp
+                                                    @foreach ($currencies as $code => $name)
+                                                        <option value="{{ $code }}"
+                                                            {{ ($quotation->currency ?? 'idr') == $code ? 'selected' : '' }}>
+                                                            {{ strtoupper($code) }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
                                             </div>
                                         </div>
-                                        <div class="card-body">
-                                            <div class="row mb-3 mt-2">
-                                                <div class="col-md-6">
-                                                    <label class="form-label">Supplier / 供应商</label>
-                                                    <input type="hidden" name="quotations[{{ $quotationIndex }}][id]"
-                                                        value="{{ $quotation->id }}">
-                                                    <select name="quotations[{{ $quotationIndex }}][supplier_id]"
-                                                        class="form-select supplier-select" required
-                                                        {{ $quotation->is_selected ? 'disabled' : '' }}>
-                                                        <option value="" disabled>Please choose supplier / 请选择供应商
-                                                        </option>
-                                                        @foreach ($suppliers as $supplier)
-                                                            <option value="{{ $supplier->id }}"
-                                                                {{ $quotation->supplier_id == $supplier->id ? 'selected' : '' }}>
-                                                                {{ $supplier->name }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                    @if ($quotation->is_selected)
-                                                        <input type="hidden"
-                                                            name="quotations[{{ $quotationIndex }}][supplier_id]"
-                                                            value="{{ $quotation->supplier_id }}">
-                                                    @endif
+
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered"
+                                                id="offer-items-table-{{ $quotationIndex }}">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Item / 物品</th>
+                                                        <th>Quantity / 数量</th>
+                                                        <th>UOM / 单位</th>
+                                                        <th>Unit Price / 单价</th>
+                                                        <th>Subtotal Price / 小计</th>
+                                                        <th>Shipping Cost / 运输费</th>
+                                                        <th>Grand Total / 总计</th>
+                                                        <th>Remarks / 备注</th>
+                                                        <th>New Unit Price / 新单价</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach ($quotation->quotationDetails as $detailIndex => $detail)
+                                                        <tr>
+                                                            <td>
+                                                                <input type="hidden"
+                                                                    name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][id]"
+                                                                    value="{{ $detail->id }}">
+                                                                <input type="hidden"
+                                                                    name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][pre_purchase_order_detail_id]"
+                                                                    value="{{ $detail->pre_purchase_order_detail_id }}">
+                                                                <input type="hidden"
+                                                                    name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][item_id]"
+                                                                    value="{{ $detail->prePurchaseOrderDetail->itemRequestDetail->itemPriceHistory->itemUom->item_id }}">
+                                                                {{ $detail->prePurchaseOrderDetail->itemRequestDetail->itemPriceHistory->itemUom->item->name }}
+                                                            </td>
+                                                            <td>
+                                                                <input type="hidden"
+                                                                    name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][quantity]"
+                                                                    value="{{ $detail->quantity }}"
+                                                                    class="item-quantity">
+                                                                {{ $detail->quantity }}
+                                                            </td>
+                                                            <td>
+                                                                <input type="hidden"
+                                                                    name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][uom_id]"
+                                                                    value="{{ $detail->prePurchaseOrderDetail->uom_id }}">
+                                                                {{ $detail->prePurchaseOrderDetail->uom->unitOfMeasurement->name }}
+                                                            </td>
+                                                            <td>
+                                                                <input type="number"
+                                                                    name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][price]"
+                                                                    class="form-control item-price" step="0.01"
+                                                                    min="0"
+                                                                    value="{{ $detail->offered_price_per_unit }}"
+                                                                    {{ $quotation->is_selected ? 'readonly' : '' }}
+                                                                    required>
+                                                            </td>
+                                                            <td>
+                                                                <input type="number"
+                                                                    name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][subtotal_price]"
+                                                                    class="form-control item-subtotal" step="0.01"
+                                                                    min="0"
+                                                                    value="{{ $detail->offered_price_per_unit * $detail->quantity }}"
+                                                                    readonly required>
+                                                            </td>
+                                                            <td>
+                                                                <input type="number"
+                                                                    name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][shipping_cost]"
+                                                                    class="form-control item-shipping" step="0.01"
+                                                                    min="0"
+                                                                    value="{{ $detail->shipping_cost ?? 0 }}"
+                                                                    {{ $quotation->is_selected ? 'readonly' : '' }}
+                                                                    required>
+                                                            </td>
+                                                            <td>
+                                                                <input type="number"
+                                                                    name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][grand_total]"
+                                                                    class="form-control item-grand-total" step="0.01"
+                                                                    min="0"
+                                                                    value="{{ $detail->offered_price_per_unit * $detail->quantity + ($detail->shipping_cost ?? 0) }}"
+                                                                    readonly required>
+                                                            </td>
+                                                            <td>
+                                                                <textarea name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][remarks]" class="form-control"
+                                                                    rows="2" placeholder="Remarks (optional) / 备注 (可选)" {{ $quotation->is_selected ? 'readonly' : '' }}>{{ $detail->remarks }}</textarea>
+                                                            </td>
+                                                            <td>
+                                                                <input type="number"
+                                                                    name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][new_unit_price]"
+                                                                    class="form-control item-new-price" step="0.01"
+                                                                    min="0"
+                                                                    value="{{ ($detail->offered_price_per_unit * $detail->quantity + ($detail->shipping_cost ?? 0)) / $detail->quantity }}"
+                                                                    readonly required>
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        <!-- Additional Costs Before Tax Section -->
+                                        <div class="card mt-3">
+                                            <div class="card-header bg-light">
+                                                <h6 class="mb-0">Additional Costs Before Tax / 税前附加费用</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div id="before-tax-costs-{{ $quotationIndex }}">
+                                                    @foreach ($quotation->beforeTaxCosts ?? [] as $costIndex => $cost)
+                                                        <div class="row mb-2 before-tax-cost-row">
+                                                            <div class="col-md-5">
+                                                                <input type="text"
+                                                                    name="quotations[{{ $quotationIndex }}][before_tax_costs][{{ $costIndex }}][description]"
+                                                                    class="form-control" placeholder="Description / 描述"
+                                                                    value="{{ $cost->description }}"
+                                                                    {{ $quotation->is_selected ? 'readonly' : '' }}
+                                                                    required>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <input type="number"
+                                                                    name="quotations[{{ $quotationIndex }}][before_tax_costs][{{ $costIndex }}][amount]"
+                                                                    class="form-control before-tax-cost-amount"
+                                                                    step="0.01" min="0"
+                                                                    value="{{ $cost->amount }}"
+                                                                    {{ $quotation->is_selected ? 'readonly' : '' }}
+                                                                    required>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <select
+                                                                    name="quotations[{{ $quotationIndex }}][before_tax_costs][{{ $costIndex }}][type]"
+                                                                    class="form-select"
+                                                                    {{ $quotation->is_selected ? 'disabled' : '' }}>
+                                                                    <option value="shipping"
+                                                                        {{ $cost->type == 'shipping' ? 'selected' : '' }}>
+                                                                        Shipping / 运费</option>
+                                                                    <option value="handling"
+                                                                        {{ $cost->type == 'handling' ? 'selected' : '' }}>
+                                                                        Handling / 装卸费</option>
+                                                                    <option value="insurance"
+                                                                        {{ $cost->type == 'insurance' ? 'selected' : '' }}>
+                                                                        Insurance / 保险</option>
+                                                                    <option value="other"
+                                                                        {{ $cost->type == 'other' ? 'selected' : '' }}>
+                                                                        Other / 其他</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-md-1">
+                                                                @if (!$quotation->is_selected)
+                                                                    <button type="button"
+                                                                        class="btn btn-danger btn-sm remove-cost">
+                                                                        <i class="fa fa-trash"></i>
+                                                                    </button>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
                                                 </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label">Grand Total / 总计</label>
-                                                    <div class="input-group">
-                                                        <span class="input-group-text">$</span>
+                                                @if (!$quotation->is_selected)
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-outline-primary mt-2 add-before-tax-cost"
+                                                        data-supplier="{{ $quotationIndex }}">
+                                                        <i class="fa fa-plus"></i> Add Additional Cost / 添加附加费用
+                                                    </button>
+                                                @endif
+                                            </div>
+                                        </div>
+
+                                        <!-- Tax Section -->
+                                        <div class="card mt-3">
+                                            <div class="card-header bg-light">
+                                                <h6 class="mb-0">Tax / 税</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="row align-items-center">
+                                                    <div class="col-md-3">
+                                                        <label class="form-label">Subtotal Before Tax / 税前小计</label>
                                                         <input type="number"
-                                                            name="quotations[{{ $quotationIndex }}][grand_total]"
-                                                            class="form-control grand-total" step="0.01"
-                                                            min="0" value="{{ $quotation->grand_total }}"
+                                                            name="quotations[{{ $quotationIndex }}][subtotal_before_tax]"
+                                                            class="form-control subtotal-before-tax"
+                                                            value="{{ $quotation->subtotal_before_tax ?? 0 }}" readonly>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label class="form-label">Tax Type / 税务类型</label>
+                                                        <select name="quotations[{{ $quotationIndex }}][tax_type]"
+                                                            class="form-select tax-type"
+                                                            {{ $quotation->is_selected ? 'disabled' : '' }}>
+                                                            <option value="percentage"
+                                                                {{ ($quotation->tax_type ?? 'percentage') == 'percentage' ? 'selected' : '' }}>
+                                                                Percentage / 百分比</option>
+                                                            <option value="fixed"
+                                                                {{ ($quotation->tax_type ?? 'percentage') == 'fixed' ? 'selected' : '' }}>
+                                                                Fixed Amount / 固定金额</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label class="form-label">Tax Value / 税值</label>
+                                                        <div class="input-group">
+                                                            <input type="number"
+                                                                name="quotations[{{ $quotationIndex }}][tax_value]"
+                                                                class="form-control tax-value" step="0.01"
+                                                                min="0" value="{{ $quotation->tax_value ?? 0 }}"
+                                                                {{ $quotation->is_selected ? 'readonly' : '' }}>
+                                                            <span
+                                                                class="input-group-text tax-symbol">{{ ($quotation->tax_type ?? 'percentage') == 'percentage' ? '%' : getCurrencySymbol($quotation->currency ?? 'idr') }}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label class="form-label">Tax Amount / 税额</label>
+                                                        <input type="number"
+                                                            name="quotations[{{ $quotationIndex }}][tax_amount]"
+                                                            class="form-control tax-amount"
+                                                            value="{{ $quotation->tax_amount ?? 0 }}" readonly>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Additional Costs After Tax Section -->
+                                        <div class="card mt-3">
+                                            <div class="card-header bg-light">
+                                                <h6 class="mb-0">Additional Costs After Tax / 税后附加费用</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div id="after-tax-costs-{{ $quotationIndex }}">
+                                                    @foreach ($quotation->afterTaxCosts ?? [] as $costIndex => $cost)
+                                                        <div class="row mb-2 after-tax-cost-row">
+                                                            <div class="col-md-5">
+                                                                <input type="text"
+                                                                    name="quotations[{{ $quotationIndex }}][after_tax_costs][{{ $costIndex }}][description]"
+                                                                    class="form-control" placeholder="Description / 描述"
+                                                                    value="{{ $cost->description }}"
+                                                                    {{ $quotation->is_selected ? 'readonly' : '' }}
+                                                                    required>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <input type="number"
+                                                                    name="quotations[{{ $quotationIndex }}][after_tax_costs][{{ $costIndex }}][amount]"
+                                                                    class="form-control after-tax-cost-amount"
+                                                                    step="0.01" min="0"
+                                                                    value="{{ $cost->amount }}"
+                                                                    {{ $quotation->is_selected ? 'readonly' : '' }}
+                                                                    required>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <select
+                                                                    name="quotations[{{ $quotationIndex }}][after_tax_costs][{{ $costIndex }}][type]"
+                                                                    class="form-select"
+                                                                    {{ $quotation->is_selected ? 'disabled' : '' }}>
+                                                                    <option value="fee"
+                                                                        {{ $cost->type == 'fee' ? 'selected' : '' }}>Fee /
+                                                                        费用</option>
+                                                                    <option value="discount"
+                                                                        {{ $cost->type == 'discount' ? 'selected' : '' }}>
+                                                                        Discount / 折扣</option>
+                                                                    <option value="other"
+                                                                        {{ $cost->type == 'other' ? 'selected' : '' }}>
+                                                                        Other / 其他</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-md-1">
+                                                                @if (!$quotation->is_selected)
+                                                                    <button type="button"
+                                                                        class="btn btn-danger btn-sm remove-cost">
+                                                                        <i class="fa fa-trash"></i>
+                                                                    </button>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                                @if (!$quotation->is_selected)
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-outline-primary mt-2 add-after-tax-cost"
+                                                        data-supplier="{{ $quotationIndex }}">
+                                                        <i class="fa fa-plus"></i> Add Additional Cost / 添加附加费用
+                                                    </button>
+                                                @endif
+                                            </div>
+                                        </div>
+
+                                        <!-- Grand Total Section -->
+                                        <div class="card mt-3">
+                                            <div class="card-header bg-light">
+                                                <h6 class="mb-0">Grand Total / 总计</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Total Amount / 总金额</label>
+                                                        <input type="number"
+                                                            name="quotations[{{ $quotationIndex }}][total_amount]"
+                                                            class="form-control total-amount"
+                                                            value="{{ $quotation->total_amount ?? 0 }}" readonly>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Remarks / 备注</label>
+                                                        <input type="text"
+                                                            name="quotations[{{ $quotationIndex }}][remarks]"
+                                                            class="form-control" value="{{ $quotation->remarks }}"
                                                             {{ $quotation->is_selected ? 'readonly' : '' }}>
                                                     </div>
                                                 </div>
                                             </div>
-
-                                            <div class="table-responsive">
-                                                <table class="table table-bordered"
-                                                    id="quotation-items-table-{{ $quotationIndex }}">
-                                                    <thead class="table-light">
-                                                        <tr>
-                                                            <th>Item / 物品</th>
-                                                            <th>Quantity / 数量</th>
-                                                            <th>UOM / 单位</th>
-                                                            <th>Offered Price / 报价</th>
-                                                            <th>Total Price / 总价</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @foreach ($quotation->quotationDetails as $detailIndex => $detail)
-                                                            <tr>
-                                                                <td>
-                                                                    <input type="hidden"
-                                                                        name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][id]"
-                                                                        value="{{ $detail->id }}">
-                                                                    <input type="hidden"
-                                                                        name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][pre_purchase_order_detail_id]"
-                                                                        value="{{ $detail->pre_purchase_order_detail_id }}">
-                                                                    {{ $detail->prePurchaseOrderDetail->itemRequestDetail->itemPriceHistory->itemUom->item->name }}
-                                                                </td>
-                                                                <td>
-                                                                    {{ $detail->quantity }}
-                                                                    <input type="hidden"
-                                                                        name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][quantity]"
-                                                                        value="{{ $detail->quantity }}">
-                                                                </td>
-                                                                <td>
-                                                                    {{ $detail->prePurchaseOrderDetail->uom->unitOfMeasurement->name }}
-                                                                </td>
-                                                                <td>
-                                                                    <div class="input-group">
-                                                                        <span class="input-group-text">$</span>
-                                                                        <input type="number"
-                                                                            name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][offered_price_per_unit]"
-                                                                            class="form-control price-per-unit"
-                                                                            data-index="{{ $detailIndex }}"
-                                                                            step="0.01" min="0"
-                                                                            value="{{ $detail->offered_price_per_unit }}"
-                                                                            {{ $quotation->is_selected ? 'readonly' : '' }}>
-                                                                    </div>
-                                                                </td>
-                                                                <td>
-                                                                    <div class="input-group">
-                                                                        <span class="input-group-text">$</span>
-                                                                        <input type="number"
-                                                                            name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][total_price]"
-                                                                            class="form-control total-price" readonly
-                                                                            value="{{ $detail->offered_price_per_unit * $detail->quantity }}">
-                                                                    </div>
-                                                                </td>
-                                                            </tr>
-                                                        @endforeach
-                                                    </tbody>
-                                                    <tfoot>
-                                                        <tr>
-                                                            <td colspan="3"></td>
-                                                            <td class="text-end"><strong>Subtotal:</strong></td>
-                                                            <td>
-                                                                <div class="input-group">
-                                                                    <span class="input-group-text">$</span>
-                                                                    <input type="text"
-                                                                        class="form-control items-subtotal" readonly
-                                                                        value="{{ $quotation->quotationDetails->sum(function ($detail) {return $detail->offered_price_per_unit * $detail->quantity;}) }}">
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td colspan="3"></td>
-                                                            <td class="text-end"><strong>Shipping Cost:</strong></td>
-                                                            <td>
-                                                                <div class="input-group">
-                                                                    <span class="input-group-text">$</span>
-                                                                    <input type="number"
-                                                                        name="quotations[{{ $quotationIndex }}][shipping_cost]"
-                                                                        class="form-control shipping-cost" step="0.01"
-                                                                        min="0"
-                                                                        value="{{ $quotation->shipping_cost }}"
-                                                                        {{ $quotation->is_selected ? 'readonly' : '' }}>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td colspan="3"></td>
-                                                            <td class="text-end"><strong>Other Cost:</strong></td>
-                                                            <td>
-                                                                <div class="input-group">
-                                                                    <span class="input-group-text">$</span>
-                                                                    <input type="number"
-                                                                        name="quotations[{{ $quotationIndex }}][other_cost]"
-                                                                        class="form-control other-cost" step="0.01"
-                                                                        min="0"
-                                                                        value="{{ $quotation->other_cost }}"
-                                                                        {{ $quotation->is_selected ? 'readonly' : '' }}>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    </tfoot>
-                                                </table>
-                                            </div>
-
-                                            <div class="row mt-3">
-                                                <div class="col-md-12">
-                                                    <label class="form-label">Remarks / 备注</label>
-                                                    <input type="text"
-                                                        name="quotations[{{ $quotationIndex }}][remarks]"
-                                                        class="form-control" value="{{ $quotation->remarks }}"
-                                                        {{ $quotation->is_selected ? 'readonly' : '' }}>
-                                                </div>
-                                            </div>
-
-                                            @if (!$quotation->is_selected && $data->process_status == 'under_review')
-                                                <div class="mt-3 text-end">
-                                                    <button type="button" class="btn btn-success select-supplier"
-                                                        data-index="{{ $quotationIndex }}">
-                                                        Select This Supplier / 选择该供应商
-                                                    </button>
-                                                </div>
-                                            @endif
                                         </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @else
-                            <!-- Display Quotation Comparisons in read-only mode -->
-                            <h6 class="text-primary mt-4 mb-3">Quotation Comparisons / 报价比较</h6>
-                            <div class="row">
-                                @foreach ($data->quotations as $quotation)
-                                    <div class="col-md-6 mb-4">
-                                        <div class="card h-100 {{ $quotation->is_selected ? 'border-success' : '' }}">
-                                            <div
-                                                class="card-header {{ $quotation->is_selected ? 'bg-success text-white' : 'bg-light' }}">
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <h6 class="mb-0">{{ $quotation->supplier->name }}</h6>
-                                                    @if ($quotation->is_selected)
-                                                        <span class="badge bg-white text-success">Selected / 已选择</span>
-                                                    @endif
-                                                </div>
+
+                                        @if (!$quotation->is_selected && $data->process_status == 'under_review')
+                                            <div class="mt-3 text-end">
+                                                <button type="button" class="btn btn-success select-supplier"
+                                                    data-index="{{ $quotationIndex }}">
+                                                    Select This Supplier / 选择该供应商
+                                                </button>
                                             </div>
-                                            <div class="card-body">
-                                                <div class="table-responsive">
-                                                    <table class="table table-sm">
-                                                        <thead>
-                                                            <tr>
-                                                                <th>Item / 物品</th>
-                                                                <th>Qty / 数量</th>
-                                                                <th>Price / 单价</th>
-                                                                <th>Total / 总价</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            @foreach ($quotation->quotationDetails as $detail)
-                                                                <tr>
-                                                                    <td>{{ $detail->prePurchaseOrderDetail->itemRequestDetail->itemPriceHistory->itemUom->item->name }}
-                                                                    </td>
-                                                                    <td>{{ $detail->quantity }}</td>
-                                                                    <td>${{ number_format($detail->offered_price_per_unit, 2) }}
-                                                                    </td>
-                                                                    <td>${{ number_format($detail->total_price, 2) }}</td>
-                                                                </tr>
-                                                            @endforeach
-                                                        </tbody>
-                                                        <tfoot>
-                                                            <tr>
-                                                                <td colspan="3" class="text-end">
-                                                                    <strong>Subtotal:</strong></td>
-                                                                <td>${{ number_format($quotation->quotationDetails->sum('total_price'), 2) }}
-                                                                </td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td colspan="3" class="text-end">
-                                                                    <strong>Shipping:</strong></td>
-                                                                <td>${{ number_format($quotation->shipping_cost, 2) }}</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td colspan="3" class="text-end">
-                                                                    <strong>Other:</strong></td>
-                                                                <td>${{ number_format($quotation->other_cost, 2) }}</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td colspan="3" class="text-end">
-                                                                    <strong>Total:</strong></td>
-                                                                <td><strong>${{ number_format($quotation->grand_total, 2) }}</strong>
-                                                                </td>
-                                                            </tr>
-                                                        </tfoot>
-                                                    </table>
-                                                </div>
-                                                @if ($quotation->remarks)
-                                                    <div class="mt-2">
-                                                        <strong>Remarks / 备注:</strong> {{ $quotation->remarks }}
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        </div>
+                                        @endif
                                     </div>
-                                @endforeach
-                            </div>
-                        @endif
+                                </div>
+                            @endforeach
+
+                        </div>
 
                         <div class="my-4 d-flex justify-content-between">
                             <div>
@@ -394,76 +532,6 @@
         </div>
     </div>
 
-    <!-- Add Item Modal -->
-    <div class="modal fade" id="addItemModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add Item / 添加物品</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <input type="text" id="searchItem" class="form-control"
-                            placeholder="Search items... / 搜索物品...">
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-bordered" id="itemsTable">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 5%">#</th>
-                                    <th style="width: 30%">Item / 物品</th>
-                                    <th style="width: 15%">Available Quantity / 可用数量</th>
-                                    <th style="width: 15%">UOM / 单位</th>
-                                    <th style="width: 15%">Request Number / 请求编号</th>
-                                    <th style="width: 20%">Actions / 操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Items will be loaded here dynamically -->
-                                <tr>
-                                    <td colspan="6" class="text-center">Searching for items... / 正在搜索物品...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close / 关闭</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add Quotation Modal -->
-    <div class="modal fade" id="addQuotationModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add Quotation / 添加报价</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row mb-3">
-                        <div class="col-md-12">
-                            <label class="form-label">Supplier / 供应商</label>
-                            <select id="newQuotationSupplier" class="form-select">
-                                <option value="" disabled selected>Please choose supplier / 请选择供应商</option>
-                                @foreach ($suppliers as $supplier)
-                                    <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel / 取消</button>
-                    <button type="button" id="confirmAddQuotation" class="btn btn-primary">Add / 添加</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Select Supplier Confirmation Modal -->
     <div class="modal fade" id="selectSupplierModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
@@ -491,10 +559,9 @@
     <script>
         $(document).ready(function() {
             let detailIndex = {{ count($data->details) }};
-            let quotationIndex = {{ count($data->quotations) }};
-            let selectedSuppliers = [];
+            let supplierIndex = {{ count($data->quotations) }};
+            let selectedSuppliers = []; // Store selected suppliers
             let orderItems = []; // Store items with quantity > 0
-            let deletedDetails = [];
             let deletedQuotations = [];
 
             // Initialize selectedSuppliers array with existing quotations
@@ -505,315 +572,641 @@
                 });
             @endforeach
 
-            // Function to collect all items with quantity > 0
+            // Function to collect all items from the pre-purchase order
             function updateOrderItems() {
-                orderItems = [];
-                let itemMap = new Map(); // Use Map to group by item_id and uom_id
+                let tempItems = [];
+
+                console.log("Starting updateOrderItems. Found " + $('#detailsTable tbody tr').length +
+                    " rows");
 
                 $('#detailsTable tbody tr').each(function() {
                     const row = $(this);
-                    if (row.is(':visible')) { // Only count visible rows
-                        const detailId = row.find('input[name^="details"][name$="[id]"]').val() || '';
-                        const itemRequestDetailId = row.find(
-                            'input[name^="details"][name$="[item_request_detail_id]"]').val();
-                        const itemId = row.find('.item-id').val();
-                        const uomId = row.find('.uom-id').val();
-                        const quantity = parseFloat(row.find('.order-quantity').val()) || 0;
+                    const detailId = row.find('input[name^="details"][name$="[id]"]').val();
 
-                        if (quantity > 0 && itemId && uomId) {
-                            orderItems.push({
-                                detailId: detailId,
-                                itemRequestDetailId: itemRequestDetailId,
-                                itemId: itemId,
-                                itemName: row.find('.item-name').text().trim(),
-                                uomId: uomId,
-                                uomName: row.find('.uom-name').text().trim(),
-                                quantity: quantity,
-                                prePurchaseOrderDetailId: detailId
-                            });
-                        }
+                    // More direct selectors to ensure we get the values
+                    const itemId = row.find('input[name^="details"][name$="[item_id]"]').val();
+                    const uomId = row.find('input[name^="details"][name$="[uom_id]"]').val();
+                    const quantity = parseFloat(row.find(
+                        'input[name^="details"][name$="[quantity]"]').val()) || 0;
+                    const remarks = row.find('input[name^="details"][name$="[remarks]"]')
+                        .val() || '';
+
+                    // Get item name and UOM name
+                    const itemName = row.find('.item-name').text().trim() || 'Item';
+                    const uomName = row.find('.uom-name').text().trim() || 'Unit';
+
+                    console.log("Processing row: detailId=" + detailId + ", itemId=" + itemId +
+                        ", uomId=" + uomId);
+
+                    // We only need a valid detail ID to include the item
+                    if (detailId) {
+                        tempItems.push({
+                            prePurchaseOrderDetailId: detailId,
+                            itemId: itemId || row.data(
+                                'item-id'), // Fallback to data attribute
+                            itemName: itemName,
+                            uomId: uomId,
+                            uomName: uomName,
+                            quantity: quantity,
+                            remarks: remarks
+                        });
+                        console.log("Added item: " + itemName + " with detailId: " + detailId);
                     }
                 });
+
+                // Group items by itemName and uomName
+                const groupedItems = {};
+
+                tempItems.forEach(item => {
+                    const key = `${item.itemName}_${item.uomName}`;
+
+                    if (!groupedItems[key]) {
+                        groupedItems[key] = {
+                            itemName: item.itemName,
+                            itemId: item.itemId,
+                            uomName: item.uomName,
+                            uomId: item.uomId,
+                            quantity: 0,
+                            detailIds: []
+                        };
+                    }
+
+                    groupedItems[key].quantity += item.quantity;
+                    groupedItems[key].detailIds.push(item.prePurchaseOrderDetailId);
+                });
+
+                // Convert grouped items back to array
+                orderItems = Object.values(groupedItems);
+
+                console.log("Finished updateOrderItems. Found " + orderItems.length + " grouped items");
             }
 
-            // Update quotation tables when quantity changes
-            $(document).on('input', '.order-quantity', function() {
-                updateOrderItems();
-                updateAllQuotationTables();
-            });
-
-            // Remove detail row
-            $(document).on('click', '.remove-detail', function() {
-                const index = $(this).data('index');
-                const row = $(`#detail-row-${index}`);
-                const detailId = row.find('input[name^="details"][name$="[id]"]').val();
-
-                if (detailId) {
-                    deletedDetails.push(detailId);
-                    // Add a hidden input to track deleted details
-                    $('form').append(`<input type="hidden" name="deleted_details[]" value="${detailId}">`);
-                }
-
-                row.hide();
-                updateOrderItems();
-                updateAllQuotationTables();
-            });
-
-            // Add quotation button click
-            $('#addQuotation').click(function() {
-                // Check if there are items with quantity > 0
+            // Function to add supplier offer
+            $('#addSupplierOffer').click(function() {
+                // Force update of order items
                 updateOrderItems();
 
+                console.log("Add supplier button clicked. Items count: " + orderItems.length);
+
+                // Check if there are items and alert only if truly empty
                 if (orderItems.length === 0) {
-                    alert('Please add order quantities before adding quotations / 请在添加报价前添加订购数量');
+                    alert('There are no items in this pre-purchase order / 预采购单中没有物品');
                     return;
                 }
 
-                // Open the add quotation modal
-                $('#addQuotationModal').modal('show');
+                $.ajax({
+                    url: '{{ route('get-suppliers') }}',
+                    type: 'GET',
+                    success: function(response) {
+                        addSupplierOfferRow(response.data);
+                    },
+                    error: function() {
+                        alert('Failed to fetch supplier data / 获取供应商数据失败');
+                    }
+                });
             });
 
-            // Confirm add quotation
-            $('#confirmAddQuotation').click(function() {
-                const supplierId = $('#newQuotationSupplier').val();
-                const supplierName = $('#newQuotationSupplier option:selected').text();
+            function addSupplierOfferRow(suppliers) {
+                let supplierOptions = suppliers.map(supplier =>
+                    `<option value="${supplier.id}">${supplier.name}</option>`
+                ).join('');
 
-                if (!supplierId) {
-                    alert('Please select a supplier / 请选择供应商');
-                    return;
-                }
+                // Get currencies for dropdown
+                let currencyOptions = '';
+                @php
+                    $currencies = getCurrency();
+                @endphp
+                @foreach ($currencies as $code => $name)
+                    currencyOptions +=
+                        `<option value="{{ $code }}" {{ $code == 'idr' ? 'selected' : '' }}>{{ strtoupper($code) }}</option>`;
+                @endforeach
 
-                // Check if supplier already has a quotation
-                const supplierExists = selectedSuppliers.some(s => s.supplierId == supplierId);
-                if (supplierExists) {
-                    alert('This supplier already has a quotation / 该供应商已有报价');
-                    return;
-                }
+                // Create card for each supplier offer
+                let supplierCard = `
+    <div id="supplier-card-${supplierIndex}" class="card mb-4 border-1">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">Supplier Offer #${supplierIndex + 1}</h6>
+            <button type="button" class="btn btn-danger btn-sm remove-supplier" data-id="${supplierIndex}">
+                <i class="fa fa-trash"></i> Remove / 删除
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3 mt-2">
+                <div class="col-md-6">
+                    <label class="form-label">Supplier / 供应商</label>
+                    <select name="quotations[${supplierIndex}][supplier_id]" class="form-select supplier-select" required>
+                        <option value="" disabled selected>Please choose supplier / 请选择供应商</option>
+                        ${supplierOptions}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Currency / 货币</label>
+                    <select name="quotations[${supplierIndex}][currency]" class="form-select currency-select" required>
+                        ${currencyOptions}
+                    </select>
+                </div>
+            </div>
 
-                // Add the quotation card
-                addQuotationCard(supplierId, supplierName);
+            <div class="table-responsive">
+                <table class="table table-bordered" id="offer-items-table-${supplierIndex}">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Item / 物品</th>
+                            <th>Quantity / 数量</th>
+                            <th>UOM / 单位</th>
+                            <th>Unit Price / 单价 </th>
+                            <th>Subtotal Price / 小计</th>
+                            <th>Shipping Cost / 运输费</th>
+                            <th>Grand Total / 总计</th>
+                            <th>Remarks / 备注</th>
+                            <th>New Unit Price / 新单价</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Offer items will be added here -->
+                    </tbody>
+                </table>
+            </div>
 
-                // Close the modal and reset selection
-                $('#addQuotationModal').modal('hide');
-                $('#newQuotationSupplier').val('');
-            });
-
-            function addQuotationCard(supplierId, supplierName) {
-                // Create card for quotation
-                let quotationCard = `
-                <div id="quotation-card-${quotationIndex}" class="card mb-4 border-1">
-                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0">Quotation #${quotationIndex + 1}</h6>
-                        <button type="button" class="btn btn-danger btn-sm remove-quotation" data-index="${quotationIndex}">
-                            <i class="fa fa-trash"></i> Remove / 删除
-                        </button>
+            <!-- Additional Costs Before Tax Section -->
+            <div class="card mt-3">
+                <div class="card-header bg-light mb-2">
+                    <h6 class="mb-0">Additional Costs Before Tax / 税前附加费用</h6>
+                </div>
+                <div class="card-body">
+                    <div id="before-tax-costs-${supplierIndex}">
+                        <!-- Additional costs before tax will be added here -->
                     </div>
-                    <div class="card-body">
-                        <div class="row mb-3 mt-2">
-                            <div class="col-md-6">
-                                <label class="form-label">Supplier / 供应商</label>
-                                <select name="quotations[${quotationIndex}][supplier_id]" class="form-select supplier-select" required>
-                                    <option value="${supplierId}" selected>${supplierName}</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Grand Total / 总计</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    <input type="number" name="quotations[${quotationIndex}][grand_total]" class="form-control grand-total" step="0.01" min="0" value="0" readonly>
-                                </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary mt-2 add-before-tax-cost" data-supplier="${supplierIndex}">
+                        <i class="fa fa-plus"></i> Add Additional Cost / 添加附加费用
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tax Section -->
+            <div class="card mt-3">
+                <div class="card-header bg-light mb-2">
+                    <h6 class="mb-0">Tax / 税</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <label class="form-label">Subtotal Before Tax / 税前小计</label>
+                            <input type="number" name="quotations[${supplierIndex}][subtotal_before_tax]" class="form-control subtotal-before-tax" readonly>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Tax Type / 税务类型</label>
+                            <select name="quotations[${supplierIndex}][tax_type]" class="form-select tax-type">
+                                <option value="percentage">Percentage / 百分比</option>
+                                <option value="fixed">Fixed Amount / 固定金额</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Tax Value / 税值</label>
+                            <div class="input-group">
+                                <input type="number" name="quotations[${supplierIndex}][tax_value]" class="form-control tax-value" step="0.01" min="0" value="0">
+                                <span class="input-group-text tax-symbol">%</span>
                             </div>
                         </div>
-
-                        <div class="table-responsive">
-                            <table class="table table-bordered" id="quotation-items-table-${quotationIndex}">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Item / 物品</th>
-                                        <th>Quantity / 数量</th>
-                                        <th>UOM / 单位</th>
-                                        <th>Offered Price / 报价</th>
-                                        <th>Total Price / 总价</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Quotation items will be added here -->
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td colspan="3"></td>
-                                        <td class="text-end"><strong>Subtotal:</strong></td>
-                                        <td>
-                                            <div class="input-group">
-                                                <span class="input-group-text">$</span>
-                                                <input type="text" class="form-control items-subtotal" readonly value="0">
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td colspan="3"></td>
-                                        <td class="text-end"><strong>Shipping Cost:</strong></td>
-                                        <td>
-                                            <div class="input-group">
-                                                <span class="input-group-text">$</span>
-                                                <input type="number" name="quotations[${quotationIndex}][shipping_cost]"
-                                                    class="form-control shipping-cost" step="0.01" min="0" value="0">
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td colspan="3"></td>
-                                        <td class="text-end"><strong>Other Cost:</strong></td>
-                                        <td>
-                                            <div class="input-group">
-                                                <span class="input-group-text">$</span>
-                                                <input type="number" name="quotations[${quotationIndex}][other_cost]"
-                                                    class="form-control other-cost" step="0.01" min="0" value="0">
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-
-                        <div class="row mt-3">
-                            <div class="col-md-12">
-                                <label class="form-label">Remarks / 备注</label>
-                                <input type="text" name="quotations[${quotationIndex}][remarks]" class="form-control">
-                            </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Tax Amount / 税额</label>
+                            <input type="number" name="quotations[${supplierIndex}][tax_amount]" class="form-control tax-amount" readonly>
                         </div>
                     </div>
                 </div>
-                `;
+            </div>
+
+            <!-- Additional Costs After Tax Section -->
+            <div class="card mt-3">
+                <div class="card-header bg-light mb-2">
+                    <h6 class="mb-0">Additional Costs After Tax / 税后附加费用</h6>
+                </div>
+                <div class="card-body">
+                    <div id="after-tax-costs-${supplierIndex}">
+                        <!-- Additional costs after tax will be added here -->
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary mt-2 add-after-tax-cost" data-supplier="${supplierIndex}">
+                        <i class="fa fa-plus"></i> Add Additional Cost / 添加附加费用
+                    </button>
+                </div>
+            </div>
+
+            <!-- Grand Total Section -->
+            <div class="card mt-3">
+                <div class="card-header bg-light mb-2">
+                    <h6 class="mb-0">Grand Total / 总计</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label">Total Amount / 总金额</label>
+                            <input type="number" name="quotations[${supplierIndex}][total_amount]" class="form-control total-amount" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Remarks / 备注</label>
+                            <input type="text" name="quotations[${supplierIndex}][remarks]" class="form-control">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    `;
 
                 // Append the card to the container
-                $('#quotationsContainer').append(quotationCard);
+                $('#supplierOffersContainer').append(supplierCard);
 
                 // Update selected suppliers array
                 selectedSuppliers.push({
-                    index: quotationIndex,
-                    supplierId: supplierId
+                    index: supplierIndex,
+                    supplierId: null
                 });
 
                 // Fill the items table
-                updateQuotationItemsTable(quotationIndex);
+                updateOfferItemsTable(supplierIndex);
 
-                // Setup event handlers for this quotation
-                setupQuotationEvents(quotationIndex);
+                // Setup supplier select change event
+                $(`#supplier-card-${supplierIndex} .supplier-select`).change(function() {
+                    const supplierId = $(this).val();
+                    // Update the selectedSuppliers array
+                    for (let i = 0; i < selectedSuppliers.length; i++) {
+                        if (selectedSuppliers[i].index === supplierIndex) {
+                            selectedSuppliers[i].supplierId = supplierId;
+                            break;
+                        }
+                    }
+                });
 
-                // Increment quotation index for next offer
-                quotationIndex++;
+                // Setup tax type change event
+                $(document).on('change', '.tax-type', function() {
+                    // Find the parent supplier card
+                    const supplierCard = $(this).closest('[id^="supplier-card-"]');
+                    const taxType = $(this).val();
+
+                    // Only proceed if we found a valid supplier card
+                    if (supplierCard.length) {
+                        const taxSymbol = supplierCard.find('.tax-symbol');
+
+                        if (taxType === 'percentage') {
+                            taxSymbol.text('%');
+                        } else {
+                            // Get currency from the same card
+                            const currencyVal = supplierCard.find('.currency-select').val() || 'idr';
+                            taxSymbol.text(getCurrencySymbol(currencyVal));
+                        }
+
+                        // Safely extract the supplier index from the ID
+                        const cardId = supplierCard.attr('id') || '';
+                        const match = cardId.match(/supplier-card-(\d+)/);
+
+                        if (match && match[1]) {
+                            const supplierIdx = match[1];
+                            calculateTotalAmount(supplierIdx);
+                        }
+                    }
+                });
+
+
+
+                // Setup tax value change event
+                $(document).on('input', '.tax-value', function() {
+                    // Find the parent supplier card
+                    const supplierCard = $(this).closest('[id^="supplier-card-"]');
+
+                    // Only proceed if we found a valid supplier card
+                    if (supplierCard.length) {
+                        // Safely extract the supplier index from the ID
+                        const cardId = supplierCard.attr('id') || '';
+                        const match = cardId.match(/supplier-card-(\d+)/);
+
+                        if (match && match[1]) {
+                            const supplierIdx = match[1];
+                            calculateTotalAmount(supplierIdx);
+                        }
+                    }
+                });
+
+                // Setup currency change event
+                $(document).on('change', '.currency-select', function() {
+                    // Find the parent supplier card
+                    const supplierCard = $(this).closest('[id^="supplier-card-"]');
+
+                    // Only proceed if we found a valid supplier card
+                    if (supplierCard.length) {
+                        const taxType = supplierCard.find('.tax-type').val();
+
+                        if (taxType === 'fixed') {
+                            const currencyVal = $(this).val() || 'idr';
+                            supplierCard.find('.tax-symbol').text(getCurrencySymbol(currencyVal));
+                        }
+
+                        // Safely extract the supplier index from the ID
+                        const cardId = supplierCard.attr('id') || '';
+                        const match = cardId.match(/supplier-card-(\d+)/);
+
+                        if (match && match[1]) {
+                            const supplierIdx = match[1];
+                            calculateTotalAmount(supplierIdx);
+                        }
+                    }
+                });
+
+                // Increment supplier index for next offer
+                supplierIndex++;
             }
 
-            function updateQuotationItemsTable(quotationIdx) {
-                let quotationItemsTable = $(`#quotation-items-table-${quotationIdx} tbody`);
-                quotationItemsTable.empty();
+            // Add additional cost before tax
+            $(document).on('click', '.add-before-tax-cost', function() {
+                const supplierIdx = $(this).data('supplier');
+                const container = $(`#before-tax-costs-${supplierIdx}`);
+                const costIndex = container.children().length;
+
+                const costRow = `
+    <div class="row mb-2 before-tax-cost-row">
+        <div class="col-md-5">
+            <input type="text" name="quotations[${supplierIdx}][before_tax_costs][${costIndex}][description]"
+                   class="form-control" placeholder="Description / 描述" required>
+        </div>
+        <div class="col-md-3">
+            <input type="number" name="quotations[${supplierIdx}][before_tax_costs][${costIndex}][amount]"
+                   class="form-control before-tax-cost-amount" step="0.01" min="0" value="0" required>
+        </div>
+        <div class="col-md-3">
+            <select name="quotations[${supplierIdx}][before_tax_costs][${costIndex}][type]" class="form-select">
+                <option value="shipping">Shipping / 运费</option>
+                <option value="handling">Handling / 装卸费</option>
+                <option value="insurance">Insurance / 保险</option>
+                <option value="other">Other / 其他</option>
+            </select>
+        </div>
+        <div class="col-md-1">
+            <button type="button" class="btn btn-danger btn-sm remove-cost">
+                <i class="fa fa-trash"></i>
+            </button>
+        </div>
+    </div>
+    `;
+
+                container.append(costRow);
+
+                // Trigger calculation when a new cost is added
+                container.find('.before-tax-cost-amount').last().on('input', function() {
+                    calculateTotalAmount(supplierIdx);
+                });
+
+                calculateTotalAmount(supplierIdx);
+            });
+
+            // Add additional cost after tax
+            $(document).on('click', '.add-after-tax-cost', function() {
+                const supplierIdx = $(this).data('supplier');
+                const container = $(`#after-tax-costs-${supplierIdx}`);
+                const costIndex = container.children().length;
+
+                const costRow = `
+    <div class="row mb-2 after-tax-cost-row">
+        <div class="col-md-5">
+            <input type="text" name="quotations[${supplierIdx}][after_tax_costs][${costIndex}][description]"
+                   class="form-control" placeholder="Description / 描述" required>
+        </div>
+        <div class="col-md-3">
+            <input type="number" name="quotations[${supplierIdx}][after_tax_costs][${costIndex}][amount]"
+                   class="form-control after-tax-cost-amount" step="0.01" min="0" value="0" required>
+        </div>
+        <div class="col-md-3">
+            <select name="quotations[${supplierIdx}][after_tax_costs][${costIndex}][type]" class="form-select">
+                <option value="fee">Fee / 费用</option>
+                <option value="discount">Discount / 折扣</option>
+                <option value="other">Other / 其他</option>
+            </select>
+        </div>
+        <div class="col-md-1">
+            <button type="button" class="btn btn-danger btn-sm remove-cost">
+                <i class="fa fa-trash"></i>
+            </button>
+        </div>
+    </div>
+    `;
+
+                container.append(costRow);
+
+                // Trigger calculation when a new cost is added
+                container.find('.after-tax-cost-amount').last().on('input', function() {
+                    calculateTotalAmount(supplierIdx);
+                });
+
+                calculateTotalAmount(supplierIdx);
+            });
+
+            // Remove additional cost
+            $(document).on('click', '.remove-cost', function() {
+                const row = $(this).closest('.row');
+                const supplierCard = $(this).closest('.card');
+                const supplierIdx = supplierCard.find(
+                    '.add-before-tax-cost, .add-after-tax-cost').data('supplier');
+
+                row.remove();
+                calculateTotalAmount(supplierIdx);
+            });
+
+            // Helper function to get currency symbol
+            function getCurrencySymbol(currencyCode) {
+                // Check if currencyCode is undefined or null
+                if (!currencyCode) return '';
+
+                switch (currencyCode.toLowerCase()) {
+                    case 'idr':
+                        return 'Rp';
+                    case 'usd':
+                        return '$';
+                    case 'eur':
+                        return '€';
+                    case 'gbp':
+                        return '£';
+                    case 'jpy':
+                        return '¥';
+                    case 'cny':
+                        return '¥';
+                    default:
+                        return currencyCode.toUpperCase();
+                }
+            }
+
+
+
+            // Calculate total amount for a supplier offer
+            function calculateTotalAmount(supplierIdx) {
+                // Get items subtotal
+                let itemsSubtotal = 0;
+                $(`#offer-items-table-${supplierIdx} tbody tr`).each(function() {
+                    const grandTotal = parseFloat($(this).find('.item-grand-total').val()) || 0;
+                    itemsSubtotal += grandTotal;
+                });
+
+                // Get additional costs before tax
+                let beforeTaxCosts = 0;
+                $(`#before-tax-costs-${supplierIdx} .before-tax-cost-amount`).each(function() {
+                    const amount = parseFloat($(this).val()) || 0;
+                    beforeTaxCosts += amount;
+                });
+
+                // Calculate subtotal before tax
+                const subtotalBeforeTax = itemsSubtotal + beforeTaxCosts;
+                $(`#supplier-card-${supplierIdx} .subtotal-before-tax`).val(subtotalBeforeTax.toFixed(
+                    2));
+
+                // Calculate tax amount
+                const taxType = $(`#supplier-card-${supplierIdx} .tax-type`).val();
+                const taxValue = parseFloat($(`#supplier-card-${supplierIdx} .tax-value`).val()) || 0;
+                let taxAmount = 0;
+
+                if (taxType === 'percentage') {
+                    taxAmount = subtotalBeforeTax * (taxValue / 100);
+                } else {
+                    taxAmount = taxValue;
+                }
+
+                $(`#supplier-card-${supplierIdx} .tax-amount`).val(taxAmount.toFixed(2));
+
+                // Get additional costs after tax
+                let afterTaxCosts = 0;
+                $(`#after-tax-costs-${supplierIdx} .after-tax-cost-amount`).each(function() {
+                    const amount = parseFloat($(this).val()) || 0;
+                    afterTaxCosts += amount;
+                });
+
+                // Calculate total amount
+                const totalAmount = subtotalBeforeTax + taxAmount + afterTaxCosts;
+                $(`#supplier-card-${supplierIdx} .total-amount`).val(totalAmount.toFixed(2));
+            }
+
+            function updateOfferItemsTable(supplierIdx) {
+                let offerItemsTable = $(`#offer-items-table-${supplierIdx} tbody`);
+                offerItemsTable.empty();
+
+                console.log(
+                    `Updating offer items table #${supplierIdx} with ${orderItems.length} items`);
 
                 // Add rows for each order item
                 orderItems.forEach((item, idx) => {
-                    let quotationRow = `
-                    <tr>
-                        <td>
-                            <input type="hidden" name="quotations[${quotationIdx}][details][${idx}][pre_purchase_order_detail_id]" value="${item.prePurchaseOrderDetailId}">
-                            ${item.itemName}
-                        </td>
-                        <td>
-                            <input type="hidden" name="quotations[${quotationIdx}][details][${idx}][quantity]" value="${item.quantity}">
-                            ${item.quantity}
-                        </td>
-                        <td>
-                            ${item.uomName}
-                        </td>
-                        <td>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input type="number" name="quotations[${quotationIdx}][details][${idx}][offered_price_per_unit]"
-                                    class="form-control price-per-unit" data-index="${idx}"
-                                    step="0.01" min="0" value="0" required>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input type="number" name="quotations[${quotationIdx}][details][${idx}][total_price]"
-                                    class="form-control total-price" readonly value="0">
-                            </div>
-                        </td>
-                    </tr>
-                    `;
-                    quotationItemsTable.append(quotationRow);
+                    // For grouped items, we need to join all detailIds
+                    const detailIdsInput = item.detailIds ?
+                        item.detailIds.map(id =>
+                            `<input type="hidden" name="quotations[${supplierIdx}][details][${idx}][detail_ids][]" value="${id}">`
+                        ).join('') :
+                        `<input type="hidden" name="quotations[${supplierIdx}][details][${idx}][pre_purchase_order_detail_id]" value="${item.prePurchaseOrderDetailId || item.detailIds[0]}">`;
+
+                    let offerRow = `
+        <tr>
+            <td>
+                ${detailIdsInput}
+                <input type="hidden" name="quotations[${supplierIdx}][details][${idx}][item_id]" value="${item.itemId}">
+                ${item.itemName}
+            </td>
+            <td>
+                <input type="hidden" name="quotations[${supplierIdx}][details][${idx}][quantity]" value="${item.quantity}" class="item-quantity">
+                ${item.quantity}
+            </td>
+            <td>
+                <input type="hidden" name="quotations[${supplierIdx}][details][${idx}][uom_id]" value="${item.uomId}">
+                ${item.uomName}
+            </td>
+            <td>
+                <input type="number" name="quotations[${supplierIdx}][details][${idx}][price]" class="form-control item-price" step="0.01" min="0" required>
+            </td>
+            <td>
+                <input type="number" name="quotations[${supplierIdx}][details][${idx}][subtotal_price]" class="form-control item-subtotal" step="0.01" min="0" readonly required>
+            </td>
+            <td>
+                <input type="number" name="quotations[${supplierIdx}][details][${idx}][shipping_cost]" class="form-control item-shipping" step="0.01" min="0" value="0" required>
+            </td>
+            <td>
+                <input type="number" name="quotations[${supplierIdx}][details][${idx}][grand_total]" class="form-control item-grand-total" step="0.01" min="0" readonly required>
+            </td>
+            <td>
+                <textarea name="quotations[${supplierIdx}][details][${idx}][remarks]" class="form-control" rows="2" placeholder="Remarks (optional) / 备注 (可选) "></textarea>
+            </td>
+            <td>
+                <input type="number" name="quotations[${supplierIdx}][details][${idx}][new_unit_price]" class="form-control item-new-price" step="0.01" min="0" readonly required>
+            </td>
+        </tr>
+        `;
+                    offerItemsTable.append(offerRow);
+                });
+
+                // Add event listeners to calculate values automatically
+                setupCalculationEvents(supplierIdx);
+            }
+
+            // Set up event listeners for automatic calculations
+            function setupCalculationEvents(supplierIdx) {
+                // Get the current table
+                const table = $(`#offer-items-table-${supplierIdx}`);
+
+                // When unit price changes, update subtotal, grand total, and new unit price
+                table.find('.item-price').on('input', function() {
+                    const row = $(this).closest('tr');
+                    calculateRowValues(row);
+                    calculateTotalAmount(supplierIdx);
+                });
+
+                // When shipping cost changes, update grand total and new unit price
+                table.find('.item-shipping').on('input', function() {
+                    const row = $(this).closest('tr');
+                    calculateRowValues(row);
+                    calculateTotalAmount(supplierIdx);
                 });
             }
 
+            // Calculate values for a specific row
+            function calculateRowValues(row) {
+                // Get input values
+                const quantity = parseFloat(row.find('.item-quantity').val()) || 0;
+                const unitPrice = parseFloat(row.find('.item-price').val()) || 0;
+                const shippingCost = parseFloat(row.find('.item-shipping').val()) || 0;
+
+                // Calculate subtotal (Quantity * Unit Price)
+                const subtotal = quantity * unitPrice;
+                row.find('.item-subtotal').val(subtotal.toFixed(2));
+
+                // Calculate grand total (Subtotal + Shipping Cost)
+                const grandTotal = subtotal + shippingCost;
+                row.find('.item-grand-total').val(grandTotal.toFixed(2));
+
+                // Calculate new unit price (Grand Total / Quantity)
+                const newUnitPrice = quantity > 0 ? grandTotal / quantity : 0;
+                row.find('.item-new-price').val(newUnitPrice.toFixed(2));
+            }
+
+            // Function to update all quotation tables
             function updateAllQuotationTables() {
                 selectedSuppliers.forEach(supplier => {
                     // Skip if quotation card doesn't exist (was deleted)
-                    if ($(`#quotation-card-${supplier.index}`).length) {
-                        updateQuotationItemsTable(supplier.index);
+                    if ($(`#supplier-card-${supplier.index}`).length) {
+                        updateOfferItemsTable(supplier.index);
                     }
                 });
             }
 
-            function setupQuotationEvents(quotationIdx) {
-                // Calculate total price when price per unit changes
-                $(`#quotation-card-${quotationIdx}`).on('input', '.price-per-unit', function() {
-                    const row = $(this).closest('tr');
-                    const pricePerUnit = parseFloat($(this).val()) || 0;
-                    const quantity = parseFloat(row.find('input[name$="[quantity]"]').val()) || 0;
-                    const totalPrice = pricePerUnit * quantity;
-
-                    row.find('.total-price').val(totalPrice.toFixed(2));
-
-                    // Update subtotal
-                    updateQuotationTotals(quotationIdx);
-                });
-
-                // Update totals when shipping or other costs change
-                $(`#quotation-card-${quotationIdx}`).on('input', '.shipping-cost, .other-cost', function() {
-                    updateQuotationTotals(quotationIdx);
-                });
-            }
-
-            function updateQuotationTotals(quotationIdx) {
-                const card = $(`#quotation-card-${quotationIdx}`);
-
-                // Calculate items subtotal
-                let subtotal = 0;
-                card.find('.total-price').each(function() {
-                    subtotal += parseFloat($(this).val()) || 0;
-                });
-
-                // Update subtotal field
-                card.find('.items-subtotal').val(subtotal.toFixed(2));
-
-                // Get shipping and other costs
-                const shippingCost = parseFloat(card.find('.shipping-cost').val()) || 0;
-                const otherCost = parseFloat(card.find('.other-cost').val()) || 0;
-
-                // Calculate grand total
-                const grandTotal = subtotal + shippingCost + otherCost;
-
-                // Update grand total field
-                card.find('.grand-total').val(grandTotal.toFixed(2));
-            }
-
-            // Remove quotation
-            $(document).on('click', '.remove-quotation', function() {
-                let quotationIdx = $(this).data('index');
+            // Remove supplier offer
+            $(document).on('click', '.remove-supplier', function() {
+                let supplierIdx = $(this).data('id');
                 let quotationId = $(
-                    `#quotation-card-${quotationIdx} input[name^="quotations"][name$="[id]"]`).val();
+                        `#supplier-card-${supplierIdx} input[name^="quotations"][name$="[id]"]`)
+                    .val();
 
                 if (quotationId) {
                     deletedQuotations.push(quotationId);
                     // Add a hidden input to track deleted quotations
                     $('form').append(
-                        `<input type="hidden" name="deleted_quotations[]" value="${quotationId}">`);
+                        `<input type="hidden" name="deleted_quotations[]" value="${quotationId}">`
+                    );
                 }
 
-                $(`#quotation-card-${quotationIdx}`).remove();
+                $(`#supplier-card-${supplierIdx}`).remove();
 
                 // Remove from selected suppliers array
-                selectedSuppliers = selectedSuppliers.filter(s => s.index != quotationIdx);
+                selectedSuppliers = selectedSuppliers.filter(s => s.index != supplierIdx);
             });
 
             // Select supplier button click
@@ -828,205 +1221,129 @@
                 const quotationIdx = $('#selectedQuotationIndex').val();
 
                 // Add a hidden input to indicate which supplier should be selected
-                $('form').append(`<input type="hidden" name="selected_quotation" value="${quotationIdx}">`);
+                $('form').append(
+                    `<input type="hidden" name="selected_quotation" value="${quotationIdx}">`
+                );
 
                 // Submit the form
                 $('form').submit();
             });
 
-            // Add item button click
-            $('#addItemBtn').click(function() {
-                // Fetch available items from the customer order
-                $.ajax({
-                    url: '{{ route('get-items-by-customer-order') }}',
-                    type: 'GET',
-                    data: {
-                        customer_order_id: $('#customer_order_id').val()
-                    },
-                    success: function(response) {
-                        // Populate items table
-                        let itemsTable = $('#itemsTable tbody');
-                        itemsTable.empty();
+            // Check for duplicate suppliers
+            function isDuplicateSupplier(supplierId) {
+                if (!supplierId) return false;
 
-                        if (response.data.length === 0) {
-                            itemsTable.html(
-                                '<tr><td colspan="6" class="text-center">No items available / 没有可用的物品</td></tr>'
-                            );
-                        } else {
-                            let rowNumber = 1;
-                            response.data.forEach((item) => {
-                                // Skip items that are already in the table
-                                let itemId = item.item_price_history.item_uom.item_id;
-                                let uomId = item.item_price_history.item_uom
-                                    .unit_of_measurement_id;
+                return selectedSuppliers.some(s => {
+                    return s.supplierId == supplierId;
+                });
+            }
 
-                                // Check if this item+UOM is already in the table
-                                let exists = false;
-                                $('#detailsTable tbody tr:visible').each(function() {
-                                    let existingItemId = $(this).find(
-                                        '.item-id').val();
-                                    let existingUomId = $(this).find('.uom-id')
-                                        .val();
+            // Handle supplier selection change
+            $(document).on('change', '.supplier-select', function() {
+                const supplierId = $(this).val();
+                const currentCard = $(this).closest('.card');
+                const currentIndex = currentCard.attr('id').replace('supplier-card-', '');
 
-                                    if (existingItemId == itemId &&
-                                        existingUomId == uomId) {
-                                        exists = true;
-                                        return false; // Break the loop
-                                    }
-                                });
+                // Check if this supplier is already selected in another card
+                let duplicate = false;
 
-                                if (!exists) {
-                                    let requestQuantity = item.quantity;
-                                    let availableQuantity = requestQuantity;
-
-                                    if (availableQuantity > 0) {
-                                        let itemRow = `
-                                        <tr>
-                                            <td>${rowNumber}</td>
-                                            <td>${item.item_price_history.item_uom.item.name}</td>
-                                            <td>${availableQuantity}</td>
-                                            <td>${item.item_price_history.item_uom.unit_of_measurement.name}</td>
-                                            <td>${item.item_request.request_number}</td>
-                                            <td>
-                                                <button type="button" class="btn btn-primary btn-sm add-item-to-po"
-                                                    data-item-id="${itemId}"
-                                                    data-item-name="${item.item_price_history.item_uom.item.name}"
-                                                    data-uom-id="${uomId}"
-                                                    data-uom-name="${item.item_price_history.item_uom.unit_of_measurement.name}"
-                                                    data-available-quantity="${availableQuantity}"
-                                                    data-request-id="${item.id}"
-                                                    data-request-number="${item.item_request.request_number}">
-                                                    <i class="fa fa-plus"></i> Add / 添加
-                                                </button>
-                                            </td>
-                                        </tr>`;
-                                        itemsTable.append(itemRow);
-                                        rowNumber++;
-                                    }
-                                }
-                            });
-
-                            if (rowNumber === 1) {
-                                itemsTable.html(
-                                    '<tr><td colspan="6" class="text-center">No available items found / 没有找到可用物品</td></tr>'
-                                );
-                            }
-                        }
-                    },
-                    error: function() {
-                        $('#itemsTable tbody').html(
-                            '<tr><td colspan="6" class="text-center text-danger">Failed to fetch data / 获取数据失败</td></tr>'
-                        );
+                selectedSuppliers.forEach(s => {
+                    if (s.index != currentIndex && s.supplierId == supplierId) {
+                        duplicate = true;
                     }
                 });
-            });
 
-            // Filter items in the add item modal
-            $('#searchItem').on('keyup', function() {
-                let value = $(this).val().toLowerCase();
-                $('#itemsTable tbody tr').filter(function() {
-                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-                });
-            });
+                if (duplicate) {
+                    alert('This supplier already has an offer / 该供应商已有报价');
+                    $(this).val(''); // Reset selection
 
-            // Add item to pre-purchase order from modal
-            $(document).on('click', '.add-item-to-po', function() {
-                const itemId = $(this).data('item-id');
-                const itemName = $(this).data('item-name');
-                const uomId = $(this).data('uom-id');
-                const uomName = $(this).data('uom-name');
-                const availableQuantity = $(this).data('available-quantity');
-                const requestId = $(this).data('request-id');
-                const requestNumber = $(this).data('request-number');
-
-                // Add a new row to the details table
-                let newRow = `
-                <tr id="detail-row-${detailIndex}">
-                    <td>${$('#detailsTable tbody tr').length + 1}</td>
-                    <td>
-                        <input type="hidden" name="details[${detailIndex}][item_request_detail_id]" value="${requestId}">
-                        ${requestNumber}
-                    </td>
-                    <td>
-                        <input type="hidden" name="details[${detailIndex}][item_id]" value="${itemId}" class="item-id">
-                        <span class="item-name">${itemName}</span>
-                    </td>
-                    <td>${availableQuantity}</td>
-                    <td>
-                        <input type="number" name="details[${detailIndex}][quantity]" class="form-control order-quantity" min="0.001" step="0.001" max="${availableQuantity}" value="${availableQuantity}" required>
-                    </td>
-                    <td>
-                        <input type="hidden" name="details[${detailIndex}][item_uom_id]" value="${uomId}" class="uom-id">
-                        <span class="uom-name">${uomName}</span>
-                    </td>
-                    <td>
-                        <input type="text" name="details[${detailIndex}][remarks]" class="form-control">
-                    </td>
-                    <td>
-                        <button type="button" class="btn btn-danger btn-sm remove-detail" data-index="${detailIndex}">
-                            <i class="fa fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-                `;
-
-                $('#detailsTable tbody').append(newRow);
-                detailIndex++;
-
-                // Close the modal
-                $('#addItemModal').modal('hide');
-
-                // Update order items and quotation tables
-                updateOrderItems();
-                updateAllQuotationTables();
+                    // Update selectedSuppliers array
+                    for (let i = 0; i < selectedSuppliers.length; i++) {
+                        if (selectedSuppliers[i].index == currentIndex) {
+                            selectedSuppliers[i].supplierId = null;
+                            break;
+                        }
+                    }
+                } else {
+                    // Update selectedSuppliers array
+                    for (let i = 0; i < selectedSuppliers.length; i++) {
+                        if (selectedSuppliers[i].index == currentIndex) {
+                            selectedSuppliers[i].supplierId = supplierId;
+                            break;
+                        }
+                    }
+                }
             });
 
             // Setup events for existing quotations
             @foreach ($data->quotations as $quotationIndex => $quotation)
-                setupQuotationEvents({{ $quotationIndex }});
+                setupCalculationEvents({{ $quotationIndex }});
+                calculateTotalAmount({{ $quotationIndex }});
+
+                // Add handlers for existing additional costs
+                $(`#before-tax-costs-{{ $quotationIndex }} .before-tax-cost-amount`).on('input',
+                    function() {
+                        calculateTotalAmount({{ $quotationIndex }});
+                    });
+
+                $(`#after-tax-costs-{{ $quotationIndex }} .after-tax-cost-amount`).on('input',
+                    function() {
+                        calculateTotalAmount({{ $quotationIndex }});
+                    });
             @endforeach
 
             // Update all totals initially
-            $('.price-per-unit').each(function() {
+            $('.item-price').each(function() {
                 $(this).trigger('input');
             });
 
             // Form validation before submit
             $('form').on('submit', function(e) {
                 let hasItems = false;
-                let hasQuotations = false;
+                let hasSuppliers = false;
                 let submitType = $(document.activeElement).attr('name') === 'submit_type' ?
                     $(document.activeElement).val() : '';
 
-                // Only validate for pending status
-                if ('{{ $data->process_status }}' === 'pending') {
-                    // Check if at least one item has quantity > 0
-                    $('.order-quantity').each(function() {
-                        if ($(this).is(':visible') && parseFloat($(this).val()) > 0) {
-                            hasItems = true;
-                            return false; // Break the loop
-                        }
-                    });
+                // Check if at least one item exists
+                updateOrderItems();
+                hasItems = orderItems.length > 0;
 
-                    // Check if at least one quotation exists
-                    hasQuotations = selectedSuppliers.length > 0;
+                // Check if at least one supplier offer exists
+                hasSuppliers = selectedSuppliers.length > 0;
 
-                    if (!hasItems) {
-                        e.preventDefault();
-                        alert('Please add at least one item with order quantity / 请至少添加一个有订购数量的物品');
-                        return false;
+                if (!hasItems) {
+                    e.preventDefault();
+                    alert('There are no items in this pre-purchase order / 预采购单中没有物品');
+                    return false;
+                }
+
+                // For submit (not draft), we need quotations
+                if (submitType === 'submit' && !hasSuppliers) {
+                    e.preventDefault();
+                    alert('Please add at least one supplier offer / 请至少添加一个供应商报价');
+                    return false;
+                }
+
+                // Check if all suppliers are selected
+                let missingSupplier = false;
+                selectedSuppliers.forEach(supplier => {
+                    if (!supplier.supplierId && $(`#supplier-card-${supplier.index}`)
+                        .length) {
+                        missingSupplier = true;
                     }
+                });
 
-                    // For submit (not draft), we need quotations
-                    if (submitType === 'submit' && !hasQuotations) {
-                        e.preventDefault();
-                        alert('Please add at least one quotation / 请至少添加一个报价');
-                        return false;
-                    }
+                if (missingSupplier && submitType === 'submit') {
+                    e.preventDefault();
+                    alert('Please select a supplier for all offers / 请为所有报价选择供应商');
+                    return false;
                 }
 
                 return true;
             });
+
+            // Initialize by loading order items
+            updateOrderItems();
         });
     </script>
 @endpush
