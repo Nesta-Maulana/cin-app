@@ -240,7 +240,7 @@
         <div class="card-body d-md-flex justify-content-md-between align-items-center pt-3 pb-2">
             <div class="align-self-start my-2 d-none d-md-block text-muted">
                 <small>
-                    Showing {{ $table->firstItem() }} to {{ $table->lastItem() }} of {{ $table->total() }} data
+                    Showing {{ $table->firstItem() ?? 0 }} to {{ $table->lastItem() ?? 0 }} of {{ $table->total() ?? 0 }} data
                 </small>
             </div>
             {{ $table->links() }}

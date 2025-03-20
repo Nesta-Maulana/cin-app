@@ -3,12 +3,12 @@
 namespace App\Http\Livewire\Transaction;
 
 use Livewire\Component;
-use App\Models\QuotationComparisonShippingCost as Model;
+use App\Models\QuotationComparisonAdditionalCost as Model;
 use Livewire\WithPagination;
 use Jantinnerezo\LivewireAlert\LivewireAlert;
-use App\Repositories\Transaction\QuotationComparisonShippingCost\QuotationComparisonShippingCostRepositoryInterface;
+use App\Repositories\Transaction\QuotationComparisonAdditionalCost\QuotationComparisonAdditionalCostRepositoryInterface;
 
-class ShowQuotationComparisonShippingCost extends Component
+class ShowQuotationComparisonAdditionalCost extends Component
 {
     use LivewireAlert;
     use WithPagination;
@@ -24,13 +24,13 @@ class ShowQuotationComparisonShippingCost extends Component
 
     protected $repository;
 
-    public function mount(QuotationComparisonShippingCostRepositoryInterface $repository)
+    public function mount(QuotationComparisonAdditionalCostRepositoryInterface $repository)
     {
         $this->repository = $repository;
     }
     public function hydrate()
     {
-        $this->repository = app(QuotationComparisonShippingCostRepositoryInterface::class);
+        $this->repository = app(QuotationComparisonAdditionalCostRepositoryInterface::class);
     }
 
     public function render()
@@ -44,12 +44,12 @@ class ShowQuotationComparisonShippingCost extends Component
                 $scope['filter'] = [$this->search];
             }
             $table = $this->repository->getData($scope, $with, $orderBy, $this->paginate);
-            return view('livewire.transaction.show-quotation-comparison-shipping-cost', [
+            return view('livewire.transaction.show-quotation-comparison-additional-cost', [
                 'table' => $table,
             ]);
         } catch (\Exception $e) {
             $this->alert('error', 'Error fetching permissions: ' . $e->getMessage());
-            return view('livewire.transaction.show-quotation-comparison-shipping-cost', [
+            return view('livewire.transaction.show-quotation-comparison-additional-cost', [
                 'table' => collect([]),
             ]);
         }

@@ -3,20 +3,20 @@
 namespace App\Http\Controllers\Transaction;
 
 use App\Http\Controllers\Controller;
-use App\Repositories\Transaction\QuotationComparisonShippingCost\QuotationComparisonShippingCostRepositoryInterface;
+use App\Repositories\Transaction\QuotationComparisonAdditionalCost\QuotationComparisonAdditionalCostRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
-class QuotationComparisonShippingCostController extends Controller
+class QuotationComparisonAdditionalCostController extends Controller
 {
     public $view, $route;
     protected $repository;
-    public function __construct(QuotationComparisonShippingCostRepositoryInterface $repository)
+    public function __construct(QuotationComparisonAdditionalCostRepositoryInterface $repository)
     {
         $this->repository = $repository;
-        $this->view = 'transaction.quotationcomparisonshippingcost';
+        $this->view = 'transaction.quotationcomparisonadditionalcost';
         $this->route = '';
 
         $this->middleware("can:create-{$this->route}")->only('create','store');

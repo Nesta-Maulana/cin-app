@@ -1,5 +1,5 @@
 @extends('layouts.admin.app')
-@section('title', 'QuotationComparisonShippingCost')
+@section('title', 'QuotationComparisonAdditionalCost')
 
 @push('style')
 <link rel="stylesheet" href="{{ asset('theme/custom.css') }}" />
@@ -11,5 +11,5 @@
 @endpush
 
 @section('content')
-@livewire('transaction.show-quotation-comparison-shipping-cost', ['title' => $__env->yieldContent('title')])
+@livewire('transaction.show-quotation-comparison-additional-cost', ['title' => $__env->yieldContent('title')])
 @endsection

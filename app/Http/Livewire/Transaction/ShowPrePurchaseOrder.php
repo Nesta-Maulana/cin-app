@@ -63,7 +63,6 @@ class ShowPrePurchaseOrder extends Component
 
             // Paginate results
             $table = $query->paginate($this->paginate);
-
             return view('livewire.transaction.show-pre-purchase-order', [
                 'table' => $table,
             ]);

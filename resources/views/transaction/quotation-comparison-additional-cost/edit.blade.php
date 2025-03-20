@@ -1,5 +1,5 @@
 @extends('layouts.admin.app')
-@section('title', 'QuotationComparisonShippingCost')
+@section('title', 'QuotationComparisonAdditionalCost')
 
 @section('content')
 <div class="row">
@@ -10,13 +10,13 @@
                     <h5 class="mb-0">Edit @yield('title')</h5>
                     <small class="text-muted">Perbarui @yield('title')</small>
                 </div>
-                <a href="{{ route('quotation-comparison-shipping-cost.index') }}" class="btn p-0" title="Kembali">
+                <a href="{{ route('quotation-comparison-additional-cost.index') }}" class="btn p-0" title="Kembali">
                     <i class="ti ti-x ti-sm text-muted"></i>
                 </a>
             </div>
 
             <div class="card-body">
-                <form action="{{ route('quotation-comparison-shipping-cost.update', $data->id) }}" method="POST">
+                <form action="{{ route('quotation-comparison-additional-cost.update', $data->id) }}" method="POST">
                     @csrf
                     @method('PUT')
 
@@ -41,7 +41,7 @@
 
                     <div class="my-2">
                         <button type="submit" class="btn btn-primary px-5 me-2">Update</button>
-                        <a href="{{ route('quotation-comparison-shipping-cost.index') }}" class="btn btn-label-secondary">Cancel</a>
+                        <a href="{{ route('quotation-comparison-additional-cost.index') }}" class="btn btn-label-secondary">Cancel</a>
                     </div>
                 </form>
             </div>

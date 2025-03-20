@@ -78,6 +78,8 @@ use App\Repositories\Transaction\PurchaseOrderSupplierOfferDetail\PurchaseOrderS
 use App\Repositories\Transaction\PurchaseOrderSupplierOfferDetail\PurchaseOrderSupplierOfferDetailRepositoryInterface;
 use App\Repositories\Transaction\QuotationComparison\QuotationComparisonRepository;
 use App\Repositories\Transaction\QuotationComparison\QuotationComparisonRepositoryInterface;
+use App\Repositories\Transaction\QuotationComparisonAdditionalCost\QuotationComparisonAdditionalCostRepository;
+use App\Repositories\Transaction\QuotationComparisonAdditionalCost\QuotationComparisonAdditionalCostRepositoryInterface;
 use App\Repositories\Transaction\QuotationComparisonDetail\QuotationComparisonDetailRepository;
 use App\Repositories\Transaction\QuotationComparisonDetail\QuotationComparisonDetailRepositoryInterface;
 use App\Repositories\Transaction\QuotationComparisonShippingCost\QuotationComparisonShippingCostRepository;
@@ -137,7 +139,7 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(PrePurchaseOrderDetailRepositoryInterface::class, PrePurchaseOrderDetailRepository::class);
         $this->app->bind(QuotationComparisonRepositoryInterface::class, QuotationComparisonRepository::class);
         $this->app->bind(QuotationComparisonDetailRepositoryInterface::class, QuotationComparisonDetailRepository::class);
-        $this->app->bind(QuotationComparisonShippingCostRepositoryInterface::class, QuotationComparisonShippingCostRepository::class);
+        $this->app->bind(QuotationComparisonAdditionalCostRepositoryInterface::class, QuotationComparisonAdditionalCostRepository::class);
     }
 
     /**

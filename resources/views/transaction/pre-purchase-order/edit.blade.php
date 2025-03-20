@@ -1094,7 +1094,8 @@
                         item.detailIds.map(id =>
                             `<input type="hidden" name="quotations[${supplierIdx}][details][${idx}][detail_ids][]" value="${id}">`
                         ).join('') :
-                        `<input type="hidden" name="quotations[${supplierIdx}][details][${idx}][pre_purchase_order_detail_id]" value="${item.prePurchaseOrderDetailId || item.detailIds[0]}">`;
+                        `<input type="hidden" name="quotations[${supplierIdx}][details][${idx}][pre_purchase_order_detail_id]" value="${item.prePurchaseOrderDetailId}">`;
+
 
                     let offerRow = `
         <tr>

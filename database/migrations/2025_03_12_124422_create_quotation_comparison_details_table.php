@@ -15,17 +15,22 @@ return new class extends Migration
     {
         Schema::create('quotation_comparison_details', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('offer_id'); // Referensi ke header supplier offer
-            $table->unsignedBigInteger('pre_purchase_order_detail_id'); // Referensi ke barang dalam PO
-            $table->decimal('quantity', 15, 2)->default(1); // Jumlah barang sesuai PO
-            $table->decimal('offered_price_per_unit', 15, 2)->default(0); // Harga penawaran per unit
-            $table->decimal('total_price', 15, 2)->storedAs('offered_price_per_unit * quantity'); // Harga total
-
+            $table->unsignedBigInteger('quotation_comparison_id');
+            $table->unsignedBigInteger('pre_purchase_order_detail_id');
+            $table->unsignedBigInteger('item_uom_id');
+            $table->decimal('quantity', 15, 2);
+            $table->decimal('offered_price_per_unit', 15, 2);
+            $table->decimal('subtotal_price', 15, 2);
+            $table->decimal('shipping_cost', 15, 2)->default(0);
+            $table->decimal('grand_total', 15, 2);
+            $table->decimal('new_unit_price', 15, 2);
+            $table->text('remarks')->nullable();
             $table->timestamps();
 
-            // Foreign keys
-            $table->foreign('offer_id')->references('id')->on('quotation_comparisons')->onDelete('cascade');
+            $table->foreign('quotation_comparison_id')->references('id')->on('quotation_comparisons')->onDelete('cascade');
             $table->foreign('pre_purchase_order_detail_id')->references('id')->on('pre_purchase_order_details')->onDelete('cascade');
+            $table->foreign('item_uom_id')->references('id')->on('item_uoms');
+
         });
     }
 

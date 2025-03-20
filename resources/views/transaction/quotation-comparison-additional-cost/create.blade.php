@@ -1,5 +1,5 @@
 @extends('layouts.admin.app')
-@section('title', 'QuotationComparisonShippingCost')
+@section('title', 'QuotationComparisonAdditionalCost')
 
 @section('content')
 <div class="row">
@@ -10,13 +10,13 @@
                     <h5 class="mb-0">Create @yield('title')</h5>
                     <small class="text-muted">Buat @yield('title')</small>
                 </div>
-                <a href="{{ route('quotation-comparison-shipping-cost.index') }}" class="btn p-0" title="Kembali">
+                <a href="{{ route('quotation-comparison-additional-cost.index') }}" class="btn p-0" title="Kembali">
                     <i class="ti ti-x ti-sm text-muted"></i>
                 </a>
             </div>
 
             <div class="card-body">
-                <form action="{{ route('quotation-comparison-shipping-cost.store') }}" method="POST">
+                <form action="{{ route('quotation-comparison-additional-cost.store') }}" method="POST">
                     @csrf
 
                     @if (count($errors) > 0)
@@ -40,7 +40,7 @@
 
                     <div class="my-2">
                         <button type="submit" class="btn btn-primary px-5 me-2">Submit</button>
-                        <a href="{{ route('quotation-comparison-shipping-cost.index') }}" class="btn btn-label-secondary">Cancel</a>
+                        <a href="{{ route('quotation-comparison-additional-cost.index') }}" class="btn btn-label-secondary">Cancel</a>
                     </div>
                 </form>
             </div>
