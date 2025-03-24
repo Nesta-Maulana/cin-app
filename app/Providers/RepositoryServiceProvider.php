@@ -64,6 +64,10 @@ use App\Repositories\Transaction\ItemRequestDetail\ItemRequestDetailRepository;
 use App\Repositories\Transaction\ItemRequestDetail\ItemRequestDetailRepositoryInterface;
 use App\Repositories\Transaction\ItemRequestProcess\ItemRequestProcessRepository;
 use App\Repositories\Transaction\ItemRequestProcess\ItemRequestProcessRepositoryInterface;
+use App\Repositories\Transaction\ManualItemRequest\ManualItemRequestRepository;
+use App\Repositories\Transaction\ManualItemRequest\ManualItemRequestRepositoryInterface;
+use App\Repositories\Transaction\ManualItemRequestDetail\ManualItemRequestDetailRepository;
+use App\Repositories\Transaction\ManualItemRequestDetail\ManualItemRequestDetailRepositoryInterface;
 use App\Repositories\Transaction\PrePurchaseOrder\PrePurchaseOrderRepository;
 use App\Repositories\Transaction\PrePurchaseOrder\PrePurchaseOrderRepositoryInterface;
 use App\Repositories\Transaction\PrePurchaseOrderDetail\PrePurchaseOrderDetailRepository;
@@ -140,6 +144,8 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(QuotationComparisonRepositoryInterface::class, QuotationComparisonRepository::class);
         $this->app->bind(QuotationComparisonDetailRepositoryInterface::class, QuotationComparisonDetailRepository::class);
         $this->app->bind(QuotationComparisonAdditionalCostRepositoryInterface::class, QuotationComparisonAdditionalCostRepository::class);
+        $this->app->bind(ManualItemRequestRepositoryInterface::class, ManualItemRequestRepository::class);
+        $this->app->bind(ManualItemRequestDetailRepositoryInterface::class, ManualItemRequestDetailRepository::class);
     }
 
     /**

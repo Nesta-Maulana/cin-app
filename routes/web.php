@@ -19,6 +19,7 @@ use App\Http\Controllers\Transaction\DeliveryOrderController;
 use App\Http\Controllers\Transaction\ItemNeedToPurchaseController;
 use App\Http\Controllers\Transaction\ItemRequestController;
 use App\Http\Controllers\Transaction\ItemRequestProcessController;
+use App\Http\Controllers\Transaction\ManualItemRequestController;
 use App\Http\Controllers\Transaction\PrePurchaseOrderController;
 use App\Http\Controllers\Transaction\PurchaseOrderController;
 use App\Http\Controllers\Transaction\QuotationComparisonController;
@@ -122,4 +123,8 @@ Route::middleware(['auth', 'auth.status'])->group(function () {
     Route::resource('bom-status', BomStatusController::class);
     Route::resource('pre-purchase-order', PrePurchaseOrderController::class);
     Route::resource('purchase-order', PurchaseOrderController::class);
+    Route::resource('manual-item-request', ManualItemRequestController::class);
+    Route::get('manual-item-request-template', [ManualItemRequestController::class, 'downloadTemplate'])
+    ->name('manual-item-request.download-template');
+
 });
