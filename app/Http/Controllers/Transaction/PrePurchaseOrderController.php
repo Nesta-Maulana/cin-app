@@ -10,6 +10,8 @@ use App\Models\QuotationComparison;
 use App\Models\QuotationComparisonAdditionalCost;
 use App\Models\QuotationComparisonDetail;
 use App\Models\Supplier;
+use App\Models\ItemRequest;
+use App\Models\ManualItemRequest;
 use App\Repositories\Transaction\PrePurchaseOrder\PrePurchaseOrderRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -63,13 +65,16 @@ class PrePurchaseOrderController extends Controller
     public function edit($id)
     {
         try {
+            // Load the pre-purchase order with all necessary relationships
             $data = PrePurchaseOrder::with([
                 'details.itemRequestDetail.itemRequest',
                 'details.itemRequestDetail.itemPriceHistory.itemUom.item',
                 'details.itemRequestDetail.itemPriceHistory.itemUom.unitOfMeasurement',
+                'details.manualItemRequestDetail.manualItemRequest',
                 'details.uom.unitOfMeasurement',
                 'quotations.supplier',
                 'quotations.quotationDetails.prePurchaseOrderDetail.itemRequestDetail.itemPriceHistory.itemUom.item',
+                'quotations.quotationDetails.prePurchaseOrderDetail.manualItemRequestDetail',
                 'quotations.quotationDetails.prePurchaseOrderDetail.uom.unitOfMeasurement',
                 'customerOrder'
             ])->findOrFail($id);
@@ -78,32 +83,12 @@ class PrePurchaseOrderController extends Controller
             $suppliers = Supplier::all();
 
             return view('transaction.pre-purchase-order.edit', compact('data', 'customerOrders', 'suppliers'));
-
-            return view("{$this->view}.edit", compact('data'));
         } catch (Exception $e) {
             Log::error($e->getMessage());
             alertNotif('error', $e->getMessage());
             return redirect()->route("{$this->route}.index");
         }
     }
-
-    /* public function update(Request $request, $id)
-    {
-        $data = $request->validate([
-            //
-        ]);
-        $data['updated_by'] = auth()->user()->id;
-        try {
-            DB::transaction(function () use ($request, $id, $data) {
-                $this->repository->update($id, $data);
-            });
-            alertNotif('update');
-        } catch (Exception $e) {
-            Log::error($e->getMessage());
-            alertNotif('error', $e->getMessage());
-        }
-        return redirect()->route("{$this->route}.index");
-    } */
 
     public function destroy($id)
     {
@@ -117,23 +102,23 @@ class PrePurchaseOrderController extends Controller
         }
         return redirect()->route("{$this->route}.index");
     }
+
     public function show($id)
     {
         // Load the pre-purchase order with all necessary relationships
         $data = PrePurchaseOrder::with([
             'details.itemRequestDetail.itemRequest',
             'details.itemRequestDetail.itemPriceHistory.itemUom.item',
+            'details.manualItemRequestDetail.manualItemRequest',
             'details.uom.unitOfMeasurement',
             'customerOrder',
             'quotations.supplier',
             'quotations.quotationDetails.prePurchaseOrderDetail.itemRequestDetail.itemPriceHistory.itemUom.item',
+            'quotations.quotationDetails.prePurchaseOrderDetail.manualItemRequestDetail',
             'quotations.quotationDetails.prePurchaseOrderDetail.uom.unitOfMeasurement',
             'quotations.beforeTaxCosts',
             'quotations.afterTaxCosts'
         ])->findOrFail($id);
-
-        // Check access permissions if needed
-        // $this->authorize('view', $data);
 
         return view($this->view . '.show', compact('data'));
     }
@@ -152,14 +137,24 @@ class PrePurchaseOrderController extends Controller
             // Dapatkan pre-purchase order
             $prePurchaseOrder = PrePurchaseOrder::findOrFail($prePurchaseOrderId);
 
+            // Update pre-purchase order basic info
+            if ($request->has('customer_order_id')) {
+                $prePurchaseOrder->update([
+                    'customer_order_id' => $request->customer_order_id,
+                    'remarks' => $request->remarks
+                ]);
+            }
+
             // Hapus quotation yang di-request untuk dihapus
             if ($request->has('deleted_quotations')) {
                 QuotationComparison::whereIn('id', $request->deleted_quotations)->delete();
             }
 
             // Loop untuk setiap quotation
-            foreach ($request->quotations as $quotationIndex => $quotationData) {
-                $this->processQuotation($prePurchaseOrder, $quotationData);
+            if ($request->has('quotations')) {
+                foreach ($request->quotations as $quotationIndex => $quotationData) {
+                    $this->processQuotation($prePurchaseOrder, $quotationData);
+                }
             }
 
             // Jika ada supplier yang dipilih
@@ -181,6 +176,15 @@ class PrePurchaseOrderController extends Controller
                 }
             }
 
+            // Update process status if submit_type is present
+            if ($request->has('submit_type')) {
+                if ($request->submit_type === 'submit') {
+                    $prePurchaseOrder->update(['process_status' => 'under_review']);
+                } else if ($request->submit_type === 'draft') {
+                    $prePurchaseOrder->update(['process_status' => 'pending']);
+                }
+            }
+
             DB::commit();
 
             return redirect()
@@ -189,7 +193,8 @@ class PrePurchaseOrderController extends Controller
 
         } catch (Exception $e) {
             DB::rollback();
-            dd($e->getMessage());
+            Log::error('Pre Purchase Order Update Error: ' . $e->getMessage());
+
             return redirect()
                 ->back()
                 ->withInput()
@@ -207,10 +212,10 @@ class PrePurchaseOrderController extends Controller
     {
         // Validasi dasar
         $validator = Validator::make($request->all(), [
-            'quotations' => 'required|array',
-            'quotations.*.supplier_id' => 'required|exists:suppliers,id',
-            'quotations.*.currency' => 'required|string|max:10',
-            'quotations.*.details' => 'required|array',
+            'quotations' => 'sometimes|array',
+            'quotations.*.supplier_id' => 'required_with:quotations|exists:suppliers,id',
+            'quotations.*.currency' => 'required_with:quotations|string|max:10',
+            'quotations.*.details' => 'required_with:quotations|array',
         ]);
 
         if ($validator->fails()) {
@@ -221,19 +226,21 @@ class PrePurchaseOrderController extends Controller
         }
 
         // Validasi detail untuk setiap quotation
-        foreach ($request->quotations as $quotationIndex => $quotation) {
-            if (isset($quotation['details'])) {
-                foreach ($quotation['details'] as $detailIndex => $detail) {
-                    $hasPrePODetailId = isset($detail['pre_purchase_order_detail_id']) && !empty($detail['pre_purchase_order_detail_id']);
-                    $hasDetailIds = isset($detail['detail_ids']) && is_array($detail['detail_ids']) && !empty($detail['detail_ids']);
+        if ($request->has('quotations')) {
+            foreach ($request->quotations as $quotationIndex => $quotation) {
+                if (isset($quotation['details'])) {
+                    foreach ($quotation['details'] as $detailIndex => $detail) {
+                        $hasPrePODetailId = isset($detail['pre_purchase_order_detail_id']) && !empty($detail['pre_purchase_order_detail_id']);
+                        $hasDetailIds = isset($detail['detail_ids']) && is_array($detail['detail_ids']) && !empty($detail['detail_ids']);
 
-                    if (!$hasPrePODetailId && !$hasDetailIds) {
-                        return redirect()
-                            ->back()
-                            ->withErrors([
-                                "quotations.{$quotationIndex}.details.{$detailIndex}" => 'Each detail must have either pre_purchase_order_detail_id or detail_ids.'
-                            ])
-                            ->withInput();
+                        if (!$hasPrePODetailId && !$hasDetailIds) {
+                            return redirect()
+                                ->back()
+                                ->withErrors([
+                                    "quotations.{$quotationIndex}.details.{$detailIndex}" => 'Each detail must have either pre_purchase_order_detail_id or detail_ids.'
+                                ])
+                                ->withInput();
+                        }
                     }
                 }
             }
@@ -266,7 +273,12 @@ class PrePurchaseOrderController extends Controller
         // Update atau create quotation
         if ($quotationId) {
             $quotation = QuotationComparison::find($quotationId);
-            $quotation->update($quotationModelData);
+            if ($quotation) {
+                $quotation->update($quotationModelData);
+            } else {
+                $quotation = QuotationComparison::create($quotationModelData);
+                $quotationId = $quotation->id;
+            }
         } else {
             $quotation = QuotationComparison::create($quotationModelData);
             $quotationId = $quotation->id;
@@ -299,6 +311,9 @@ class PrePurchaseOrderController extends Controller
     /**
      * Save quotation details
      */
+    /**
+     * Save quotation details
+     */
     private function saveQuotationDetails($quotationId, $details)
     {
         foreach ($details as $detail) {
@@ -317,11 +332,19 @@ class PrePurchaseOrderController extends Controller
 
                         // Hitung proporsi untuk item ini dari total
                         $proportion = ($totalQuantity > 0) ? ($originalQuantity / $totalQuantity) : 0;
+
+                        // Tentukan item_uom_id berdasarkan jenis item request
+                        $itemUomId = null;
+                        if ($originalDetail->itemRequestDetail) {
+                            // System item request
+                            $itemUomId = $originalDetail->itemRequestDetail->itemPriceHistory->itemUom->id;
+                        }
+
                         // Buat record untuk setiap detail ID
                         QuotationComparisonDetail::create([
                             'quotation_comparison_id' => $quotationId,
                             'pre_purchase_order_detail_id' => $detailId,
-                            'item_uom_id' => $originalDetail->itemRequestDetail->itemPriceHistory->itemUom->id, // Gunakan UOM dari detail asli
+                            'item_uom_id' => $itemUomId,
                             'quantity' => $originalQuantity, // Gunakan quantity asli
                             'offered_price_per_unit' => $detail['price'] ?? 0, // Harga per unit sama
                             'subtotal_price' => ($detail['price'] ?? 0) * $originalQuantity, // Subtotal berdasarkan quantity asli
@@ -335,10 +358,9 @@ class PrePurchaseOrderController extends Controller
                 }
             } else {
                 // Untuk detail normal (tanpa penggabungan)
-                QuotationComparisonDetail::create([
+                $detailData = [
                     'quotation_comparison_id' => $quotationId,
                     'pre_purchase_order_detail_id' => $detail['pre_purchase_order_detail_id'],
-                    'item_uom_id' => $detail['uom_id'] ?? $detail['item_uom_id'], // Menyesuaikan dengan struktur form
                     'quantity' => $detail['quantity'],
                     'offered_price_per_unit' => $detail['price'] ?? 0,
                     'subtotal_price' => $detail['subtotal_price'] ?? 0,
@@ -346,7 +368,26 @@ class PrePurchaseOrderController extends Controller
                     'grand_total' => $detail['grand_total'] ?? 0,
                     'new_unit_price' => $detail['new_unit_price'] ?? 0,
                     'remarks' => $detail['remarks'] ?? null
-                ]);
+                ];
+
+                // Get prepo detail to check what type it is
+                $prePurchaseOrderDetail = PrePurchaseOrderDetail::find($detail['pre_purchase_order_detail_id']);
+
+                // Add item_uom_id if available from different sources
+                if (isset($detail['uom_id']) && !empty($detail['uom_id'])) {
+                    $detailData['item_uom_id'] = $detail['uom_id'];
+                } elseif (isset($detail['item_uom_id']) && !empty($detail['item_uom_id'])) {
+                    $detailData['item_uom_id'] = $detail['item_uom_id'];
+                } elseif ($prePurchaseOrderDetail && $prePurchaseOrderDetail->itemRequestDetail) {
+                    // For system item requests
+                    $detailData['item_uom_id'] = $prePurchaseOrderDetail->itemRequestDetail->itemPriceHistory->itemUom->id;
+                } elseif ($prePurchaseOrderDetail && $prePurchaseOrderDetail->uom_id) {
+                    // Use item's UOM if available
+                    $detailData['item_uom_id'] = $prePurchaseOrderDetail->uom_id;
+                }
+                // For manual item requests without UOM, item_uom_id will be null (requires the migration above)
+
+                QuotationComparisonDetail::create($detailData);
             }
         }
     }
@@ -367,5 +408,12 @@ class PrePurchaseOrderController extends Controller
         }
     }
 
-
+    /**
+     * Get suppliers as JSON for AJAX requests
+     */
+    public function getSuppliers()
+    {
+        $suppliers = Supplier::orderBy('name')->get();
+        return response()->json(['data' => $suppliers]);
+    }
 }
