@@ -67,7 +67,7 @@
                         <tr wire:key="row{{ $item->id }}">
                             <td>{{ $item->request_number }}</td>
                             <td>{{ $item->customerOrder->customer->customer_name ?? '-' }} <small
-                                    class="text-muted">({{ $item->customerOrder->order_number ?? '-' }})</small>
+                                    class="text-muted">({{ $item->customerOrder->order_number	 ?? '-' }})</small>
                             </td>
                             <td>
                                 @if (is_string($item->request_date))

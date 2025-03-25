@@ -29,7 +29,10 @@ class PrePurchaseOrderDetail extends Model
     {
         return $this->belongsTo(ItemRequestDetail::class, 'item_request_detail_id');
     }
-
+    public function manualItemRequestDetail()
+    {
+        return $this->belongsTo(ManualItemRequestDetail::class);
+    }
     // Relasi ke Satuan Unit of Measurement (UOM)
     public function uom()
     {

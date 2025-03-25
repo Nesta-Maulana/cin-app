@@ -74,6 +74,10 @@ class CustomerOrder extends Model
     {
         return $this->hasMany(ItemRequest::class);
     }
+    public function manualItemRequests()
+    {
+        return $this->hasMany(ManualItemRequest::class);
+    }
     public function itemNeedToPurchases()
     {
         return $this->hasMany(ItemNeedToPurchase::class);

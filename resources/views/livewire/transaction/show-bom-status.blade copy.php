@@ -22,14 +22,6 @@
                         <option value="done">完成 (Done)</option>
                     </select>
                 </div>
-                <div class="me-3 mb-2">
-                    <label class="form-label">Request Type</label>
-                    <select wire:model="typeFilter" class="form-select">
-                        <option value="all">All Types</option>
-                        <option value="system">System Requests</option>
-                        <option value="manual">Manual Requests</option>
-                    </select>
-                </div>
                 <div class="mb-2">
                     <label class="form-label">Search</label>
                     <input wire:model.debounce.500ms="search" type="search" class="form-control"
@@ -50,31 +42,19 @@
                             </select>
                         </label>
                     </div>
-
-                    <div class="btn-group my-1">
-                        <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown"
-                            aria-expanded="false">
-                            Add Item Request
-                        </button>
-                        <ul class="dropdown-menu">
-                            @can('create-item-request')
-                                <li>
-                                    <a href="{{ route('item-request.create') }}" class="dropdown-item">
-                                        <i class="fa fa-plus me-1 fa-xs"></i>
-                                        Add System Item Request
-                                    </a>
-                                </li>
-                            @endcan
-                            @can('create-manual-item-request')
-                                <li>
-                                    <a href="{{ route('manual-item-request.create') }}" class="dropdown-item">
-                                        <i class="fa fa-plus me-1 fa-xs"></i>
-                                        Add Manual Item Request
-                                    </a>
-                                </li>
-                            @endcan
-                        </ul>
-                    </div>
+                    @can('create-item-request')
+                        <div class="flex-wrap my-1">
+                            <a href="{{ route('item-request.create') }}"
+                                class="btn btn-secondary text-white add-new btn-primary">
+                                <span>
+                                    <i class="fa fa-plus me-0 me-sm-1 fa-xs"></i>
+                                    <span>
+                                        Add Item Request
+                                    </span>
+                                </span>
+                            </a>
+                        </div>
+                    @endcan
                 @else
                     <div class="my-1 me-md-2">
                         <span class="px-1">
@@ -95,14 +75,13 @@
             <table class="table border-top">
                 <thead>
                     <tr>
-                        @canany(['update-item-request', 'update-manual-item-request'])
+                        @can('update-item-request')
                             <th>
                                 <input style="width: 17px; height: 17px;" wire:model="selectAll" type="checkbox"
                                     class="form-check-input">
                             </th>
-                        @endcanany
+                        @endcan
                         <th>No. BOM</th>
-                        <th>Type</th>
                         <th>Status</th>
                         <th>PIC</th>
                         <th>Date</th>
@@ -111,91 +90,57 @@
                 </thead>
                 <tbody>
                     @forelse($table as $key => $item)
-                        @php
-                            // Determine the type of request
-                            $requestType = isset($item->request_type) ? $item->request_type : 'system';
-                            $itemId = $item->id;
-                            $expandRowKey = "{$requestType}_{$itemId}";
-                        @endphp
-                        <tr wire:key="row{{ $expandRowKey }}">
-                            @canany(['update-item-request', 'update-manual-item-request'])
+                        <tr wire:key="row{{ $item->id }}">
+                            @can('update-item-request')
                                 <td>
                                     <input style="width: 17px; height: 17px;" wire:model="selected"
-                                        value="{{ $expandRowKey }}" type="checkbox" class="dt-checkboxes form-check-input">
+                                        value="{{ $item->id }}" type="checkbox" class="dt-checkboxes form-check-input">
                                 </td>
-                            @endcanany
+                            @endcan
                             <td>
                                 {{ $item->request_number }}
                             </td>
                             <td>
-                                <span class="badge bg-{{ $requestType === 'manual' ? 'info' : 'primary' }}">
-                                    {{ $requestType === 'manual' ? 'Manual' : 'System' }}
-                                </span>
+                                <span class="badge bg-secondary">{{ $item->request_status }}</span>
                             </td>
-                            <td>
-                                <span class="badge bg-secondary">{{ $item->request_status ?? $item->status }}</span>
-                            </td>
-                            <td>
-                                @if ($requestType === 'manual')
-                                    {{ $item->created_by_name ?? 'N/A' }}
-                                @else
-                                    {{ $item->createdBy->name ?? 'N/A' }}
-                                @endif
-                            </td>
+                            <td>{{ $item->createdBy->name }}</td>
                             <td>{{ date('Y/m/d', strtotime($item->created_at)) }}</td>
                             <td>
+
                                 <div class="d-flex align-items-center">
-                                    @if (isset($expandedRows[$expandRowKey]))
-                                        <a href="#"
-                                            wire:click.prevent="toggleExpand({{ $itemId }}, '{{ $requestType }}')"
+                                    @if (isset($expandedRows[$item->id]))
+                                        <a href="#" wire:click.prevent="toggleExpand({{ $item->id }})"
                                             class="action-btn fw-bold">
                                             <i class="fa fa-chevron-up fa-sm me-2 fs-5"></i>
                                         </a>
                                     @else
-                                        <a href="#"
-                                            wire:click.prevent="toggleExpand({{ $itemId }}, '{{ $requestType }}')"
+                                        <a href="#" wire:click.prevent="toggleExpand({{ $item->id }})"
                                             class="action-btn fw-bold">
-                                            <i class="fa fa-chevron-down fa-sm me-2 fs-5"></i>
+                                            <i class="fa fa-chevron-down  fa-sm me-2 fs-5"></i>
                                         </a>
                                     @endif
 
-                                    @if ($requestType === 'manual')
-                                        @can('update-manual-item-request')
-                                            <a href="{{ route('manual-item-request.edit', $itemId) }}" class="action-btn"
-                                                title="edit">
-                                                <i class="fa fa-edit fa-sm me-2 fs-5"></i>
-                                            </a>
-                                        @endcan
+                                    @can('update-item-request')
+                                        <a href="{{ route('item-request.edit', $item->id) }}" class="action-btn"
+                                            title="edit">
+                                            <i class="fa fa-edit fa-sm me-2 fs-5"></i>
+                                        </a>
+                                    @endcan
 
-                                        @can('delete-manual-item-request')
-                                            <a href="javascript:;" class="action-btn" title="delete"
-                                                wire:click.prevent="confirmDelete({{ $itemId }}, 'manual')">
-                                                <i class="fa fa-trash fa-sm me-2 fs-5"></i>
-                                            </a>
-                                        @endcan
-                                    @else
-                                        @can('update-item-request')
-                                            <a href="{{ route('item-request.edit', $itemId) }}" class="action-btn"
-                                                title="edit">
-                                                <i class="fa fa-edit fa-sm me-2 fs-5"></i>
-                                            </a>
-                                        @endcan
-
-                                        @can('delete-item-request')
-                                            <a href="javascript:;" class="action-btn" title="delete"
-                                                wire:click.prevent="confirmDelete({{ $itemId }}, 'system')">
-                                                <i class="fa fa-trash fa-sm me-2 fs-5"></i>
-                                            </a>
-                                        @endcan
-                                    @endif
+                                    @can('delete-item-request')
+                                        <a href="javascript:;" class="action-btn" title="delete"
+                                            wire:click.prevent="confirmDelete({{ $item->id }})">
+                                            <i class="fa fa-trash fa-sm me-2 fs-5"></i>
+                                        </a>
+                                    @endcan
                                 </div>
                             </td>
                         </tr>
 
                         <!-- Expanded Row with Item Details -->
-                        @if (isset($expandedRows[$expandRowKey]))
-                            <tr wire:key="detail{{ $expandRowKey }}" class="bg-light">
-                                <td colspan="7" class="p-0">
+                        @if (isset($expandedRows[$item->id]))
+                            <tr wire:key="detail{{ $item->id }}" class="bg-light">
+                                <td colspan="6" class="p-0">
                                     <div class="p-1">
                                         <div class="table-responsive">
                                             <table class="table table-bordered">
@@ -209,59 +154,33 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    @if ($requestType === 'manual')
-                                                        @forelse($item->details as $detail)
-                                                            <tr>
-                                                                <td>{{ $detail->item_name }}</td>
-                                                                <td>{{ $detail->delivered_quantity ?? 0 }}/{{ $detail->quantity }}
-                                                                </td>
-                                                                <td>{{ $detail->unit }}</td>
-                                                                <td>
-                                                                    <input type="number" class="form-control"
-                                                                        wire:model.defer="comparisonPrices.manual_{{ $detail->id }}"
-                                                                        wire:change="validateQuantity({{ $detail->id }}, {{ $detail->quantity }}, 'manual')"
-                                                                        placeholder="Enter Quantity for Comparison">
-                                                                    @if (isset($quantityErrors["manual_{$detail->id}"]))
-                                                                        <span
-                                                                            class="text-danger small">{{ $quantityErrors["manual_{$detail->id}"] }}</span>
-                                                                    @endif
-                                                                </td>
-                                                                <td>{{ $detail->remarks }}</td>
-                                                            </tr>
-                                                        @empty
-                                                            <tr>
-                                                                <td colspan="5" class="text-center">No item details
-                                                                    found</td>
-                                                            </tr>
-                                                        @endforelse
-                                                    @else
-                                                        @forelse($item->details as $detail)
-                                                            <tr>
-                                                                <td>{{ $detail->itemPriceHistory->itemUom->item->name }}
-                                                                </td>
-                                                                <td>{{ $detail->deliveryOrderDetails->sum('quantity') }}/{{ $detail->quantity }}
-                                                                </td>
-                                                                <td>{{ $detail->itemPriceHistory->itemUom->unitOfMeasurement->name }}
-                                                                </td>
-                                                                <td>
-                                                                    <input type="number" class="form-control"
-                                                                        wire:model.defer="comparisonPrices.system_{{ $detail->id }}"
-                                                                        wire:change="validateQuantity({{ $detail->id }}, {{ $detail->quantity }}, 'system')"
-                                                                        placeholder="Enter Quantity for Comparison">
-                                                                    @if (isset($quantityErrors["system_{$detail->id}"]))
-                                                                        <span
-                                                                            class="text-danger small">{{ $quantityErrors["system_{$detail->id}"] }}</span>
-                                                                    @endif
-                                                                </td>
-                                                                <td>{{ $detail->remarks }}</td>
-                                                            </tr>
-                                                        @empty
-                                                            <tr>
-                                                                <td colspan="5" class="text-center">No item details
-                                                                    found</td>
-                                                            </tr>
-                                                        @endforelse
-                                                    @endif
+                                                    @forelse($item->details as $detail)
+                                                        <tr>
+                                                            <td>{{ $detail->itemPriceHistory->itemUom->item->name }}
+                                                            </td>
+                                                            <td>{{ $detail->deliveryOrderDetails->sum('quantity') }}/{{ $detail->quantity }}
+                                                            </td>
+                                                            <td>{{ $detail->itemPriceHistory->itemUom->unitOfMeasurement->name }}
+                                                            </td>
+                                                            <td>
+                                                                <input type="number" class="form-control"
+                                                                    wire:model.defer="comparisonPrices.{{ $detail->id }}"
+                                                                    wire:change="validateQuantity({{ $detail->id }}, {{ $detail->quantity }})"
+                                                                    placeholder="Enter Quantity for Comparison">
+                                                                @if (isset($quantityErrors[$detail->id]))
+                                                                    <span
+                                                                        class="text-danger small">{{ $quantityErrors[$detail->id] }}</span>
+                                                                @endif
+                                                            </td>
+                                                            <td>{{ $detail->remarks }}</td>
+                                                        </tr>
+                                                    @empty
+                                                        <tr>
+                                                            <td colspan="7" class="text-center">No item details
+                                                                found
+                                                            </td>
+                                                        </tr>
+                                                    @endforelse
                                                 </tbody>
                                             </table>
                                         </div>
@@ -269,9 +188,10 @@
                                 </td>
                             </tr>
                         @endif
+
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center">
+                            <td colspan="6" class="text-center">
                                 <div class="alert alert-secondary">
                                     Data tidak ditemukan
                                 </div>
@@ -370,7 +290,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="3" class="text-center">No items selected</td>
+                                            <td colspan="4" class="text-center">No items selected</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
@@ -401,7 +321,7 @@
 
     <script>
         window.addEventListener('DOMContentLoaded', () => {
-            @this.set('selectedCustomerOrder', @js($customerOrders->first()->id ?? null))
+            @this.set('selectedCustomerOrder', @js($customerOrders->first()->id))
         });
 
         window.addEventListener('close-modal', event => {
