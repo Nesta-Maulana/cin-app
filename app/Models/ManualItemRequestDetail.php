@@ -9,8 +9,8 @@ class ManualItemRequestDetail extends Model
 {
     use HasFactory;
     protected $guarded = ['id'];
-    public function itemRequest()
+    public function manualItemRequest()
     {
-        return $this->belongsTo(ItemRequest::class);
+        return $this->belongsTo(ManualItemRequest::class);
     }
 }

@@ -73,6 +73,7 @@
                                     <tr>
                                         <th>#</th>
                                         <th>Item Request Number / 请求编号</th>
+                                        <th>Type / 类型</th>
                                         <th>Item Name / 物品</th>
                                         <th>Order Quantity / 订购数量</th>
                                         <th>UOM / 单位</th>
@@ -82,22 +83,51 @@
                                 <tbody>
                                     @foreach ($data->details as $index => $detail)
                                         <tr id="item-{{ $index }}"
-                                            data-item-id="{{ $detail->itemRequestDetail ? $detail->itemRequestDetail->itemPriceHistory->itemUom->item_id : '' }}">
+                                            data-item-id="{{ $detail->itemRequestDetail ? $detail->itemRequestDetail->itemPriceHistory->itemUom->item_id : '' }}"
+                                            data-detail-type="{{ $detail->itemRequestDetail ? 'system' : 'manual' }}">
                                             <td>{{ $index + 1 }}</td>
                                             <td>
-                                                {{ $detail->itemRequestDetail ? $detail->itemRequestDetail->itemRequest->request_number : '-' }}
+                                                @if ($detail->itemRequestDetail)
+                                                    {{ $detail->itemRequestDetail->itemRequest->request_number }}
+                                                @elseif($detail->manualItemRequestDetail)
+                                                    {{ $detail->manualItemRequestDetail->manualItemRequest->request_number }}
+                                                @else
+                                                    -
+                                                @endif
                                                 <input type="hidden" name="details[{{ $index }}][id]"
                                                     value="{{ $detail->id }}">
-                                                <input type="hidden"
-                                                    name="details[{{ $index }}][item_request_detail_id]"
-                                                    value="{{ $detail->item_request_detail_id }}">
+                                                @if ($detail->item_request_detail_id)
+                                                    <input type="hidden"
+                                                        name="details[{{ $index }}][item_request_detail_id]"
+                                                        value="{{ $detail->item_request_detail_id }}">
+                                                @endif
+                                                @if ($detail->manual_item_request_detail_id)
+                                                    <input type="hidden"
+                                                        name="details[{{ $index }}][manual_item_request_detail_id]"
+                                                        value="{{ $detail->manual_item_request_detail_id }}">
+                                                @endif
                                             </td>
                                             <td>
-                                                <input type="hidden" name="details[{{ $index }}][item_id]"
-                                                    value="{{ $detail->itemRequestDetail ? $detail->itemRequestDetail->itemPriceHistory->itemUom->item_id : '' }}"
-                                                    class="item-id">
                                                 <span
-                                                    class="item-name">{{ $detail->itemRequestDetail ? $detail->itemRequestDetail->itemPriceHistory->itemUom->item->name : '-' }}</span>
+                                                    class="badge bg-{{ $detail->itemRequestDetail ? 'primary' : 'info' }}">
+                                                    {{ $detail->itemRequestDetail ? 'System' : 'Manual' }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @if ($detail->itemRequestDetail)
+                                                    <input type="hidden" name="details[{{ $index }}][item_id]"
+                                                        value="{{ $detail->itemRequestDetail->itemPriceHistory->itemUom->item_id }}"
+                                                        class="item-id">
+                                                    <span
+                                                        class="item-name">{{ $detail->itemRequestDetail->itemPriceHistory->itemUom->item->name }}</span>
+                                                @elseif($detail->manualItemRequestDetail)
+                                                    <input type="hidden" name="details[{{ $index }}][item_id]"
+                                                        value="{{ $detail->item_name ?? '' }}" class="item-id">
+                                                    <span
+                                                        class="item-name">{{ $detail->manualItemRequestDetail->item_name }}</span>
+                                                @else
+                                                    -
+                                                @endif
                                             </td>
                                             <td>
                                                 <input type="hidden" name="details[{{ $index }}][quantity]"
@@ -107,8 +137,15 @@
                                             <td>
                                                 <input type="hidden" name="details[{{ $index }}][uom_id]"
                                                     value="{{ $detail->uom_id }}" class="uom-id">
-                                                <span
-                                                    class="uom-name">{{ $detail->uom ? $detail->uom->unitOfMeasurement->name : '-' }}</span>
+                                                @if ($detail->itemRequestDetail)
+                                                    <span
+                                                        class="uom-name">{{ $detail->uom ? $detail->uom->unitOfMeasurement->name : $detail->itemRequestDetail->itemPriceHistory->itemUom->unitOfMeasurement->name ?? '-' }}</span>
+                                                @elseif($detail->manualItemRequestDetail)
+                                                    <span
+                                                        class="uom-name">{{ $detail->uom ? $detail->uom->unitOfMeasurement->name : $detail->manualItemRequestDetail->unit ?? '-' }}</span>
+                                                @else
+                                                    <span class="uom-name">-</span>
+                                                @endif
                                             </td>
                                             <td>
                                                 <input type="hidden" name="details[{{ $index }}][remarks]"
@@ -154,7 +191,8 @@
                                                 <select name="quotations[{{ $quotationIndex }}][supplier_id]"
                                                     class="form-select supplier-select" required
                                                     {{ $quotation->is_selected ? 'disabled' : '' }}>
-                                                    <option value="" disabled>Please choose supplier / 请选择供应商</option>
+                                                    <option value="" disabled>Please choose supplier / 请选择供应商
+                                                    </option>
                                                     @foreach ($suppliers as $supplier)
                                                         <option value="{{ $supplier->id }}"
                                                             {{ $quotation->supplier_id == $supplier->id ? 'selected' : '' }}>
@@ -212,10 +250,22 @@
                                                                 <input type="hidden"
                                                                     name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][pre_purchase_order_detail_id]"
                                                                     value="{{ $detail->pre_purchase_order_detail_id }}">
-                                                                <input type="hidden"
-                                                                    name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][item_id]"
-                                                                    value="{{ $detail->prePurchaseOrderDetail->itemRequestDetail->itemPriceHistory->itemUom->item_id }}">
-                                                                {{ $detail->prePurchaseOrderDetail->itemRequestDetail->itemPriceHistory->itemUom->item->name }}
+
+                                                                @if ($detail->prePurchaseOrderDetail->itemRequestDetail)
+                                                                    <!-- System item request -->
+                                                                    <input type="hidden"
+                                                                        name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][item_id]"
+                                                                        value="{{ $detail->prePurchaseOrderDetail->itemRequestDetail->itemPriceHistory->itemUom->item_id }}">
+                                                                    {{ $detail->prePurchaseOrderDetail->itemRequestDetail->itemPriceHistory->itemUom->item->name }}
+                                                                @elseif($detail->prePurchaseOrderDetail->manualItemRequestDetail)
+                                                                    <!-- Manual item request -->
+                                                                    <input type="hidden"
+                                                                        name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][item_id]"
+                                                                        value="manual">
+                                                                    {{ $detail->prePurchaseOrderDetail->manualItemRequestDetail->item_name }}
+                                                                @else
+                                                                    Unknown Item
+                                                                @endif
                                                             </td>
                                                             <td>
                                                                 <input type="hidden"
@@ -225,10 +275,21 @@
                                                                 {{ $detail->quantity }}
                                                             </td>
                                                             <td>
-                                                                <input type="hidden"
-                                                                    name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][uom_id]"
-                                                                    value="{{ $detail->prePurchaseOrderDetail->uom_id }}">
-                                                                {{ $detail->prePurchaseOrderDetail->uom->unitOfMeasurement->name }}
+                                                                @if ($detail->prePurchaseOrderDetail->itemRequestDetail)
+                                                                    <!-- System item request UOM -->
+                                                                    <input type="hidden"
+                                                                        name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][uom_id]"
+                                                                        value="{{ $detail->prePurchaseOrderDetail->uom_id ?? $detail->prePurchaseOrderDetail->itemRequestDetail->itemPriceHistory->itemUom->id }}">
+                                                                    {{ $detail->prePurchaseOrderDetail->uom ? $detail->prePurchaseOrderDetail->uom->unitOfMeasurement->name : $detail->prePurchaseOrderDetail->itemRequestDetail->itemPriceHistory->itemUom->unitOfMeasurement->name }}
+                                                                @elseif($detail->prePurchaseOrderDetail->manualItemRequestDetail)
+                                                                    <!-- Manual item request UOM -->
+                                                                    <input type="hidden"
+                                                                        name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][uom_id]"
+                                                                        value="{{ $detail->prePurchaseOrderDetail->uom_id ?? '' }}">
+                                                                    {{ $detail->prePurchaseOrderDetail->uom ? $detail->prePurchaseOrderDetail->uom->unitOfMeasurement->name : $detail->prePurchaseOrderDetail->manualItemRequestDetail->unit }}
+                                                                @else
+                                                                    Unknown Unit
+                                                                @endif
                                                             </td>
                                                             <td>
                                                                 <input type="number"
@@ -243,8 +304,7 @@
                                                                 <input type="number"
                                                                     name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][subtotal_price]"
                                                                     class="form-control item-subtotal" step="0.01"
-                                                                    min="0"
-                                                                    value="{{ $detail->offered_price_per_unit * $detail->quantity }}"
+                                                                    min="0" value="{{ $detail->subtotal_price }}"
                                                                     readonly required>
                                                             </td>
                                                             <td>
@@ -260,8 +320,7 @@
                                                                 <input type="number"
                                                                     name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][grand_total]"
                                                                     class="form-control item-grand-total" step="0.01"
-                                                                    min="0"
-                                                                    value="{{ $detail->offered_price_per_unit * $detail->quantity + ($detail->shipping_cost ?? 0) }}"
+                                                                    min="0" value="{{ $detail->grand_total }}"
                                                                     readonly required>
                                                             </td>
                                                             <td>
@@ -272,8 +331,7 @@
                                                                 <input type="number"
                                                                     name="quotations[{{ $quotationIndex }}][details][{{ $detailIndex }}][new_unit_price]"
                                                                     class="form-control item-new-price" step="0.01"
-                                                                    min="0"
-                                                                    value="{{ ($detail->offered_price_per_unit * $detail->quantity + ($detail->shipping_cost ?? 0)) / $detail->quantity }}"
+                                                                    min="0" value="{{ $detail->new_unit_price }}"
                                                                     readonly required>
                                                             </td>
                                                         </tr>
@@ -460,7 +518,6 @@
                                                 @endif
                                             </div>
                                         </div>
-
                                         <!-- Grand Total Section -->
                                         <div class="card mt-3">
                                             <div class="card-header bg-light">
@@ -582,6 +639,7 @@
                 $('#detailsTable tbody tr').each(function() {
                     const row = $(this);
                     const detailId = row.find('input[name^="details"][name$="[id]"]').val();
+                    const detailType = row.data('detail-type'); // 'system' or 'manual'
 
                     // More direct selectors to ensure we get the values
                     const itemId = row.find('input[name^="details"][name$="[item_id]"]').val();
@@ -596,21 +654,22 @@
                     const uomName = row.find('.uom-name').text().trim() || 'Unit';
 
                     console.log("Processing row: detailId=" + detailId + ", itemId=" + itemId +
-                        ", uomId=" + uomId);
+                        ", uomId=" + uomId + ", type=" + detailType);
 
                     // We only need a valid detail ID to include the item
                     if (detailId) {
                         tempItems.push({
                             prePurchaseOrderDetailId: detailId,
-                            itemId: itemId || row.data(
-                                'item-id'), // Fallback to data attribute
+                            itemId: itemId || row.data('item-id'), // Fallback to data attribute
                             itemName: itemName,
                             uomId: uomId,
                             uomName: uomName,
                             quantity: quantity,
-                            remarks: remarks
+                            remarks: remarks,
+                            detailType: detailType
                         });
-                        console.log("Added item: " + itemName + " with detailId: " + detailId);
+                        console.log("Added item: " + itemName + " with detailId: " + detailId +
+                            " and type: " + detailType);
                     }
                 });
 
@@ -627,7 +686,8 @@
                             uomName: item.uomName,
                             uomId: item.uomId,
                             quantity: 0,
-                            detailIds: []
+                            detailIds: [],
+                            detailType: item.detailType
                         };
                     }
 
@@ -866,8 +926,6 @@
                     }
                 });
 
-
-
                 // Setup tax value change event
                 $(document).on('input', '.tax-value', function() {
                     // Find the parent supplier card
@@ -1032,8 +1090,6 @@
                 }
             }
 
-
-
             // Calculate total amount for a supplier offer
             function calculateTotalAmount(supplierIdx) {
                 // Get items subtotal
@@ -1096,11 +1152,15 @@
                         ).join('') :
                         `<input type="hidden" name="quotations[${supplierIdx}][details][${idx}][pre_purchase_order_detail_id]" value="${item.prePurchaseOrderDetailId}">`;
 
+                    // Add type indicator for the system or manual
+                    const itemTypeInput =
+                        `<input type="hidden" name="quotations[${supplierIdx}][details][${idx}][detail_type]" value="${item.detailType || 'system'}">`;
 
                     let offerRow = `
         <tr>
             <td>
                 ${detailIdsInput}
+                ${itemTypeInput}
                 <input type="hidden" name="quotations[${supplierIdx}][details][${idx}][item_id]" value="${item.itemId}">
                 ${item.itemName}
             </td>
