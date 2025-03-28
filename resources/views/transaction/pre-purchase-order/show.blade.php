@@ -42,7 +42,7 @@
                                 </small>
                             </div>
                             @if ($data->process_status == 'pending')
-                                <form action="{{ route('pre-purchase-order.submit', $data->id) }}" method="POST">
+                                <form action="{{-- {{ route('pre-purchase-order.submit', $data->id) }} --}}" method="POST">
                                     @csrf
                                     <button type="submit" class="btn btn-primary">Submit for Review / 提交审核</button>
                                 </form>
@@ -94,6 +94,74 @@
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
+                                @php
+                                    // Group details by item name and UOM
+                                    $groupedDetails = [];
+                                    foreach ($data->details as $detail) {
+                                        // Get item name
+                                        if ($detail->itemRequestDetail) {
+                                            $itemName =
+                                                $detail->itemRequestDetail->itemPriceHistory->itemUom->item->name;
+                                        } elseif ($detail->manualItemRequestDetail) {
+                                            $itemName = $detail->manualItemRequestDetail->item_name;
+                                        } else {
+                                            $itemName = $detail->item_name ?? 'Unknown Item';
+                                        }
+
+                                        // Get UOM
+                                        if ($detail->uom) {
+                                            $uom = $detail->uom->unitOfMeasurement->name;
+                                        } elseif ($detail->itemRequestDetail) {
+                                            $uom =
+                                                $detail->itemRequestDetail->itemPriceHistory->itemUom->unitOfMeasurement
+                                                    ->name;
+                                        } elseif ($detail->manualItemRequestDetail) {
+                                            $uom = $detail->manualItemRequestDetail->unit;
+                                        } else {
+                                            $uom = $detail->unit ?? 'Unknown UOM';
+                                        }
+
+                                        // Create unique key for grouping
+                                        $key = $itemName . '|' . $uom;
+
+                                        if (!isset($groupedDetails[$key])) {
+                                            $groupedDetails[$key] = [
+                                                'item_name' => $itemName,
+                                                'uom' => $uom,
+                                                'quantity' => 0,
+                                                'request_numbers' => [],
+                                                'types' => [],
+                                                'details' => [],
+                                            ];
+                                        }
+
+                                        // Add quantity
+                                        $groupedDetails[$key]['quantity'] += $detail->quantity;
+
+                                        // Add request number if available
+                                        if ($detail->itemRequestDetail) {
+                                            $requestNumber = $detail->itemRequestDetail->itemRequest->request_number;
+                                            if (!in_array($requestNumber, $groupedDetails[$key]['request_numbers'])) {
+                                                $groupedDetails[$key]['request_numbers'][] = $requestNumber;
+                                            }
+                                            if (!in_array('System', $groupedDetails[$key]['types'])) {
+                                                $groupedDetails[$key]['types'][] = 'System';
+                                            }
+                                        } elseif ($detail->manualItemRequestDetail) {
+                                            $requestNumber =
+                                                $detail->manualItemRequestDetail->manualItemRequest->request_number;
+                                            if (!in_array($requestNumber, $groupedDetails[$key]['request_numbers'])) {
+                                                $groupedDetails[$key]['request_numbers'][] = $requestNumber;
+                                            }
+                                            if (!in_array('Manual', $groupedDetails[$key]['types'])) {
+                                                $groupedDetails[$key]['types'][] = 'Manual';
+                                            }
+                                        }
+
+                                        // Store original detail for reference
+                                        $groupedDetails[$key]['details'][] = $detail;
+                                    }
+                                @endphp
                                 <table class="table table-bordered">
                                     <thead class="table-light">
                                         <tr>
@@ -107,50 +175,271 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach ($data->details as $index => $detail)
+                                        @foreach ($groupedDetails as $index => $groupedDetail)
                                             <tr>
-                                                <td>{{ $index + 1 }}</td>
+                                                <td>{{ $loop->iteration }}</td>
                                                 <td>
-                                                    @if ($detail->itemRequestDetail)
-                                                        {{ $detail->itemRequestDetail->itemRequest->request_number }}
-                                                    @elseif($detail->manualItemRequestDetail)
-                                                        {{ $detail->manualItemRequestDetail->manualItemRequest->request_number }}
+                                                    @if (count($groupedDetail['request_numbers']) > 0)
+                                                        {{ implode(', ', $groupedDetail['request_numbers']) }}
                                                     @else
                                                         -
                                                     @endif
                                                 </td>
                                                 <td>
-                                                    <span
-                                                        class="badge bg-{{ $detail->itemRequestDetail ? 'primary' : 'info' }}">
-                                                        {{ $detail->itemRequestDetail ? 'System' : 'Manual' }}
-                                                    </span>
+                                                    @foreach ($groupedDetail['types'] as $type)
+                                                        <span
+                                                            class="badge bg-{{ $type == 'System' ? 'primary' : 'info' }} me-1">
+                                                            {{ $type }}
+                                                        </span>
+                                                    @endforeach
                                                 </td>
+                                                <td>{{ $groupedDetail['item_name'] }}</td>
+                                                <td class="text-end">{{ number_format($groupedDetail['quantity'], 2) }}
+                                                </td>
+                                                <td>{{ $groupedDetail['uom'] }}</td>
                                                 <td>
-                                                    @if ($detail->itemRequestDetail)
-                                                        {{ $detail->itemRequestDetail->itemPriceHistory->itemUom->item->name }}
-                                                    @elseif($detail->manualItemRequestDetail)
-                                                        {{ $detail->manualItemRequestDetail->item_name }}
+                                                    @php
+                                                        $remarks = array_filter(
+                                                            array_map(function ($detail) {
+                                                                return $detail->remarks;
+                                                            }, $groupedDetail['details']),
+                                                        );
+                                                    @endphp
+                                                    @if (count($remarks) > 0)
+                                                        {{ implode(', ', $remarks) }}
                                                     @else
-                                                        {{ $detail->item_name ?? '-' }}
+                                                        -
                                                     @endif
                                                 </td>
-                                                <td class="text-end">{{ number_format($detail->quantity, 2) }}</td>
-                                                <td>
-                                                    @if ($detail->uom)
-                                                        {{ $detail->uom->unitOfMeasurement->name }}
-                                                    @elseif($detail->itemRequestDetail)
-                                                        {{ $detail->itemRequestDetail->itemPriceHistory->itemUom->unitOfMeasurement->name }}
-                                                    @elseif($detail->manualItemRequestDetail)
-                                                        {{ $detail->manualItemRequestDetail->unit }}
-                                                    @else
-                                                        {{ $detail->unit ?? '-' }}
-                                                    @endif
-                                                </td>
-                                                <td>{{ $detail->remarks ?: '-' }}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+                    </div>
+                    @php
+                        // Create a comparison table data structure
+                        $comparisonItems = [];
+
+                        // First, gather all items from all quotations
+                        foreach ($data->quotations as $quotation) {
+                            // Calculate tax and cost proportions for this quotation
+                            $totalItemsValue = $quotation->quotationDetails->sum(function ($detail) {
+                                return $detail->offered_price_per_unit * $detail->quantity +
+                                    ($detail->shipping_cost ?? 0);
+                            });
+
+                            $beforeTaxCostsTotal = $quotation->beforeTaxCosts->sum('amount') ?? 0;
+                            $afterTaxCostsTotal = $quotation->afterTaxCosts->sum('amount') ?? 0;
+                            $taxAmount = $quotation->tax_amount ?? 0;
+
+                            // Group quotation details by item name and UOM
+                            foreach ($quotation->quotationDetails as $detail) {
+                                // Get item name
+                                if ($detail->prePurchaseOrderDetail->itemRequestDetail) {
+                                    $itemName =
+                                        $detail->prePurchaseOrderDetail->itemRequestDetail->itemPriceHistory->itemUom
+                                            ->item->name;
+                                } elseif ($detail->prePurchaseOrderDetail->manualItemRequestDetail) {
+                                    $itemName = $detail->prePurchaseOrderDetail->manualItemRequestDetail->item_name;
+                                } else {
+                                    $itemName = $detail->prePurchaseOrderDetail->item_name ?? 'Unknown Item';
+                                }
+
+                                // Get UOM
+                                if ($detail->prePurchaseOrderDetail->uom) {
+                                    $uom = $detail->prePurchaseOrderDetail->uom->unitOfMeasurement->name;
+                                } elseif ($detail->prePurchaseOrderDetail->itemRequestDetail) {
+                                    $uom =
+                                        $detail->prePurchaseOrderDetail->itemRequestDetail->itemPriceHistory->itemUom
+                                            ->unitOfMeasurement->name;
+                                } elseif ($detail->prePurchaseOrderDetail->manualItemRequestDetail) {
+                                    $uom = $detail->prePurchaseOrderDetail->manualItemRequestDetail->unit;
+                                } else {
+                                    $uom = $detail->prePurchaseOrderDetail->unit ?? 'Unknown UOM';
+                                }
+
+                                // Create unique key for grouping
+                                $key = $itemName . '|' . $uom;
+
+                                if (!isset($comparisonItems[$key])) {
+                                    $comparisonItems[$key] = [
+                                        'item_name' => $itemName,
+                                        'uom' => $uom,
+                                        'quantity' => $detail->quantity,
+                                        'suppliers' => [],
+                                    ];
+                                } else {
+                                    // Update quantity if needed
+                                    $comparisonItems[$key]['quantity'] = max(
+                                        $comparisonItems[$key]['quantity'],
+                                        $detail->quantity,
+                                    );
+                                }
+
+                                // Calculate item grand total
+                                $itemGrandTotal =
+                                    $detail->offered_price_per_unit * $detail->quantity + ($detail->shipping_cost ?? 0);
+
+                                // Calculate proportion of total item value this item represents
+                                $itemProportion = $totalItemsValue > 0 ? $itemGrandTotal / $totalItemsValue : 0;
+
+                                // Calculate the allocated costs and tax
+                                $allocatedBeforeTaxCosts = $itemProportion * $beforeTaxCostsTotal;
+                                $allocatedTaxAmount = $itemProportion * $taxAmount;
+                                $allocatedAfterTaxCosts = $itemProportion * $afterTaxCostsTotal;
+
+                                // Calculate new unit price after tax
+                                $newUnitPriceAfterTax =
+                                    $detail->quantity > 0
+                                        ? ($itemGrandTotal +
+                                                $allocatedBeforeTaxCosts +
+                                                $allocatedTaxAmount +
+                                                $allocatedAfterTaxCosts) /
+                                            $detail->quantity
+                                        : 0;
+
+                                // Add supplier info to this item
+                                $comparisonItems[$key]['suppliers'][$quotation->id] = [
+                                    'supplier_id' => $quotation->supplier->id,
+                                    'supplier_name' => $quotation->supplier->name,
+                                    'unit_price_after_tax' => $newUnitPriceAfterTax,
+                                    'currency' => $quotation->currency,
+                                    'quotation_id' => $quotation->id,
+                                    'is_selected' => $quotation->is_selected,
+                                ];
+                            }
+                        }
+
+                        // Sort items by name
+                        ksort($comparisonItems);
+
+                        // Find cheapest supplier for each item
+                        foreach ($comparisonItems as $key => &$item) {
+                            $cheapestPrice = PHP_FLOAT_MAX;
+                            $cheapestSupplierId = null;
+
+                            foreach ($item['suppliers'] as $quotationId => $supplier) {
+                                if ($supplier['unit_price_after_tax'] < $cheapestPrice) {
+                                    $cheapestPrice = $supplier['unit_price_after_tax'];
+                                    $cheapestSupplierId = $quotationId;
+                                }
+                            }
+
+                            $item['cheapest_supplier_id'] = $cheapestSupplierId;
+                            $item['cheapest_price'] = $cheapestPrice;
+                        }
+                        unset($item); // Clear reference
+                    @endphp
+
+                    <!-- Comparison Table -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">Price Comparison Table / 价格比较表</h6>
+                            <small class="text-muted">Compare supplier prices and select the best option for each
+                                item</small>
+                        </div>
+                        <div class="card-body p-0">
+                            <form action="{{-- {{ route('pre-purchase-order.select-items', $data->id) }} --}}" method="POST">
+                                @csrf
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Item / 物品</th>
+                                                <th>UOM / 单位</th>
+                                                <th>Quantity / 数量</th>
+                                                <th class="">Cheapest Supplier / 最便宜的供应商</th>
+                                                @foreach ($data->quotations as $quotation)
+                                                    <th
+                                                        class="text-center {{ $quotation->is_selected ? 'bg-light text-primary' : '' }}">
+                                                        {{ $quotation->supplier->name }}
+                                                        @if ($quotation->is_selected)
+                                                            <div class="small"><i class="fa fa-check-circle"></i> Selected
+                                                            </div>
+                                                        @endif
+                                                    </th>
+                                                @endforeach
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($comparisonItems as $key => $item)
+                                                <tr>
+                                                    <td>{{ $item['item_name'] }}</td>
+                                                    <td>{{ $item['uom'] }}</td>
+                                                    <td class="text-end">{{ number_format($item['quantity'], 2) }}</td>
+                                                    <td class="">
+                                                        @if (isset($item['cheapest_supplier_id']))
+                                                            {{ $item['suppliers'][$item['cheapest_supplier_id']]['supplier_name'] }}
+                                                        @else
+                                                            N/A
+                                                        @endif
+                                                        ( @if (isset($item['cheapest_supplier_id']))
+                                                            {{ strtoupper($item['suppliers'][$item['cheapest_supplier_id']]['currency']) }}
+                                                            {{ number_format($item['cheapest_price'], 2) }}
+                                                        @else
+                                                            N/A
+                                                        @endif
+                                                        )
+                                                    </td>
+                                                    @foreach ($data->quotations as $quotation)
+                                                        <td
+                                                            class="text-center {{ $quotation->is_selected ? 'bg-light' : '' }}">
+                                                            @if (isset($item['suppliers'][$quotation->id]))
+                                                                <div
+                                                                    class="d-flex justify-content-between align-items-center">
+                                                                    <div class="form-check form-check-inline mb-0">
+                                                                        <input class="form-check-input" type="radio"
+                                                                            name="selected_supplier[{{ $key }}]"
+                                                                            id="supplier_{{ $quotation->id }}_{{ $loop->index }}"
+                                                                            value="{{ $quotation->id }}"
+                                                                            {{ isset($item['cheapest_supplier_id']) && $item['cheapest_supplier_id'] == $quotation->id ? 'checked' : '' }}
+                                                                            {{ $data->process_status == 'approved' ? 'disabled' : '' }}>
+                                                                        <label class="form-check-label visually-hidden"
+                                                                            for="supplier_{{ $quotation->id }}_{{ $loop->index }}">
+                                                                            Select
+                                                                        </label>
+                                                                    </div>
+                                                                    <div
+                                                                        class="text-end fw-bold {{ $item['cheapest_supplier_id'] == $quotation->id ? 'text-success' : '' }}">
+                                                                        {{ strtoupper($quotation->currency) }}
+                                                                        {{ number_format($item['suppliers'][$quotation->id]['unit_price_after_tax'], 2) }}
+                                                                    </div>
+                                                                </div>
+                                                            @else
+                                                                <span class="text-muted">N/A</span>
+                                                            @endif
+                                                        </td>
+                                                    @endforeach
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                @if ($data->process_status != 'approved')
+                                    <div class="mt-3 text-end">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fa fa-save"></i> Save Item Selection / 保存所选项目
+                                        </button>
+                                    </div>
+                                @endif
+                            </form>
+
+                            <div class="mt-3">
+                                <div class="alert alert-info">
+                                    <i class="fa fa-info-circle"></i> Note:
+                                    <ul class="mb-0">
+                                        <li>The comparison table shows new unit prices after tax, including all additional
+                                            costs.</li>
+                                        <li>The cheapest supplier for each item is pre-selected and highlighted in green.
+                                        </li>
+                                        <li>You can select different suppliers for different items to optimize your
+                                            purchase.</li>
+                                        <li>Click "Save Item Selection" to update your preferences.</li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -200,7 +489,7 @@
                                                     <div
                                                         class="card h-100 {{ $quotation->is_selected ? 'border-success' : 'border-1' }}">
                                                         <div
-                                                            class="card-header {{ $quotation->is_selected ? 'bg-success text-white' : 'bg-light' }}">
+                                                            class="card-header {{ $quotation->is_selected ? '' : 'bg-light' }}">
                                                             <h6 class="mb-1">Supplier Information / 供应商信息</h6>
                                                         </div>
                                                         <div class="card-body p-1">
@@ -224,9 +513,7 @@
                                                                     已选择的供应商
                                                                 </div>
                                                             @elseif($data->process_status == 'under_review')
-                                                                <form
-                                                                    action="{{ route('pre-purchase-order.select-supplier', [$data->id, $quotation->id]) }}"
-                                                                    method="POST">
+                                                                <form action="{{-- {{ route('pre-purchase-order.select-supplier', [$data->id, $quotation->id]) }} --}}" method="POST">
                                                                     @csrf
                                                                     <button type="submit" class="btn btn-success w-100">
                                                                         Select This Supplier / 选择该供应商
@@ -285,6 +572,108 @@
                                                 </div>
                                             </div>
 
+                                            @php
+                                                // Calculate total item value for this quotation (sum of all items' grand totals before additional costs)
+$totalItemsValue = $quotation->quotationDetails->sum(function (
+    $detail,
+) {
+    return $detail->offered_price_per_unit * $detail->quantity +
+        ($detail->shipping_cost ?? 0);
+});
+
+// Get before tax costs total
+$beforeTaxCostsTotal = $quotation->beforeTaxCosts->sum('amount') ?? 0;
+
+// Get after tax costs total
+$afterTaxCostsTotal = $quotation->afterTaxCosts->sum('amount') ?? 0;
+
+// Get tax amount
+$taxAmount = $quotation->tax_amount ?? 0;
+
+// Group quotation details by item name and UOM
+$groupedQuotationDetails = [];
+foreach ($quotation->quotationDetails as $detail) {
+    // Get item name
+    if ($detail->prePurchaseOrderDetail->itemRequestDetail) {
+        $itemName =
+            $detail->prePurchaseOrderDetail->itemRequestDetail
+                ->itemPriceHistory->itemUom->item->name;
+    } elseif (
+        $detail->prePurchaseOrderDetail->manualItemRequestDetail
+    ) {
+        $itemName =
+            $detail->prePurchaseOrderDetail->manualItemRequestDetail
+                ->item_name;
+    } else {
+        $itemName =
+            $detail->prePurchaseOrderDetail->item_name ??
+            'Unknown Item';
+    }
+
+    // Get UOM
+    if ($detail->prePurchaseOrderDetail->uom) {
+        $uom =
+            $detail->prePurchaseOrderDetail->uom->unitOfMeasurement
+                ->name;
+    } elseif ($detail->prePurchaseOrderDetail->itemRequestDetail) {
+        $uom =
+            $detail->prePurchaseOrderDetail->itemRequestDetail
+                ->itemPriceHistory->itemUom->unitOfMeasurement->name;
+    } elseif (
+        $detail->prePurchaseOrderDetail->manualItemRequestDetail
+    ) {
+        $uom =
+            $detail->prePurchaseOrderDetail->manualItemRequestDetail
+                ->unit;
+    } else {
+        $uom = $detail->prePurchaseOrderDetail->unit ?? 'Unknown UOM';
+    }
+
+    // Create unique key for grouping
+    $key = $itemName . '|' . $uom;
+
+    if (!isset($groupedQuotationDetails[$key])) {
+        $groupedQuotationDetails[$key] = [
+            'item_name' => $itemName,
+            'uom' => $uom,
+            'quantity' => 0,
+            'total_price' => 0,
+            'shipping_cost' => 0,
+            'grand_total' => 0,
+            'types' => [],
+            'details' => [],
+            'remarks' => [],
+        ];
+    }
+
+    // Add quantity and price info
+    $groupedQuotationDetails[$key]['quantity'] += $detail->quantity;
+    $groupedQuotationDetails[$key]['total_price'] +=
+        $detail->offered_price_per_unit * $detail->quantity;
+    $groupedQuotationDetails[$key]['shipping_cost'] +=
+        $detail->shipping_cost ?? 0;
+    $groupedQuotationDetails[$key]['grand_total'] +=
+        $detail->offered_price_per_unit * $detail->quantity +
+        ($detail->shipping_cost ?? 0);
+
+    // Add type
+    $type = $detail->prePurchaseOrderDetail->itemRequestDetail
+        ? 'System'
+        : 'Manual';
+    if (!in_array($type, $groupedQuotationDetails[$key]['types'])) {
+        $groupedQuotationDetails[$key]['types'][] = $type;
+    }
+
+    // Add remarks if available
+    if ($detail->remarks) {
+        $groupedQuotationDetails[$key]['remarks'][] = $detail->remarks;
+    }
+
+    // Store original detail for reference
+    $groupedQuotationDetails[$key]['details'][] = $detail;
+                                                }
+                                            @endphp
+
                                             <!-- Item Details -->
                                             <div class="card mb-3">
                                                 <div class="card-header bg-light">
@@ -303,58 +692,90 @@
                                                                     <th>Subtotal Price / 小计</th>
                                                                     <th>Shipping Cost / 运输费</th>
                                                                     <th>Grand Total / 总计</th>
-                                                                    <th>New Unit Price / 新单价</th>
+                                                                    <th>New Unit Price Before Tax / 税前新单价</th>
+                                                                    <th>New Unit Price After Tax / 税后新单价</th>
                                                                 </tr>
                                                             </thead>
                                                             <tbody>
-                                                                @foreach ($quotation->quotationDetails as $detail)
+                                                                @foreach ($groupedQuotationDetails as $key => $item)
+                                                                    @php
+                                                                        // Calculate average unit price
+                                                                        $avgUnitPrice =
+                                                                            $item['quantity'] > 0
+                                                                                ? $item['total_price'] /
+                                                                                    $item['quantity']
+                                                                                : 0;
+
+                                                                        // Calculate proportion of total item value this item represents
+                                                                        $itemProportion =
+                                                                            $totalItemsValue > 0
+                                                                                ? $item['grand_total'] /
+                                                                                    $totalItemsValue
+                                                                                : 0;
+
+                                                                        // Calculate the allocated before tax costs for this item
+                                                                        $allocatedBeforeTaxCosts =
+                                                                            $itemProportion * $beforeTaxCostsTotal;
+
+                                                                        // Calculate the allocated after tax costs for this item
+                                                                        $allocatedAfterTaxCosts =
+                                                                            $itemProportion * $afterTaxCostsTotal;
+
+                                                                        // Calculate the allocated tax amount for this item
+                                                                        $allocatedTaxAmount =
+                                                                            $itemProportion * $taxAmount;
+
+                                                                        // Calculate new unit price before tax
+                                                                        $newUnitPriceBeforeTax =
+                                                                            ($item['grand_total'] +
+                                                                                $allocatedBeforeTaxCosts) /
+                                                                            $item['quantity'];
+
+                                                                        // Calculate new unit price after tax
+                                                                        $newUnitPriceAfterTax =
+                                                                            ($item['grand_total'] +
+                                                                                $allocatedBeforeTaxCosts +
+                                                                                $allocatedTaxAmount +
+                                                                                $allocatedAfterTaxCosts) /
+                                                                            $item['quantity'];
+                                                                    @endphp
                                                                     <tr>
                                                                         <td>
-                                                                            @if ($detail->prePurchaseOrderDetail->itemRequestDetail)
-                                                                                {{ $detail->prePurchaseOrderDetail->itemRequestDetail->itemPriceHistory->itemUom->item->name }}
-                                                                            @elseif($detail->prePurchaseOrderDetail->manualItemRequestDetail)
-                                                                                {{ $detail->prePurchaseOrderDetail->manualItemRequestDetail->item_name }}
-                                                                            @else
-                                                                                {{ $detail->prePurchaseOrderDetail->item_name ?? 'Unknown Item' }}
-                                                                            @endif
-                                                                            @if ($detail->remarks)
+                                                                            {{ $item['item_name'] }}
+                                                                            @if (count($item['remarks']) > 0)
                                                                                 <div class="small text-muted">
-                                                                                    {{ $detail->remarks }}</div>
+                                                                                    {{ implode(', ', array_unique($item['remarks'])) }}
+                                                                                </div>
                                                                             @endif
                                                                         </td>
                                                                         <td>
-                                                                            <span
-                                                                                class="badge bg-{{ $detail->prePurchaseOrderDetail->itemRequestDetail ? 'primary' : 'info' }}">
-                                                                                {{ $detail->prePurchaseOrderDetail->itemRequestDetail ? 'System' : 'Manual' }}
-                                                                            </span>
+                                                                            @foreach ($item['types'] as $type)
+                                                                                <span
+                                                                                    class="badge bg-{{ $type == 'System' ? 'primary' : 'info' }} me-1">
+                                                                                    {{ $type }}
+                                                                                </span>
+                                                                            @endforeach
                                                                         </td>
                                                                         <td class="text-end">
-                                                                            {{ number_format($detail->quantity, 2) }}</td>
-                                                                        <td>
-                                                                            @if ($detail->prePurchaseOrderDetail->uom)
-                                                                                {{ $detail->prePurchaseOrderDetail->uom->unitOfMeasurement->name }}
-                                                                            @elseif($detail->prePurchaseOrderDetail->itemRequestDetail)
-                                                                                {{ $detail->prePurchaseOrderDetail->itemRequestDetail->itemPriceHistory->itemUom->unitOfMeasurement->name }}
-                                                                            @elseif($detail->prePurchaseOrderDetail->manualItemRequestDetail)
-                                                                                {{ $detail->prePurchaseOrderDetail->manualItemRequestDetail->unit }}
-                                                                            @else
-                                                                                {{ $detail->prePurchaseOrderDetail->unit ?? 'Unknown' }}
-                                                                            @endif
+                                                                            {{ number_format($item['quantity'], 2) }}</td>
+                                                                        <td>{{ $item['uom'] }}</td>
+                                                                        <td class="text-end">
+                                                                            {{ number_format($avgUnitPrice, 2) }}
                                                                         </td>
                                                                         <td class="text-end">
-                                                                            {{ number_format($detail->offered_price_per_unit, 2) }}
+                                                                            {{ number_format($item['total_price'], 2) }}
                                                                         </td>
                                                                         <td class="text-end">
-                                                                            {{ number_format($detail->offered_price_per_unit * $detail->quantity, 2) }}
+                                                                            {{ number_format($item['shipping_cost'], 2) }}
                                                                         </td>
                                                                         <td class="text-end">
-                                                                            {{ number_format($detail->shipping_cost ?? 0, 2) }}
+                                                                            {{ number_format($item['grand_total'], 2) }}
                                                                         </td>
                                                                         <td class="text-end">
-                                                                            {{ number_format($detail->offered_price_per_unit * $detail->quantity + ($detail->shipping_cost ?? 0), 2) }}
+                                                                            {{ number_format($newUnitPriceBeforeTax, 2) }}
                                                                         </td>
                                                                         <td class="text-end">
-                                                                            {{ number_format($detail->new_unit_price ?? ($detail->offered_price_per_unit * $detail->quantity + ($detail->shipping_cost ?? 0)) / $detail->quantity, 2) }}
+                                                                            {{ number_format($newUnitPriceAfterTax, 2) }}
                                                                         </td>
                                                                     </tr>
                                                                 @endforeach
@@ -536,8 +957,7 @@
                     <div class="d-flex justify-content-between mt-4">
                         <div>
                             @if ($data->process_status == 'pending')
-                                <form action="{{ route('pre-purchase-order.submit', $data->id) }}" method="POST"
-                                    class="d-inline">
+                                <form action="{{-- {{ route('pre-purchase-order.submit', $data->id) }} --}}" method="POST" class="d-inline">
                                     @csrf
                                     <button type="submit" class="btn btn-primary px-4">
                                         <i class="fa fa-paper-plane"></i> Submit for Review / 提交审核

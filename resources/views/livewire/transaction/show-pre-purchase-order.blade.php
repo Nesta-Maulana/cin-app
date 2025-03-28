@@ -134,6 +134,7 @@
                                                 <thead>
                                                     <tr>
                                                         <th>Items</th>
+                                                        <th>Type</th>
                                                         <th>Item Request Number</th>
                                                         <th>Qty</th>
                                                         <th>Unit</th>
@@ -143,17 +144,47 @@
                                                 <tbody>
                                                     @forelse($item->details as $detail)
                                                         <tr>
-                                                            <td>{{ $detail->itemRequestDetail->itemPriceHistory->itemUom->item->name }}
+                                                            <td>
+                                                                @if ($detail->itemRequestDetail)
+                                                                    {{ $detail->itemRequestDetail->itemPriceHistory->itemUom->item->name }}
+                                                                @elseif($detail->manualItemRequestDetail)
+                                                                    {{ $detail->manualItemRequestDetail->item_name }}
+                                                                @else
+                                                                    {{ $detail->item_name ?? 'N/A' }}
+                                                                @endif
                                                             </td>
-                                                            <td>{{ $detail->itemRequestDetail->request_number ?? '-' }}
+                                                            <td>
+                                                                <span
+                                                                    class="badge bg-{{ $detail->itemRequestDetail ? 'primary' : 'info' }}">
+                                                                    {{ $detail->itemRequestDetail ? 'System' : 'Manual' }}
+                                                                </span>
+                                                            </td>
+                                                            <td>
+                                                                @if ($detail->itemRequestDetail)
+                                                                    {{ $detail->itemRequestDetail->itemRequest->request_number ?? '-' }}
+                                                                @elseif($detail->manualItemRequestDetail)
+                                                                    {{ $detail->manualItemRequestDetail->manualItemRequest->request_number ?? '-' }}
+                                                                @else
+                                                                    -
+                                                                @endif
                                                             </td>
                                                             <td>{{ $detail->quantity }}</td>
-                                                            <td>{{ $detail->uom->unitOfMeasurement->name }}</td>
+                                                            <td>
+                                                                @if ($detail->uom)
+                                                                    {{ $detail->uom->unitOfMeasurement->name }}
+                                                                @elseif($detail->itemRequestDetail)
+                                                                    {{ $detail->itemRequestDetail->itemPriceHistory->itemUom->unitOfMeasurement->name }}
+                                                                @elseif($detail->manualItemRequestDetail)
+                                                                    {{ $detail->manualItemRequestDetail->unit }}
+                                                                @else
+                                                                    {{ $detail->unit ?? '-' }}
+                                                                @endif
+                                                            </td>
                                                             <td>{{ $detail->remarks }}</td>
                                                         </tr>
                                                     @empty
                                                         <tr>
-                                                            <td colspan="5" class="text-center">No item details found
+                                                            <td colspan="6" class="text-center">No item details found
                                                             </td>
                                                         </tr>
                                                     @endforelse
@@ -169,8 +200,10 @@
                                                         <thead>
                                                             <tr>
                                                                 <th>Supplier</th>
-                                                                <th>Shipping Cost</th>
-                                                                <th>Other Cost</th>
+                                                                <th>Currency</th>
+                                                                <th>Items Total</th>
+                                                                <th>Tax Amount</th>
+                                                                <th>Other Costs</th>
                                                                 <th>Grand Total</th>
                                                                 <th>Selected</th>
                                                                 <th>Actions</th>
@@ -180,11 +213,23 @@
                                                             @foreach ($item->quotations as $quotation)
                                                                 <tr>
                                                                     <td>{{ $quotation->supplier->name }}</td>
-                                                                    <td>{{ number_format($quotation->shipping_cost, 2) }}
+                                                                    <td>{{ strtoupper($quotation->currency ?? 'IDR') }}
                                                                     </td>
-                                                                    <td>{{ number_format($quotation->other_cost, 2) }}
+                                                                    <td>{{ number_format(
+                                                                        $quotation->quotationDetails->sum(function ($detail) {
+                                                                            return $detail->offered_price_per_unit * $detail->quantity;
+                                                                        }),
+                                                                        2,
+                                                                    ) }}
                                                                     </td>
-                                                                    <td>{{ number_format($quotation->grand_total, 2) }}
+                                                                    <td>{{ number_format($quotation->tax_amount ?? 0, 2) }}
+                                                                    </td>
+                                                                    <td>{{ number_format(
+                                                                        ($quotation->beforeTaxCosts->sum('amount') ?? 0) + ($quotation->afterTaxCosts->sum('amount') ?? 0),
+                                                                        2,
+                                                                    ) }}
+                                                                    </td>
+                                                                    <td>{{ number_format($quotation->total_amount ?? 0, 2) }}
                                                                     </td>
                                                                     <td>
                                                                         @if ($quotation->is_selected)
@@ -196,12 +241,12 @@
                                                                     </td>
                                                                     <td>
                                                                         <div class="d-flex align-items-center">
-                                                                            <a href="{{ route('quotation-comparison.edit', $quotation->id) }}"
+                                                                            <a href="{{ route('pre-purchase-order.edit', $item->id) }}#supplier-card-{{ $loop->index }}"
                                                                                 class="action-btn" title="edit">
                                                                                 <i
                                                                                     class="fa fa-edit fa-sm me-2 fs-5"></i>
                                                                             </a>
-                                                                            @if (!$quotation->is_selected && $item->process_status != 'finalized')
+                                                                            @if (!$quotation->is_selected && $item->process_status == 'under_review')
                                                                                 <a href="javascript:;"
                                                                                     class="action-btn"
                                                                                     wire:click.prevent="selectSupplier({{ $quotation->id }})"
@@ -240,7 +285,8 @@
         <div class="card-body d-md-flex justify-content-md-between align-items-center pt-3 pb-2">
             <div class="align-self-start my-2 d-none d-md-block text-muted">
                 <small>
-                    Showing {{ $table->firstItem() ?? 0 }} to {{ $table->lastItem() ?? 0 }} of {{ $table->total() ?? 0 }} data
+                    Showing {{ $table->firstItem() ?? 0 }} to {{ $table->lastItem() ?? 0 }} of
+                    {{ $table->total() ?? 0 }} data
                 </small>
             </div>
             {{ $table->links() }}
@@ -286,7 +332,7 @@
                 </div>
                 <div class="modal-body">
                     <p>Are you sure you want to select this supplier? This action will mark the Pre-Purchase Order as
-                        finalized.</p>
+                        approved.</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

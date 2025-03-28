@@ -39,21 +39,28 @@ class ShowPrePurchaseOrder extends Component
 
             // Apply search filter
             if (!empty($this->search)) {
-                $query->where('pre_po_number', 'like', "%{$this->search}%")
-                    ->orWhereHas('customerOrder', function ($q) {
-                        $q->where('order_number', 'like', "%{$this->search}%");
-                    })
-                    ->orWhereHas('createdBy', function ($q) {
-                        $q->where('name', 'like', "%{$this->search}%");
-                    });
+                $query->where(function ($q) {
+                    $q->where('pre_po_number', 'like', "%{$this->search}%")
+                        ->orWhereHas('customerOrder', function ($q) {
+                            $q->where('order_number', 'like', "%{$this->search}%");
+                        })
+                        ->orWhereHas('createdBy', function ($q) {
+                            $q->where('name', 'like', "%{$this->search}%");
+                        });
+                });
             }
 
-            // Load relationships
+            // Load relationships for both system and manual item requests
             $query->with([
+                'details.itemRequestDetail.itemRequest',
                 'details.itemRequestDetail.itemPriceHistory.itemUom.item',
                 'details.itemRequestDetail.itemPriceHistory.itemUom.unitOfMeasurement',
+                'details.manualItemRequestDetail.manualItemRequest',
                 'details.uom.unitOfMeasurement',
                 'quotations.supplier',
+                'quotations.quotationDetails.prePurchaseOrderDetail',
+                'quotations.beforeTaxCosts',
+                'quotations.afterTaxCosts',
                 'customerOrder',
                 'createdBy'
             ]);
@@ -99,16 +106,21 @@ class ShowPrePurchaseOrder extends Component
         try {
             $quotation = QuotationComparison::findOrFail($this->selectedQuotationId);
 
+            // Reset any previously selected quotations for this pre-purchase order
+            QuotationComparison::where('pre_purchase_order_id', $quotation->pre_purchase_order_id)
+                ->where('id', '!=', $this->selectedQuotationId)
+                ->update(['is_selected' => false]);
+
             // Update the selected flag for this quotation
             $quotation->update([
                 'is_selected' => true
             ]);
 
-            // Update the pre-purchase order status to finalized
+            // Update the pre-purchase order status to approved (not finalized yet)
             $quotation->prePurchaseOrder->update([
-                'process_status' => 'finalized',
-                'grand_total' => $quotation->grand_total,
-                'finalized_by' => auth()->id()
+                'process_status' => 'approved',
+                'grand_total' => $quotation->total_amount, // Using total_amount instead of grand_total
+                'approved_by' => auth()->id()
             ]);
 
             DB::commit();
@@ -137,6 +149,23 @@ class ShowPrePurchaseOrder extends Component
         }
 
         try {
+            // If setting to approved, make sure there's a selected quotation
+            if ($this->newStatus === 'approved') {
+                $prePurchaseOrders = PrePurchaseOrder::whereIn('id', $this->selected)
+                    ->with('quotations', function ($query) {
+                        $query->where('is_selected', true);
+                    })
+                    ->get();
+
+                foreach ($prePurchaseOrders as $po) {
+                    if ($po->quotations->isEmpty()) {
+                        $this->alert('warning', "Pre-Purchase Order {$po->pre_po_number} needs to have a selected supplier before setting to Approved status");
+                        return;
+                    }
+                }
+            }
+
+            // Update the status
             PrePurchaseOrder::whereIn('id', $this->selected)->update([
                 'process_status' => $this->newStatus,
                 'updated_by' => auth()->id()
@@ -155,7 +184,32 @@ class ShowPrePurchaseOrder extends Component
     public function delete()
     {
         try {
-            PrePurchaseOrder::destroy($this->modelId);
+            // Load the pre-purchase order with its relationships
+            $prePurchaseOrder = PrePurchaseOrder::with('quotations')->find($this->modelId);
+
+            if (!$prePurchaseOrder) {
+                $this->alert('error', 'Pre-Purchase Order not found');
+                return;
+            }
+
+            // Check if the pre-purchase order is finalized or approved
+            if (in_array($prePurchaseOrder->process_status, ['finalized', 'approved'])) {
+                $this->alert('error', 'Cannot delete a finalized or approved Pre-Purchase Order');
+                return;
+            }
+
+            // Delete associated quotations first
+            foreach ($prePurchaseOrder->quotations as $quotation) {
+                // Delete quotation details and additional costs
+                $quotation->quotationDetails()->delete();
+                $quotation->beforeTaxCosts()->delete();
+                $quotation->afterTaxCosts()->delete();
+                $quotation->delete();
+            }
+
+            // Now delete the pre-purchase order
+            $prePurchaseOrder->delete();
+
             $this->alert('success', 'Pre-Purchase Order deleted successfully');
         } catch (\Exception $e) {
             $this->alert('error', 'Error deleting Pre-Purchase Order: ' . $e->getMessage());
@@ -203,13 +257,15 @@ class ShowPrePurchaseOrder extends Component
             $query = PrePurchaseOrder::query();
 
             if (!empty($this->search)) {
-                $query->where('pre_po_number', 'like', "%{$this->search}%")
-                    ->orWhereHas('customerOrder', function ($q) {
-                        $q->where('order_number', 'like', "%{$this->search}%");
-                    })
-                    ->orWhereHas('createdBy', function ($q) {
-                        $q->where('name', 'like', "%{$this->search}%");
-                    });
+                $query->where(function ($q) {
+                    $q->where('pre_po_number', 'like', "%{$this->search}%")
+                        ->orWhereHas('customerOrder', function ($q) {
+                            $q->where('order_number', 'like', "%{$this->search}%");
+                        })
+                        ->orWhereHas('createdBy', function ($q) {
+                            $q->where('name', 'like', "%{$this->search}%");
+                        });
+                });
             }
 
             $this->selected = $query->pluck('id')->toArray();
