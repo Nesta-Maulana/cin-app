@@ -42,7 +42,7 @@
                                 </small>
                             </div>
                             @if ($data->process_status == 'pending')
-                                <form action="{{-- {{ route('pre-purchase-order.submit', $data->id) }} --}}" method="POST">
+                                <form action="{{ route('pre-purchase-order.submit', $data->id) }}" method="POST">
                                     @csrf
                                     <button type="submit" class="btn btn-primary">Submit for Review / 提交审核</button>
                                 </form>
@@ -92,7 +92,7 @@
                         <div class="card-header bg-light">
                             <h6 class="mb-0">Pre-Purchase Order Details / 预采购单详细信息</h6>
                         </div>
-                        <div class="card-body">
+                        <div class="card-body p-0">
                             <div class="table-responsive">
                                 @php
                                     // Group details by item name and UOM
@@ -331,6 +331,9 @@
                             $item['cheapest_price'] = $cheapestPrice;
                         }
                         unset($item); // Clear reference
+
+                        // Load item-specific supplier selections
+                        $itemSelections = $data->itemSelections()->pluck('quotation_id', 'item_key')->toArray();
                     @endphp
 
                     <!-- Comparison Table -->
@@ -341,7 +344,7 @@
                                 item</small>
                         </div>
                         <div class="card-body p-0">
-                            <form action="{{-- {{ route('pre-purchase-order.select-items', $data->id) }} --}}" method="POST">
+                            <form action="{{ route('pre-purchase-order.select-items', $data->id) }}" method="POST">
                                 @csrf
                                 <div class="table-responsive">
                                     <table class="table table-bordered table-hover">
@@ -394,7 +397,13 @@
                                                                             name="selected_supplier[{{ $key }}]"
                                                                             id="supplier_{{ $quotation->id }}_{{ $loop->index }}"
                                                                             value="{{ $quotation->id }}"
-                                                                            {{ isset($item['cheapest_supplier_id']) && $item['cheapest_supplier_id'] == $quotation->id ? 'checked' : '' }}
+                                                                            {{ (isset($itemSelections[$key]) && $itemSelections[$key] == $quotation->id
+                                                                                    ? 'checked'
+                                                                                    : isset($item['cheapest_supplier_id']) &&
+                                                                                        $item['cheapest_supplier_id'] == $quotation->id &&
+                                                                                        !isset($itemSelections[$key]))
+                                                                                ? 'checked'
+                                                                                : '' }}
                                                                             {{ $data->process_status == 'approved' ? 'disabled' : '' }}>
                                                                         <label class="form-check-label visually-hidden"
                                                                             for="supplier_{{ $quotation->id }}_{{ $loop->index }}">
@@ -513,7 +522,9 @@
                                                                     已选择的供应商
                                                                 </div>
                                                             @elseif($data->process_status == 'under_review')
-                                                                <form action="{{-- {{ route('pre-purchase-order.select-supplier', [$data->id, $quotation->id]) }} --}}" method="POST">
+                                                                <form
+                                                                    action="{{ route('pre-purchase-order.select-supplier', [$data->id, $quotation->id]) }}"
+                                                                    method="POST">
                                                                     @csrf
                                                                     <button type="submit" class="btn btn-success w-100">
                                                                         Select This Supplier / 选择该供应商
@@ -957,7 +968,8 @@ foreach ($quotation->quotationDetails as $detail) {
                     <div class="d-flex justify-content-between mt-4">
                         <div>
                             @if ($data->process_status == 'pending')
-                                <form action="{{-- {{ route('pre-purchase-order.submit', $data->id) }} --}}" method="POST" class="d-inline">
+                                <form action="{{ route('pre-purchase-order.submit', $data->id) }}" method="POST"
+                                    class="d-inline">
                                     @csrf
                                     <button type="submit" class="btn btn-primary px-4">
                                         <i class="fa fa-paper-plane"></i> Submit for Review / 提交审核

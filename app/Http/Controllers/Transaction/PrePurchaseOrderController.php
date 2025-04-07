@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CustomerOrder;
 use App\Models\PrePurchaseOrder;
 use App\Models\PrePurchaseOrderDetail;
+use App\Models\PrePurchaseOrderItemSelection;
 use App\Models\QuotationComparison;
 use App\Models\QuotationComparisonAdditionalCost;
 use App\Models\QuotationComparisonDetail;
@@ -416,4 +417,162 @@ class PrePurchaseOrderController extends Controller
         $suppliers = Supplier::orderBy('name')->get();
         return response()->json(['data' => $suppliers]);
     }
+
+    public function selectItems(Request $request, $id)
+    {
+        // dd($request->all());
+        // Validate the incoming request
+        // 验证传入的请求
+        $validatedData = $request->validate([
+            'selected_supplier' => 'required|array',
+            'selected_supplier.*' => 'required|exists:quotation_comparisons,id',
+        ], [
+            'selected_supplier.required' => 'Please select suppliers for items / 请为物品选择供应商',
+            'selected_supplier.*.required' => 'Each item must have a selected supplier / 每个物品必须有一个所选供应商',
+            'selected_supplier.*.exists' => 'Selected supplier quotation does not exist / 所选供应商报价不存在',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Get the pre-purchase order
+            // 获取预采购单
+            $prePurchaseOrder = PrePurchaseOrder::findOrFail($id);
+
+            // Check if pre-purchase order is in a valid state for editing
+            // 检查预采购单是否处于可编辑的状态
+            if ($prePurchaseOrder->process_status === 'approved') {
+                return redirect()->back()->with('error', 'This pre-purchase order is already approved and cannot be modified / 此预采购单已被批准，无法修改');
+            }
+
+            // Update or create item selections
+            // 更新或创建物品选择
+            foreach ($validatedData['selected_supplier'] as $itemKey => $quotationId) {
+                PrePurchaseOrderItemSelection::updateOrCreate(
+                    [
+                        'pre_purchase_order_id' => $id,
+                        'item_key' => $itemKey,
+                    ],
+                    [
+                        'quotation_id' => $quotationId,
+                    ]
+                );
+            }
+
+            // Update the pre-purchase order status to "Waiting Approval Manager" if it was "pending"
+            // 如果预采购单状态为"pending"，则将其更新为"Waiting Approval Manager"
+            if ($prePurchaseOrder->process_status == 'pending' || $prePurchaseOrder->process_status == 'draft') {
+                $prePurchaseOrder->update([
+                    'process_status' => 'Waiting Approval Manager'
+                ]);
+
+                // Check for approval if necessary
+                // 如有必要，检查审批
+                $checkApproval = $this->repository->checkApproval('create', $prePurchaseOrder->id);
+            }
+
+            DB::commit();
+
+            return redirect()->route('pre-purchase-order.show', $id)
+                ->with('success', 'Supplier selections have been saved successfully. The pre-purchase order has been submitted for approval. / 供应商选择已成功保存。预采购单已提交审批。');
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('Pre-Purchase Order Item Selection Error: ' . $e->getMessage());
+
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Failed to save supplier selections: ' . $e->getMessage() . ' / 保存供应商选择失败：' . $e->getMessage());
+        }
+    }
+    public function submit(Request $request, $id)
+    {
+        try {
+            DB::beginTransaction();
+
+            // Get the pre-purchase order
+            // 获取预采购单
+            $prePurchaseOrder = PrePurchaseOrder::findOrFail($id);
+
+            // Check if order is in pending status
+            // 检查订单是否处于待处理状态
+            if ($prePurchaseOrder->process_status !== 'pending' && $prePurchaseOrder->process_status !== 'Draft') {
+                return redirect()->back()
+                    ->with('error', 'This pre-purchase order is not in draft status and cannot be submitted / 此预采购单不是草稿状态，无法提交');
+            }
+
+            // Update status to "under_review"
+            // 将状态更新为"under_review"
+            $prePurchaseOrder->update([
+                'process_status' => 'Waiting Approval Manager'
+            ]);
+
+            // Check for approval
+            // 检查审批
+            $checkApproval = $this->repository->checkApproval('create', $prePurchaseOrder->id);
+
+            DB::commit();
+
+            return redirect()->route('pre-purchase-order.show', $id)
+                ->with('success', 'Pre-purchase order has been submitted for review / 预采购单已提交审核');
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('Pre-Purchase Order Submit Error: ' . $e->getMessage());
+
+            return redirect()->back()
+                ->with('error', 'Failed to submit pre-purchase order: ' . $e->getMessage() . ' / 提交预采购单失败：' . $e->getMessage());
+        }
+    }
+    public function selectSupplier(Request $request, $id, $quotationId)
+    {
+        try {
+            DB::beginTransaction();
+
+            // Get the pre-purchase order
+            // 获取预采购单
+            $prePurchaseOrder = PrePurchaseOrder::findOrFail($id);
+
+            // Check if the order is in a state that allows supplier selection
+            // 检查订单是否处于允许选择供应商的状态
+            if ($prePurchaseOrder->process_status !== 'under_review' && $prePurchaseOrder->process_status !== 'Waiting Approval Manager') {
+                return redirect()->back()
+                    ->with('error', 'Supplier selection is only allowed when the pre-purchase order is under review / 只有当预采购单处于审核中状态时，才允许选择供应商');
+            }
+
+            // Get the quotation
+            // 获取报价
+            $quotation = QuotationComparison::where('pre_purchase_order_id', $id)
+                ->findOrFail($quotationId);
+
+            // Reset all quotations to not selected
+            // 重置所有报价为未选择
+            QuotationComparison::where('pre_purchase_order_id', $id)
+                ->update(['is_selected' => false]);
+
+            // Mark this quotation as selected
+            // 将此报价标记为已选择
+            $quotation->update(['is_selected' => true]);
+
+            // Update pre-purchase order status to "approved"
+            // 将预采购单状态更新为"已批准"
+            $prePurchaseOrder->update([
+                'process_status' => 'approved',
+                'finalized_by' => auth()->id()
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('pre-purchase-order.show', $id)
+                ->with('success', 'Supplier "' . $quotation->supplier->name . '" has been selected and the pre-purchase order has been approved / 供应商 "' . $quotation->supplier->name . '" 已被选择，预采购单已获批准');
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('Pre-Purchase Order Supplier Selection Error: ' . $e->getMessage());
+
+            return redirect()->back()
+                ->with('error', 'Failed to select supplier: ' . $e->getMessage() . ' / 选择供应商失败：' . $e->getMessage());
+        }
+    }
+
 }

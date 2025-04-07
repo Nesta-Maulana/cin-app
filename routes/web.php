@@ -118,13 +118,24 @@ Route::middleware(['auth', 'auth.status'])->group(function () {
 
     Route::get('/purchase-order/{purchaseOrder}/download-supplier-offers', [PurchaseOrderController::class, 'downloadSupplierOffers'])->name('download-supplier-offers');
     Route::post('/update-supplier-offer-selection', [PurchaseOrderController::class, 'updateSupplierOfferSelection'])
-    ->name('update-supplier-offer-selection');
+        ->name('update-supplier-offer-selection');
 
     Route::resource('bom-status', BomStatusController::class);
+    Route::post('pre-purchase-order/{id}/select-items', [PrePurchaseOrderController::class, 'selectItems'])
+        ->name('pre-purchase-order.select-items');
+
+    // Route for submitting pre-purchase order for review
+    Route::post('pre-purchase-order/{id}/submit', [PrePurchaseOrderController::class, 'submit'])
+        ->name('pre-purchase-order.submit');
+
+    // Route for selecting a specific supplier for the entire pre-purchase order
+    Route::post('pre-purchase-order/{id}/select-supplier/{quotationId}', [PrePurchaseOrderController::class, 'selectSupplier'])
+        ->name('pre-purchase-order.select-supplier');
+
     Route::resource('pre-purchase-order', PrePurchaseOrderController::class);
     Route::resource('purchase-order', PurchaseOrderController::class);
     Route::resource('manual-item-request', ManualItemRequestController::class);
     Route::get('manual-item-request-template', [ManualItemRequestController::class, 'downloadTemplate'])
-    ->name('manual-item-request.download-template');
+        ->name('manual-item-request.download-template');
 
 });
