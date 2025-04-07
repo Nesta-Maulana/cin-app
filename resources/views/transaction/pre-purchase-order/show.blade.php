@@ -404,7 +404,12 @@
                                                                                         !isset($itemSelections[$key]))
                                                                                 ? 'checked'
                                                                                 : '' }}
-                                                                            {{ $data->process_status == 'approved' ? 'disabled' : '' }}>
+                                                                            {{
+                                                                            $data->process_status == 'approved' ||
+                                                                            (
+                                                                                $data->process_status != 'rejected' && isset($itemSelections[$key]) && $itemSelections[$key] != $quotation->id)
+                                                                                ? 'disabled'
+                                                                                : '' }}>
                                                                         <label class="form-check-label visually-hidden"
                                                                             for="supplier_{{ $quotation->id }}_{{ $loop->index }}">
                                                                             Select
