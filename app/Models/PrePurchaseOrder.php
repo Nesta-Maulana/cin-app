@@ -100,4 +100,21 @@ class PrePurchaseOrder extends Model
                 $query->where('event', $event);
             })->where('status', 'pending');
     }
+    public function approvalRequests()
+    {
+        return $this->morphMany(ApprovalRequest::class, 'reference', 'class_name', 'reference_id');
+    }
+
+    public function getLatestApprovalRequest()
+    {
+        return $this->approvalRequests()
+            ->with([
+                'logs' => function ($query) {
+                    $query->latest();
+                }
+            ])
+            ->latest()
+            ->first();
+    }
+
 }

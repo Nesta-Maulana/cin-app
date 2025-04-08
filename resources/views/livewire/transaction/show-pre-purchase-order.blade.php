@@ -101,10 +101,12 @@
                                     </a>
 
                                     @can('update-pre-purchase-order')
-                                        <a href="{{ route('pre-purchase-order.edit', $item->id) }}" class="action-btn"
-                                            title="edit">
-                                            <i class="fa fa-edit fa-sm me-2 fs-5"></i>
-                                        </a>
+                                        @if ($item->process_status == 'draft')
+                                            <a href="{{ route('pre-purchase-order.edit', $item->id) }}" class="action-btn"
+                                                title="Add Quotation">
+                                                <i class="fa fa-plus-circle fa-sm me-2 fs-5"></i>
+                                            </a>
+                                        @endif
                                     @endcan
 
                                     @can('delete-pre-purchase-order')
@@ -114,12 +116,45 @@
                                         </a>
                                     @endcan
 
-                                    @if ($item->process_status == 'pending' || $item->process_status == 'under_review')
-                                        <a href="{{ route('quotation-comparison.create', ['po_id' => $item->id]) }}"
-                                            class="action-btn" title="Add Quotation">
-                                            <i class="fa fa-plus-circle fa-sm me-2 fs-5"></i>
-                                        </a>
-                                    @endif
+
+                                    @php
+                                        $approvalRequest = $item->approvalRequest('create')->first();
+                                    @endphp
+                                    @can('approve-pre-purchase-order')
+                                        @if (!is_null($approvalRequest))
+                                            @if ($approvalRequest->currentLevel->class_name_approver_type == 'App\Models\User')
+                                                @if (Auth::user()->id == $approvalRequest->currentLevel->approver->approver_reference_id)
+                                                    <a href="javascript:;" class="action-btn" title="Approval Process"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalApprove{{ $approvalRequest->id }}">
+                                                        <i class="fa fa-list-check fa-sm me-2 fs-5"></i>
+                                                    </a>
+                                                @endif
+                                            @endif
+                                            @if ($approvalRequest->currentLevel->class_name_approver_type == 'App\Models\Role')
+                                                @if (Auth::user()->hasRole($approvalRequest->currentLevel->approver->name))
+                                                    @if (is_null($approvalRequest->currentLevel->department_id))
+                                                        <a href="javascript:;" class="action-btn" title="Approval Process"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modalApprove{{ $approvalRequest->id }}">
+                                                            <i class="fa fa-list-check fa-sm me-2 fs-5"></i>
+                                                        </a>
+                                                    @else
+                                                        @if (count(array_intersect(
+                                                                    $item->createdBy->departments->pluck('id')->toArray(),
+                                                                    auth()->user()->departments->pluck('id')->toArray())) > 0)
+                                                            <a href="javascript:;" class="action-btn"
+                                                                title="Approval Process" data-bs-toggle="modal"
+                                                                data-bs-target="#modalApprove{{ $approvalRequest->id }}">
+                                                                <i class="fa fa-list-check fa-sm me-2 fs-5"></i>
+                                                            </a>
+                                                        @endif
+                                                    @endif
+                                                @endif
+                                            @endif
+                                            @include('admin.modal.approval')
+                                        @endif
+                                    @endcan
                                 </div>
                             </td>
                         </tr>

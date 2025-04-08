@@ -12,7 +12,7 @@
                         <small class="text-muted">View pre-purchase order information / 查看预采购单信息</small>
                     </div>
                     <div>
-                        @if ($data->process_status == 'pending' || $data->process_status == 'under_review')
+                        @if ($data->process_status == 'draft')
                             <a href="{{ route('pre-purchase-order.edit', $data->id) }}" class="btn btn-primary btn-sm">
                                 <i class="fa fa-edit"></i> Edit / 编辑
                             </a>
@@ -20,24 +20,65 @@
                         <a href="{{ route('pre-purchase-order.index') }}" class="btn btn-secondary btn-sm">
                             <i class="fa fa-list"></i> List / 列表
                         </a>
+                        @php
+                            $approvalRequest = $data->approvalRequest('create')->first();
+                        @endphp
+                        @can('approve-pre-purchase-order')
+                            @if (!is_null($approvalRequest))
+                                @if ($approvalRequest->currentLevel->class_name_approver_type == 'App\Models\User')
+                                    @if (Auth::user()->id == $approvalRequest->currentLevel->approver->approver_reference_id)
+                                        <a href="javascript:;" class="btn btn-primary btn-sm" title="Approval Process"
+                                            data-bs-toggle="modal" data-bs-target="#modalApprove{{ $approvalRequest->id }}">
+                                            <i class="fa fa-list-check fa-sm"></i> Approval Process / 审批
+                                        </a>
+                                    @endif
+                                @endif
+                                @if ($approvalRequest->currentLevel->class_name_approver_type == 'App\Models\Role')
+                                    @if (Auth::user()->hasRole($approvalRequest->currentLevel->approver->name))
+                                        @if (is_null($approvalRequest->currentLevel->department_id))
+                                            <a href="javascript:;" class="btn btn-primary btn-sm" title="Approval Process"
+                                                data-bs-toggle="modal" data-bs-target="#modalApprove{{ $approvalRequest->id }}">
+                                                <i class="fa fa-list-check fa-sm"></i> Approval Process / 审批
+                                            </a>
+                                        @else
+                                            @if (count(array_intersect(
+                                                        $item->createdBy->departments->pluck('id')->toArray(),
+                                                        auth()->user()->departments->pluck('id')->toArray())) > 0)
+                                                <a href="javascript:;" class="btn btn-primary btn-sm" title="Approval Process"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalApprove{{ $approvalRequest->id }}">
+                                                    <i class="fa fa-list-check fa-sm"></i> Approval Process / 审批
+                                                </a>
+                                            @endif
+                                        @endif
+                                    @endif
+                                @endif
+                                @include('admin.modal.approval')
+                            @endif
+                        @endcan
                     </div>
+
                 </div>
 
                 <!-- Card Body -->
                 <div class="card-body">
                     <!-- Status Panel -->
                     <div
-                        class="alert alert-{{ $data->process_status == 'approved' ? 'success' : ($data->process_status == 'under_review' ? 'info' : 'warning') }}">
+                        class="alert alert-{{ $data->process_status == 'approved' ? 'success' : ($data->process_status == 'Waiting Approval Manager' ? 'info' : 'warning') }}">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="mb-0">Status: <strong>{{ ucfirst($data->process_status) }}</strong></h6>
                                 <small>
-                                    @if ($data->process_status == 'pending')
+                                    @if ($data->process_status == 'draft')
+                                        This pre-purchase order is in draft status.
+                                    @elseif ($data->process_status == 'pending')
                                         This pre-purchase order is pending and needs to be submitted for review.
-                                    @elseif($data->process_status == 'under_review')
+                                    @elseif($data->process_status == 'Waiting Approval Manager')
                                         This pre-purchase order is under review. Supplier offers can be added and selected.
                                     @elseif($data->process_status == 'approved')
                                         This pre-purchase order has been approved with a selected supplier.
+                                    @elseif($data->process_status == 'rejected')
+                                        This pre-purchase order has been rejected (Reason: {{  $data->getLatestApprovalRequest()->logs->first()->remarks }}).
                                     @endif
                                 </small>
                             </div>
@@ -404,10 +445,8 @@
                                                                                         !isset($itemSelections[$key]))
                                                                                 ? 'checked'
                                                                                 : '' }}
-                                                                            {{
-                                                                            $data->process_status == 'approved' ||
-                                                                            (
-                                                                                $data->process_status != 'rejected' && isset($itemSelections[$key]) && $itemSelections[$key] != $quotation->id)
+                                                                            {{ $data->process_status == 'approved' ||
+                                                                            ($data->process_status != 'rejected' && isset($itemSelections[$key]) && $itemSelections[$key] != $quotation->id)
                                                                                 ? 'disabled'
                                                                                 : '' }}>
                                                                         <label class="form-check-label visually-hidden"
@@ -432,13 +471,49 @@
                                     </table>
                                 </div>
 
-                                @if ($data->process_status != 'approved')
-                                    <div class="mt-3 text-end">
+                                <div class="mt-3 text-end">
+                                    @if (!in_array($data->process_status, ['approved', 'pending', 'Waiting Approval Manager']))
                                         <button type="submit" class="btn btn-primary">
                                             <i class="fa fa-save"></i> Save Item Selection / 保存所选项目
                                         </button>
-                                    </div>
-                                @endif
+                                    @endif
+                                    @can('approve-pre-purchase-order')
+                                        @if (!is_null($approvalRequest))
+                                            @if ($approvalRequest->currentLevel->class_name_approver_type == 'App\Models\User')
+                                                @if (Auth::user()->id == $approvalRequest->currentLevel->approver->approver_reference_id)
+                                                    <a href="javascript:;" class="btn btn-primary btn-sm"
+                                                        title="Approval Process" data-bs-toggle="modal"
+                                                        data-bs-target="#modalApprove{{ $approvalRequest->id }}">
+                                                        <i class="fa fa-list-check fa-sm"></i> Approval Process / 审批
+                                                    </a>
+                                                @endif
+                                            @endif
+                                            @if ($approvalRequest->currentLevel->class_name_approver_type == 'App\Models\Role')
+                                                @if (Auth::user()->hasRole($approvalRequest->currentLevel->approver->name))
+                                                    @if (is_null($approvalRequest->currentLevel->department_id))
+                                                        <a href="javascript:;" class="btn btn-primary btn-sm"
+                                                            title="Approval Process" data-bs-toggle="modal"
+                                                            data-bs-target="#modalApprove{{ $approvalRequest->id }}">
+                                                            <i class="fa fa-list-check fa-sm"></i> Approval Process / 审批
+                                                        </a>
+                                                    @else
+                                                        @if (count(array_intersect(
+                                                                    $item->createdBy->departments->pluck('id')->toArray(),
+                                                                    auth()->user()->departments->pluck('id')->toArray())) > 0)
+                                                            <a href="javascript:;" class="btn btn-primary btn-sm"
+                                                                title="Approval Process" data-bs-toggle="modal"
+                                                                data-bs-target="#modalApprove{{ $approvalRequest->id }}">
+                                                                <i class="fa fa-list-check fa-sm"></i> Approval Process / 审批
+                                                            </a>
+                                                        @endif
+                                                    @endif
+                                                @endif
+                                            @endif
+                                            @include('admin.modal.approval')
+                                        @endif
+                                    @endcan
+                                </div>
+
                             </form>
 
                             <div class="mt-3">
@@ -462,7 +537,7 @@
                     <div class="card mb-4">
                         <div class="card-header bg-light d-flex justify-content-between align-items-center">
                             <h6 class="mb-0">Supplier Offers / 供应商报价</h6>
-                            @if ($data->process_status != 'approved')
+                            @if (!in_array($data->process_status, ['approved', 'pending', 'Waiting Approval Manager']))
                                 <a href="{{ route('pre-purchase-order.edit', $data->id) }}#addSupplierOffer"
                                     class="btn btn-sm btn-primary">
                                     <i class="fa fa-plus"></i> Add Supplier Offer / 添加供应商报价
@@ -983,15 +1058,51 @@ foreach ($quotation->quotationDetails as $detail) {
                             @endif
                         </div>
                         <div>
-                            @if ($data->process_status != 'approved')
+                            @if (!in_array($data->process_status, ['approved', 'pending', 'Waiting Approval Manager']))
                                 <a href="{{ route('pre-purchase-order.edit', $data->id) }}" class="btn btn-primary">
                                     <i class="fa fa-edit"></i> Edit / 编辑
                                 </a>
                             @endif
+                            @can('approve-pre-purchase-order')
+                                @if (!is_null($approvalRequest))
+                                    @if ($approvalRequest->currentLevel->class_name_approver_type == 'App\Models\User')
+                                        @if (Auth::user()->id == $approvalRequest->currentLevel->approver->approver_reference_id)
+                                            <a href="javascript:;" class="btn btn-primary ms-2" title="Approval Process"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalApprove{{ $approvalRequest->id }}">
+                                                <i class="fa fa-list-check fa-sm"></i> Approval Process / 审批
+                                            </a>
+                                        @endif
+                                    @endif
+                                    @if ($approvalRequest->currentLevel->class_name_approver_type == 'App\Models\Role')
+                                        @if (Auth::user()->hasRole($approvalRequest->currentLevel->approver->name))
+                                            @if (is_null($approvalRequest->currentLevel->department_id))
+                                                <a href="javascript:;" class="btn btn-primary ms-2"
+                                                    title="Approval Process" data-bs-toggle="modal"
+                                                    data-bs-target="#modalApprove{{ $approvalRequest->id }}">
+                                                    <i class="fa fa-list-check fa-sm"></i> Approval Process / 审批
+                                                </a>
+                                            @else
+                                                @if (count(array_intersect(
+                                                            $item->createdBy->departments->pluck('id')->toArray(),
+                                                            auth()->user()->departments->pluck('id')->toArray())) > 0)
+                                                    <a href="javascript:;" class="btn btn-primary ms-2"
+                                                        title="Approval Process" data-bs-toggle="modal"
+                                                        data-bs-target="#modalApprove{{ $approvalRequest->id }}">
+                                                        <i class="fa fa-list-check fa-sm"></i> Approval Process / 审批
+                                                    </a>
+                                                @endif
+                                            @endif
+                                        @endif
+                                    @endif
+                                    @include('admin.modal.approval')
+                                @endif
+                            @endcan
                             <a href="{{ route('pre-purchase-order.index') }}" class="btn btn-secondary ms-2">
                                 <i class="fa fa-list"></i> Back to List / 返回列表
                             </a>
                         </div>
+
                     </div>
                 </div>
             </div>
