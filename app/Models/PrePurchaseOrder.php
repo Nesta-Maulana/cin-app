@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use DB;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -17,7 +18,10 @@ class PrePurchaseOrder extends Model
     {
         return LogOptions::defaults()->logAll();
     }
-
+    public function purchaseOrderNews()
+    {
+        return $this->hasMany(PurchaseOrderNew::class, 'pre_purchase_order_id');
+    }
     // Relationship to details
     // 与详情的关系
     public function details()
@@ -115,6 +119,93 @@ class PrePurchaseOrder extends Model
             ])
             ->latest()
             ->first();
+    }
+    public function getSelectedSuppliersAttribute()
+    {
+        // Get supplier IDs from item selections via their quotations
+        $supplierIds = $this->itemSelections()
+            ->join('quotation_comparisons', 'pre_purchase_order_item_selections.quotation_id', '=', 'quotation_comparisons.id')
+            ->pluck('quotation_comparisons.supplier_id')
+            ->unique()
+            ->values();
+
+        // If we have a selected quotation at the pre-purchase order level, include that supplier too
+        $selectedQuotation = $this->selectedQuotation();
+        if ($selectedQuotation && $selectedQuotation->supplier_id) {
+            $supplierIds = $supplierIds->add($selectedQuotation->supplier_id)->unique();
+        }
+
+        // Return the suppliers
+        return Supplier::whereIn('id', $supplierIds)->get();
+    }
+
+    /**
+     * Check if a purchase order can be created for a specific supplier
+     *
+     * @param int $supplierId
+     * @return bool
+     */
+    /**
+     * Check if a purchase order can be created for a specific supplier
+     *
+     * @param int $supplierId
+     * @return bool
+     */
+    /**
+     * Check if a purchase order can be created for a specific supplier
+     *
+     * @param int $supplierId
+     * @return bool
+     */
+    public function canCreatePOForSupplier($supplierId)
+    {
+        // Check if a PO already exists for this pre-purchase order and supplier
+        $existingPO = $this->purchaseOrderNews()
+            ->where('supplier_id', $supplierId)
+            ->count();
+
+        // If no PO exists yet, check if the supplier is selected
+        if ($existingPO == 0) {
+            // Check if supplier is selected in item selections
+            $isSelectedInItemSelections = $this->itemSelections()
+                ->join('quotation_comparisons', 'pre_purchase_order_item_selections.quotation_id', '=', 'quotation_comparisons.id')
+                ->where('quotation_comparisons.supplier_id', $supplierId)
+                ->exists();
+
+            // Check if supplier is selected at pre-purchase order level
+            $isSelectedGlobally = ($this->selectedQuotation() && $this->selectedQuotation()->supplier_id == $supplierId);
+
+            return $isSelectedInItemSelections || $isSelectedGlobally;
+        }
+
+        return false;
+    }
+    /**
+     * Get details that should be included in a purchase order for a specific supplier
+     *
+     * @param int $supplierId
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getDetailsForSupplier($supplierId)
+    {
+        // If we have item selections, get details based on those
+        if ($this->itemSelections()->count() > 0) {
+            $detailIds = $this->itemSelections()
+                ->join('quotation_comparisons', 'pre_purchase_order_item_selections.quotation_id', '=', 'quotation_comparisons.id')
+                ->where('quotation_comparisons.supplier_id', $supplierId)
+                ->pluck('pre_purchase_order_item_selections.pre_purchase_order_detail_id');
+
+            return $this->details()->whereIn('id', $detailIds)->get();
+        }
+
+        // If we don't have item selections but have a selected quotation for this supplier,
+        // include all details
+        $selectedQuotation = $this->selectedQuotation();
+        if ($selectedQuotation && $selectedQuotation->supplier_id == $supplierId) {
+            return $this->details;
+        }
+
+        return collect();
     }
 
 }

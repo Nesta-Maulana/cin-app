@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\PurchaseOrderNewAdditionalCost;
 use App\Models\PurchaseOrderSupplierOfferDetail;
 use App\Models\Warehouse;
 use App\Repositories\BaseRepository;
@@ -76,6 +77,13 @@ use App\Repositories\Transaction\PurchaseOrder\PurchaseOrderRepository;
 use App\Repositories\Transaction\PurchaseOrder\PurchaseOrderRepositoryInterface;
 use App\Repositories\Transaction\PurchaseOrderDetail\PurchaseOrderDetailRepository;
 use App\Repositories\Transaction\PurchaseOrderDetail\PurchaseOrderDetailRepositoryInterface;
+use App\Repositories\Transaction\PurchaseOrderNew\PurchaseOrderNewRepository;
+use App\Repositories\Transaction\PurchaseOrderNew\PurchaseOrderNewRepositoryInterface;
+use App\Repositories\Transaction\PurchaseOrderNewAdditionalCost\PurchaseOrderNewAdditionalCostRepositoryInterface;
+use App\Repositories\Transaction\PurchaseOrderNewAttachment\PurchaseOrderNewAttachmentRepository;
+use App\Repositories\Transaction\PurchaseOrderNewAttachment\PurchaseOrderNewAttachmentRepositoryInterface;
+use App\Repositories\Transaction\PurchaseOrderNewDetail\PurchaseOrderNewDetailRepository;
+use App\Repositories\Transaction\PurchaseOrderNewDetail\PurchaseOrderNewDetailRepositoryInterface;
 use App\Repositories\Transaction\PurchaseOrderSupplierOffer\PurchaseOrderSupplierOfferRepository;
 use App\Repositories\Transaction\PurchaseOrderSupplierOffer\PurchaseOrderSupplierOfferRepositoryInterface;
 use App\Repositories\Transaction\PurchaseOrderSupplierOfferDetail\PurchaseOrderSupplierOfferDetailRepository;
@@ -146,6 +154,15 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(QuotationComparisonAdditionalCostRepositoryInterface::class, QuotationComparisonAdditionalCostRepository::class);
         $this->app->bind(ManualItemRequestRepositoryInterface::class, ManualItemRequestRepository::class);
         $this->app->bind(ManualItemRequestDetailRepositoryInterface::class, ManualItemRequestDetailRepository::class);
+
+
+        // Purchase Order New
+        $this->app->bind(PurchaseOrderNewRepositoryInterface::class, PurchaseOrderNewRepository::class);
+        $this->app->bind(PurchaseOrderNewDetailRepositoryInterface::class, PurchaseOrderNewDetailRepository::class);
+        $this->app->bind(PurchaseOrderNewAttachmentRepositoryInterface::class, PurchaseOrderNewAttachmentRepository::class);
+        $this->app->bind(PurchaseOrderNewAdditionalCostRepositoryInterface::class, PurchaseOrderNewAdditionalCost::class);
+
+
     }
 
     /**

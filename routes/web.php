@@ -22,6 +22,7 @@ use App\Http\Controllers\Transaction\ItemRequestProcessController;
 use App\Http\Controllers\Transaction\ManualItemRequestController;
 use App\Http\Controllers\Transaction\PrePurchaseOrderController;
 use App\Http\Controllers\Transaction\PurchaseOrderController;
+use App\Http\Controllers\Transaction\PurchaseOrderNewController;
 use App\Http\Controllers\Transaction\QuotationComparisonController;
 use App\Http\Controllers\Transaction\StockEntryController;
 use App\Models\PrePurchaseOrder;
@@ -136,6 +137,7 @@ Route::middleware(['auth', 'auth.status'])->group(function () {
     Route::resource('purchase-order', PurchaseOrderController::class);
     Route::resource('manual-item-request', ManualItemRequestController::class);
     Route::get('manual-item-request-template', [ManualItemRequestController::class, 'downloadTemplate'])
-        ->name('manual-item-request.download-template');
+    ->name('manual-item-request.download-template');
 
+    Route::resource('purchase-order-new', PurchaseOrderNewController::class);
 });

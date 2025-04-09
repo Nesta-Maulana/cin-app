@@ -42,7 +42,7 @@
                                             </a>
                                         @else
                                             @if (count(array_intersect(
-                                                        $item->createdBy->departments->pluck('id')->toArray(),
+                                                        $data->createdBy->departments->pluck('id')->toArray(),
                                                         auth()->user()->departments->pluck('id')->toArray())) > 0)
                                                 <a href="javascript:;" class="btn btn-primary btn-sm" title="Approval Process"
                                                     data-bs-toggle="modal"
@@ -498,7 +498,7 @@
                                                         </a>
                                                     @else
                                                         @if (count(array_intersect(
-                                                                    $item->createdBy->departments->pluck('id')->toArray(),
+                                                                    $data->createdBy->departments->pluck('id')->toArray(),
                                                                     auth()->user()->departments->pluck('id')->toArray())) > 0)
                                                             <a href="javascript:;" class="btn btn-primary btn-sm"
                                                                 title="Approval Process" data-bs-toggle="modal"

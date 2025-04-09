@@ -461,7 +461,7 @@ class PrePurchaseOrderController extends Controller
 
             // Update the pre-purchase order status to "Waiting Approval Manager" if it was "pending"
             // 如果预采购单状态为"pending"，则将其更新为"Waiting Approval Manager"
-            if ($prePurchaseOrder->process_status == 'draft') {
+            if (in_array($prePurchaseOrder->process_status, ['pending','rejected'])) {
                 $prePurchaseOrder->update([
                     'process_status' => 'pending'
                 ]);
@@ -503,14 +503,15 @@ class PrePurchaseOrderController extends Controller
 
             // Update status to "under_review"
             // 将状态更新为"under_review"
-            $prePurchaseOrder->update([
-                'process_status' => 'Waiting Approval Manager'
-            ]);
+
 
             // Check for approval
             // 检查审批
             $checkApproval = $this->repository->checkApproval('create', $prePurchaseOrder->id);
-
+            // dd($checkApproval);
+            $prePurchaseOrder->update([
+                'process_status' => 'Waiting Approval Manager'
+            ]);
             DB::commit();
 
             return redirect()->route('pre-purchase-order.show', $id)

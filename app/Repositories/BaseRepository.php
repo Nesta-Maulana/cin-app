@@ -181,7 +181,7 @@ class BaseRepository implements BaseRepositoryInterface
             ->first();
         if ($approval) {
             $approvalLevelLatest = $this->modelApprovalRequest->where('approval_id', $approval->id)->where('reference_id', $id)->latest()->first();
-            if (is_null($approvalLevelLatest)) {
+            if (is_null($approvalLevelLatest) || $approvalLevelLatest->status == 'rejected') {
                 $nextLevel = $approval->approvalLevels()->orderBy('hierarchy_order')->first();
                 $approvalRequest = $this->modelApprovalRequest->create([
                     'approval_id' => $approval->id,
