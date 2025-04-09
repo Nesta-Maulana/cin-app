@@ -123,37 +123,27 @@
                                                                     // Check if there's a specific selection for this item
                                                                     $selection = $prePO
                                                                         ->itemSelections()
-                                                                        ->where(
-                                                                            'pre_purchase_order_detail_id',
-                                                                            $detail->id,
-                                                                        )
-                                                                        ->first();
+                                                                        ->where('pre_purchase_order_id', $prePO->id)
+                                                                        ->get();
 
                                                                     if ($selection) {
-                                                                        // Get the quotation detail
-                                                                        $detailPrice = $selection->quotation->quotationDetails
+                                                                        $specificSelection = $selection
                                                                             ->where(
-                                                                                'pre_purchase_order_detail_id',
-                                                                                $detail->id,
+                                                                                'item_key',
+                                                                                $detail->itemRequestDetail
+                                                                                    ->itemPriceHistory->itemUom->item
+                                                                                    ->name .
+                                                                                    '|' .
+                                                                                    $detail->itemRequestDetail
+                                                                                        ->itemPriceHistory->itemUom
+                                                                                        ->unitOfMeasurement->name,
                                                                             )
                                                                             ->first();
-
-                                                                        $supplierName =
-                                                                            $selection->quotation->supplier->name ??
-                                                                            'Unknown';
-                                                                    } elseif ($prePO->selectedQuotation()) {
-                                                                        // Use the globally selected quotation
-                                                                        $detailPrice = $prePO
-                                                                            ->selectedQuotation()
-                                                                            ->quotationDetails->where(
-                                                                                'pre_purchase_order_detail_id',
-                                                                                $detail->id,
-                                                                            )
-                                                                            ->first();
-
-                                                                        $supplierName =
-                                                                            $prePO->selectedQuotation()->supplier
-                                                                                ->name ?? 'Unknown';
+                                                                        $supplierName = $specificSelection
+                                                                            ? $specificSelection->quotation->supplier->name : 'Not Selected';
+                                                                        $detailPrice = $specificSelection
+                                                                            ? $specificSelection->quotation->quotationDetails()->where('pre_purchase_order_detail_id', $detail->id)->first()
+                                                                            : null;
                                                                     } else {
                                                                         $detailPrice = null;
                                                                         $supplierName = 'Not Selected';
