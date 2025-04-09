@@ -127,8 +127,7 @@
                                                                         ->get();
 
                                                                     if ($selection) {
-                                                                        $itemKey = $detail->itemRequestDetail
-                                                                            ->itemPriceHistory
+                                                                        $itemKey = $detail->item_uom_id
                                                                             ? $detail->itemRequestDetail
                                                                                     ->itemPriceHistory->itemUom->item
                                                                                     ->name .
@@ -141,7 +140,7 @@
                                                                                 '|' .
                                                                                 $detail->manualItemRequestDetail->unit;
                                                                         $specificSelection = $selection
-                                                                            ->where('item_key', $key)
+                                                                            ->where('item_key', $itemKey)
                                                                             ->first();
                                                                         $supplierName = $specificSelection
                                                                             ? $specificSelection->quotation->supplier
