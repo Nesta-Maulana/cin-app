@@ -127,22 +127,34 @@
                                                                         ->get();
 
                                                                     if ($selection) {
-                                                                        $specificSelection = $selection
-                                                                            ->where(
-                                                                                'item_key',
-                                                                                $detail->itemRequestDetail
+                                                                        $itemKey = $detail->itemRequestDetail
+                                                                            ->itemPriceHistory
+                                                                            ? $detail->itemRequestDetail
                                                                                     ->itemPriceHistory->itemUom->item
                                                                                     ->name .
-                                                                                    '|' .
-                                                                                    $detail->itemRequestDetail
-                                                                                        ->itemPriceHistory->itemUom
-                                                                                        ->unitOfMeasurement->name,
-                                                                            )
+                                                                                '|' .
+                                                                                $detail->itemRequestDetail
+                                                                                    ->itemPriceHistory->itemUom
+                                                                                    ->unitOfMeasurement->name
+                                                                            : $detail->manualItemRequestDetail
+                                                                                    ->item_name .
+                                                                                '|' .
+                                                                                $detail->manualItemRequestDetail->unit;
+                                                                        $specificSelection = $selection
+                                                                            ->where('item_key', $key)
                                                                             ->first();
                                                                         $supplierName = $specificSelection
-                                                                            ? $specificSelection->quotation->supplier->name : 'Not Selected';
+                                                                            ? $specificSelection->quotation->supplier
+                                                                                ->name
+                                                                            : 'Not Selected';
                                                                         $detailPrice = $specificSelection
-                                                                            ? $specificSelection->quotation->quotationDetails()->where('pre_purchase_order_detail_id', $detail->id)->first()
+                                                                            ? $specificSelection->quotation
+                                                                                ->quotationDetails()
+                                                                                ->where(
+                                                                                    'pre_purchase_order_detail_id',
+                                                                                    $detail->id,
+                                                                                )
+                                                                                ->first()
                                                                             : null;
                                                                     } else {
                                                                         $detailPrice = null;
