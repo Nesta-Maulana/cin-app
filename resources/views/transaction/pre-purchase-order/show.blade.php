@@ -1084,7 +1084,7 @@ foreach ($quotation->quotationDetails as $detail) {
                                                 </a>
                                             @else
                                                 @if (count(array_intersect(
-                                                            $item->createdBy->departments->pluck('id')->toArray(),
+                                                            $data->createdBy->departments->pluck('id')->toArray(),
                                                             auth()->user()->departments->pluck('id')->toArray())) > 0)
                                                     <a href="javascript:;" class="btn btn-primary ms-2"
                                                         title="Approval Process" data-bs-toggle="modal"
