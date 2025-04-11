@@ -461,7 +461,7 @@ class PrePurchaseOrderController extends Controller
 
             // Update the pre-purchase order status to "Waiting Approval Manager" if it was "pending"
             // 如果预采购单状态为"pending"，则将其更新为"Waiting Approval Manager"
-            if (in_array($prePurchaseOrder->process_status, ['pending','rejected'])) {
+            if (in_array($prePurchaseOrder->process_status, ['draft','rejected'])) {
                 $prePurchaseOrder->update([
                     'process_status' => 'pending'
                 ]);

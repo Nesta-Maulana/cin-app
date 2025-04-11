@@ -57,8 +57,12 @@ class PurchaseOrderNew extends Model
     // Relationship to attachments
     public function attachments()
     {
-        return $this->hasMany(PurchaseOrderNewAttachment::class, 'purchase_order_id');
+        return $this->morphMany(File::class, 'reference', 'class_name', 'reference_id');
     }
+    /* public function attachments()
+    {
+        return $this->hasMany(PurchaseOrderNewAttachment::class, 'purchase_order_id');
+    } */
 
     // Relationship to status history
     public function statusHistory()

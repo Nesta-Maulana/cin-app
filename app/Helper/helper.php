@@ -41,6 +41,30 @@ if (!function_exists('myInitial')) {
         }
     }
 }
+if (!function_exists('getStatusColor')) {
+    function getStatusColor($status)
+    {
+        switch (strtolower($status)) {
+            case 'draft':
+                return 'secondary';
+            case 'waiting approval':
+                return 'warning';
+            case 'approved':
+                return 'success';
+            case 'rejected':
+                return 'danger';
+            case 'partially received':
+                return 'info';
+            case 'fully received':
+                return 'primary';
+            case 'canceled':
+                return 'dark';
+            default:
+                return 'light';
+        }
+    }
+}
+
 
 /*** active status ***/
 if (!function_exists('isActive')) {
@@ -535,26 +559,23 @@ function getCurrency()
 function getQuantity($detail)
 {
     $quantity = $detail->quantity;
-    if($detail->itemPriceHistory->itemUom->unitOfMeasurement->id !== $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->id)
-    {
+    if ($detail->itemPriceHistory->itemUom->unitOfMeasurement->id !== $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->id) {
         $quantity = $detail->quantity * $detail->itemPriceHistory->itemUom->conversion;
     }
-    $quantities = $quantity.' '.$detail->itemPriceHistory->itemUom->item->unitOfMeasurement->name.' | ';
-    foreach ($detail->itemPriceHistory->itemUom->item->itemUoms->sortBy('conversion') as $key => $uom)
-    {
+    $quantities = $quantity . ' ' . $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->name . ' | ';
+    foreach ($detail->itemPriceHistory->itemUom->item->itemUoms->sortBy('conversion') as $key => $uom) {
         if ($uom->unitOfMeasurement->id !== $detail->itemPriceHistory->itemUom->item->unitOfMeasurement->id) {
-            $quantities .= number_format($quantity / $uom->conversion, 2, ',', '.') . ' ' . $uom->unitOfMeasurement->name.' | ';
+            $quantities .= number_format($quantity / $uom->conversion, 2, ',', '.') . ' ' . $uom->unitOfMeasurement->name . ' | ';
         }
     }
     return rtrim($quantities, ' | ');
 }
-function getQuantityByItem($item, $quantity,$defaultUom)
+function getQuantityByItem($item, $quantity, $defaultUom)
 {
-    $quantities = $quantity.' '.$defaultUom.' | ';
-    foreach ($item->itemUoms->sortBy('conversion') as $key => $uom)
-    {
+    $quantities = $quantity . ' ' . $defaultUom . ' | ';
+    foreach ($item->itemUoms->sortBy('conversion') as $key => $uom) {
         if ($uom->unitOfMeasurement->name !== $defaultUom) {
-            $quantities .= number_format($quantity / $uom->conversion, 2, ',', '.') . ' ' . $uom->unitOfMeasurement->name.' | ';
+            $quantities .= number_format($quantity / $uom->conversion, 2, ',', '.') . ' ' . $uom->unitOfMeasurement->name . ' | ';
         }
     }
     return rtrim($quantities, ' | ');

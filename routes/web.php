@@ -139,5 +139,8 @@ Route::middleware(['auth', 'auth.status'])->group(function () {
     Route::get('manual-item-request-template', [ManualItemRequestController::class, 'downloadTemplate'])
     ->name('manual-item-request.download-template');
 
+    Route::get('purchase-order-new/{id}/export-pdf', [PurchaseOrderNewController::class, 'exportPdf'])->name('purchase-order-new.export-pdf');
+    Route::post('purchase-order-new/{id}/submit', [PurchaseOrderNewController::class, 'submit'])
+    ->name('purchase-order-new.submit');
     Route::resource('purchase-order-new', PurchaseOrderNewController::class);
 });
