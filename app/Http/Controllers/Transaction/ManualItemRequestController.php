@@ -35,6 +35,28 @@ class ManualItemRequestController extends Controller
     {
         return view("{$this->view}.index");
     }
+    public function show($id)
+    {
+        try {
+            // Find the manual item request with its relationships
+            $manualItemRequest = $this->repository->find($id);
+
+            // Load relationships if they haven't been loaded
+            if (!$manualItemRequest->relationLoaded('details')) {
+                $manualItemRequest->load('details');
+            }
+
+            if (!$manualItemRequest->relationLoaded('customerOrder')) {
+                $manualItemRequest->load('customerOrder.customer');
+            }
+
+            return view('transaction.manual-item-request.show', compact('manualItemRequest'));
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            alertNotif('error', $e->getMessage());
+            return redirect()->route("{$this->route}.index");
+        }
+    }
 
     public function create()
     {
