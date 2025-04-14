@@ -47,7 +47,7 @@ if (!function_exists('getStatusColor')) {
         switch (strtolower($status)) {
             case 'draft':
                 return 'secondary';
-            case 'waiting approval':
+            case 'Waiting Approval Manager':
                 return 'warning';
             case 'approved':
                 return 'success';
@@ -60,7 +60,7 @@ if (!function_exists('getStatusColor')) {
             case 'canceled':
                 return 'dark';
             default:
-                return 'light';
+                return 'warning';
         }
     }
 }

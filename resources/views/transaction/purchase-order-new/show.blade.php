@@ -26,6 +26,42 @@
                                 <i class="fa fa-edit"></i> Edit / 编辑
                             </a>
                         @endif
+                        @can('approve-purchase-order')
+                            @php
+                                $approvalRequest = $purchaseOrder->approvalRequest('create')->first();
+                            @endphp
+                            @if (!is_null($approvalRequest))
+                                @if ($approvalRequest->currentLevel->class_name_approver_type == 'App\Models\User')
+                                    @if (Auth::user()->id == $approvalRequest->currentLevel->approver->approver_reference_id)
+                                        <a href="javascript:;" class="btn btn-primary ms-2" title="Approval Process"
+                                            data-bs-toggle="modal" data-bs-target="#modalApprove{{ $approvalRequest->id }}">
+                                            <i class="fa fa-list-check fa-sm"></i> Approval Process / 审批
+                                        </a>
+                                    @endif
+                                @endif
+                                @if ($approvalRequest->currentLevel->class_name_approver_type == 'App\Models\Role')
+                                    @if (Auth::user()->hasRole($approvalRequest->currentLevel->approver->name))
+                                        @if (is_null($approvalRequest->currentLevel->department_id))
+                                            <a href="javascript:;" class="btn btn-primary ms-2" title="Approval Process"
+                                                data-bs-toggle="modal" data-bs-target="#modalApprove{{ $approvalRequest->id }}">
+                                                <i class="fa fa-list-check fa-sm"></i> Approval Process / 审批
+                                            </a>
+                                        @else
+                                            @if (count(array_intersect(
+                                                        $purchaseOrder->createdBy->departments->pluck('id')->toArray(),
+                                                        auth()->user()->departments->pluck('id')->toArray())) > 0)
+                                                <a href="javascript:;" class="btn btn-primary ms-2" title="Approval Process"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalApprove{{ $approvalRequest->id }}">
+                                                    <i class="fa fa-list-check fa-sm"></i> Approval Process / 审批
+                                                </a>
+                                            @endif
+                                        @endif
+                                    @endif
+                                @endif
+                                @include('admin.modal.approval')
+                            @endif
+                        @endcan
                         <div class="dropdown d-inline-block">
                             <button class="btn btn-primary btn-sm dropdown-toggle" type="button" id="actionDropdown"
                                 data-bs-toggle="dropdown" aria-expanded="false">
@@ -91,7 +127,8 @@
                                         <tr>
                                             <td><strong>Status / 状态:</strong></td>
                                             <td>
-                                                <span class="badge bg-{{ getStatusColor($purchaseOrder->process_status) }}">
+                                                <span
+                                                    class="badge bg-{{ getStatusColor($purchaseOrder->process_status) }}">
                                                     {{ $purchaseOrder->process_status }}
                                                 </span>
                                             </td>
@@ -291,13 +328,7 @@
                                         @endif
 
                                         <!-- Current user can approve/reject -->
-                                        @if (
-                                            $approvalRequest->status == 'pending' &&
-                                                $approvalRequest->currentLevel &&
-                                                ((Auth::user()->id == $approvalRequest->currentLevel->approver_reference_id &&
-                                                    $approvalRequest->currentLevel->class_name_approver_type == 'App\\Models\\User') ||
-                                                    (Auth::user()->hasRole($approvalRequest->currentLevel->approver_reference_id) &&
-                                                        $approvalRequest->currentLevel->class_name_approver_type == 'App\\Models\\Role')))
+                                        @if ($approvalRequest->status == 'pending' && $approvalRequest->currentLevel && ((Auth::user()->id == $approvalRequest->currentLevel->approver_reference_id && $approvalRequest->currentLevel->class_name_approver_type == 'App\\Models\\User') || (Auth::user()->hasRole($approvalRequest->currentLevel->approver_reference_id) && $approvalRequest->currentLevel->class_name_approver_type == 'App\\Models\\Role')))
                                             <div class="mt-3">
                                                 <h6>Your Approval:</h6>
                                                 <form action="{{ route('send-approval') }}" method="POST">
@@ -349,7 +380,8 @@
                                             @foreach ($beforeTaxCosts as $cost)
                                                 <tr>
                                                     <td class="ps-4">{{ $cost->description }}
-                                                        ({{ ucfirst($cost->type) }}):</td>
+                                                        ({{ ucfirst($cost->type) }})
+                                                        :</td>
                                                     <td class="text-end">{{ $purchaseOrder->currency }}
                                                         {{ number_format($cost->amount, 2) }}</td>
                                                 </tr>
@@ -376,7 +408,8 @@
                                             @foreach ($afterTaxCosts as $cost)
                                                 <tr>
                                                     <td class="ps-4">{{ $cost->description }}
-                                                        ({{ ucfirst($cost->type) }}):</td>
+                                                        ({{ ucfirst($cost->type) }})
+                                                        :</td>
                                                     <td class="text-end">{{ $purchaseOrder->currency }}
                                                         {{ number_format($cost->amount, 2) }}</td>
                                                 </tr>
@@ -451,7 +484,5 @@
             // Implement PDF export functionality
             window.location.href = "{{ route('purchase-order-new.export-pdf', $purchaseOrder->id) }}";
         }
-
-
     </script>
 @endpush

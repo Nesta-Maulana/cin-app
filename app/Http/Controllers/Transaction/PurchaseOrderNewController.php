@@ -704,7 +704,7 @@ class PurchaseOrderNewController extends Controller
             if (isset($checkApproval['status']) && $checkApproval['status'] == 200) {
                 $purchaseOrder->update([
                     'process_status' => 'Waiting Approval Manager',
-                    'updated_by' => auth()->id,
+                    'updated_by' => auth()->id(),
                 ]);
             }
 

@@ -305,7 +305,8 @@
                                             <i class="fa fa-trash fa-sm mx-2 fs-5"></i>
                                         </a>
                                         @include('admin.modal.delete', [
-                                            'route' => route('purchase-order-new.destroy', $po->id),
+                                            'updateRoute' => route('purchase-order-new.destroy', $po->id),
+                                            'item' => $po
                                         ])
                                     @endcan
                                 </div>
