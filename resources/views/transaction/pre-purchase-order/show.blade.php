@@ -397,13 +397,22 @@
                                                 <th class="">Cheapest Supplier / 最便宜的供应商</th>
                                                 @foreach ($data->quotations as $quotation)
                                                     <th
-                                                        class="text-center {{ $quotation->is_selected ? 'bg-light text-primary' : '' }}">
+                                                        class="text-center {{ $quotation->is_selected ? 'bg-light text-primary' : '' }}" colspan="3">
                                                         {{ $quotation->supplier->name }}
+                                                        <br>
                                                         @if ($quotation->is_selected)
                                                             <div class="small"><i class="fa fa-check-circle"></i> Selected
                                                             </div>
                                                         @endif
                                                     </th>
+                                                @endforeach
+                                            </tr>
+                                            <tr>
+                                                <th colspan="4"></th>
+                                                @foreach ($data->quotations as $quotation)
+                                                    <th>#</th>
+                                                    <th>Price After Tax</th>
+                                                    <th>Total Price After Tax</th>
                                                 @endforeach
                                             </tr>
                                         </thead>
@@ -454,15 +463,24 @@
                                                                             Select
                                                                         </label>
                                                                     </div>
-                                                                    <div
-                                                                        class="text-end fw-bold {{ $item['cheapest_supplier_id'] == $quotation->id ? 'text-success' : '' }}">
-                                                                        {{ strtoupper($quotation->currency) }}
-                                                                        {{ number_format($item['suppliers'][$quotation->id]['unit_price_after_tax'], 2) }}
-                                                                    </div>
                                                                 </div>
                                                             @else
                                                                 <span class="text-muted">N/A</span>
                                                             @endif
+                                                        </td>
+                                                        <td>
+                                                            <div
+                                                                class="text-end fw-bold {{ $item['cheapest_supplier_id'] == $quotation->id ? 'text-success' : '' }}">
+                                                                {{ strtoupper($quotation->currency) }}
+                                                                {{ number_format($item['suppliers'][$quotation->id]['unit_price_after_tax'], 2) }}
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div
+                                                                class="text-end fw-bold {{ $item['cheapest_supplier_id'] == $quotation->id ? 'text-success' : '' }}">
+                                                                {{ strtoupper($quotation->currency) }}
+                                                                {{ number_format($item['suppliers'][$quotation->id]['unit_price_after_tax']*$item['quantity'], 2) }}
+                                                            </div>
                                                         </td>
                                                     @endforeach
                                                 </tr>
